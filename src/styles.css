@@ -1,0 +1,332 @@
+:root {
+  color: #f8fafc;
+  background: #05070b;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.game-shell {
+  min-height: 100%;
+  overflow: hidden;
+  background: #05070b;
+}
+
+.scene-stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 560px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.scene-video,
+.animated-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scene-video {
+  z-index: 1;
+}
+
+.animated-fallback {
+  z-index: 0;
+  background-size: 200% 200%;
+  animation: drift 12s ease-in-out infinite alternate;
+}
+
+.fallback-atrium {
+  background:
+    radial-gradient(circle at 22% 42%, rgba(249, 220, 126, 0.42), transparent 17%),
+    radial-gradient(circle at 72% 36%, rgba(75, 184, 214, 0.34), transparent 19%),
+    linear-gradient(125deg, #182234 0%, #253b3f 39%, #10131c 68%, #081119 100%);
+}
+
+.fallback-archive {
+  background:
+    radial-gradient(circle at 45% 68%, rgba(239, 176, 94, 0.35), transparent 18%),
+    radial-gradient(circle at 76% 28%, rgba(111, 171, 152, 0.28), transparent 20%),
+    linear-gradient(130deg, #1d1719 0%, #32302b 44%, #111925 100%);
+}
+
+.fallback-atrium::before,
+.fallback-archive::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(90deg, transparent 0 17%, rgba(255, 255, 255, 0.08) 17% 18%, transparent 18% 100%),
+    linear-gradient(0deg, transparent 0 63%, rgba(255, 255, 255, 0.08) 63% 64%, transparent 64% 100%);
+  background-size: 18rem 18rem;
+  opacity: 0.42;
+  transform-origin: center;
+  animation: shimmer 9s linear infinite;
+}
+
+.hotspot-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+.invitation-sign-overlay {
+  position: absolute;
+  left: 36.8%;
+  top: 49.4%;
+  z-index: 4;
+  width: 26.8%;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 0.55rem 0.8rem rgba(0, 0, 0, 0.5));
+}
+
+.hotspot {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  cursor: pointer;
+  color: #ffffff;
+  background: rgba(13, 148, 136, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 8px;
+  outline: 0;
+  opacity: 0.72;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.hotspot:hover,
+.hotspot:focus-visible {
+  background: rgba(13, 148, 136, 0.28);
+  border-color: rgba(255, 255, 255, 0.82);
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.hotspot span {
+  max-width: min(100%, 11rem);
+  padding: 0.3rem 0.45rem;
+  overflow-wrap: anywhere;
+  color: #f8fafc;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.85);
+  background: rgba(2, 6, 23, 0.58);
+  border-radius: 6px;
+}
+
+.hotspot[data-hotspot-id="archive-door"] {
+  background:
+    linear-gradient(#d6a94a, #d6a94a) top / 100% 2px no-repeat,
+    linear-gradient(#d6a94a, #d6a94a) left top / 2px 100% no-repeat,
+    linear-gradient(#d6a94a, #d6a94a) right top / 2px 100% no-repeat,
+    linear-gradient(#d6a94a, #d6a94a) left bottom / 20% 2px no-repeat,
+    linear-gradient(#d6a94a, #d6a94a) right bottom / 20% 2px no-repeat,
+    rgba(218, 165, 32, 0.04);
+  border: 0;
+  box-shadow:
+    0 0 0 1px rgba(255, 245, 184, 0.28),
+    0 0 18px rgba(214, 169, 74, 0.32);
+  opacity: 0.92;
+}
+
+.hotspot[data-hotspot-id="archive-door"]:hover,
+.hotspot[data-hotspot-id="archive-door"]:focus-visible {
+  background:
+    linear-gradient(#ffd875, #ffd875) top / 100% 2px no-repeat,
+    linear-gradient(#ffd875, #ffd875) left top / 2px 100% no-repeat,
+    linear-gradient(#ffd875, #ffd875) right top / 2px 100% no-repeat,
+    linear-gradient(#ffd875, #ffd875) left bottom / 20% 2px no-repeat,
+    linear-gradient(#ffd875, #ffd875) right bottom / 20% 2px no-repeat,
+    rgba(218, 165, 32, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(255, 248, 204, 0.48),
+    0 0 26px rgba(255, 216, 117, 0.48);
+}
+
+.hotspot[data-hotspot-id="archive-door"] span {
+  opacity: 0;
+}
+
+.top-bar {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  right: 1rem;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.top-bar p {
+  justify-self: center;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  overflow: hidden;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(2, 6, 23, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  backdrop-filter: blur(14px);
+}
+
+.top-bar-spacer {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.icon-button,
+.close-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  color: #f8fafc;
+  cursor: pointer;
+  background: rgba(2, 6, 23, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  backdrop-filter: blur(14px);
+}
+
+.icon-button {
+  pointer-events: auto;
+}
+
+.icon-button:hover,
+.icon-button:focus-visible,
+.close-button:hover,
+.close-button:focus-visible {
+  background: rgba(15, 23, 42, 0.86);
+  border-color: rgba(255, 255, 255, 0.48);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(8px);
+}
+
+.dialog-card {
+  position: relative;
+  width: min(30rem, 100%);
+  margin: 0;
+  padding: 1.35rem;
+  color: #18202f;
+  background: #f8fafc;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.35);
+}
+
+.dialog-card h1 {
+  margin: 0 3rem 0.55rem 0;
+  color: #111827;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.dialog-card p {
+  margin: 0;
+  color: #334155;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.close-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #111827;
+  background: #e2e8f0;
+  border-color: transparent;
+}
+
+@keyframes drift {
+  from {
+    background-position: 0% 0%;
+  }
+
+  to {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    transform: translate3d(-2rem, -1rem, 0);
+  }
+
+  to {
+    transform: translate3d(2rem, 1rem, 0);
+  }
+}
+
+@media (max-width: 720px) {
+  .scene-stage {
+    min-height: 100vh;
+  }
+
+  .top-bar {
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .top-bar p {
+    font-size: 0.85rem;
+  }
+
+  .hotspot span {
+    font-size: 0.7rem;
+  }
+}

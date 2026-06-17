@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.DS_Store
+
+# Local video assets can exceed GitHub's normal 100 MB file limit.
+# Copy these into public/assets after cloning, or use Git LFS later.
+public/assets/*.mp4
+public/assets/*.webm
+public/assets/*.mov
