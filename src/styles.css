@@ -52,6 +52,7 @@ button {
 
 .scene-video {
   z-index: 1;
+  transition: object-position 360ms ease;
 }
 
 .animated-fallback {
@@ -96,7 +97,9 @@ button {
   width: max(100vw, calc(100vh * var(--scene-aspect-ratio)));
   height: max(100vh, calc(100vw / var(--scene-aspect-ratio)));
   transform: translate(-50%, -50%);
-  transition: opacity 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 360ms ease;
 }
 
 .scene-stage-transitioning .scene-coordinate-layer {
@@ -338,6 +341,10 @@ button {
   opacity: 0;
 }
 
+.mobile-pan-controls {
+  display: none;
+}
+
 .icon-button,
 .close-button {
   display: inline-grid;
@@ -469,6 +476,14 @@ button {
     min-height: 100vh;
   }
 
+  .scene-stage-mobile-poster .scene-video {
+    object-position: 84% center;
+  }
+
+  .scene-stage-mobile-poster .scene-coordinate-layer {
+    transform: translate(calc(-50% - 25.4%), -50%);
+  }
+
   .top-bar {
     top: 0.75rem;
     left: 0.75rem;
@@ -486,6 +501,43 @@ button {
 
   .club-counter {
     font-size: 0.78rem;
+  }
+
+  .mobile-pan-controls {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    right: 0.75rem;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    transform: translateY(-50%);
+  }
+
+  .mobile-pan-button {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    color: #f8fafc;
+    cursor: pointer;
+    background: rgba(2, 6, 23, 0.62);
+    border: 1px solid rgba(214, 169, 74, 0.44);
+    border-radius: 8px;
+    box-shadow: 0 0 18px rgba(214, 169, 74, 0.22);
+    backdrop-filter: blur(14px);
+    pointer-events: auto;
+  }
+
+  .mobile-pan-button:only-child {
+    margin-left: auto;
+  }
+
+  .scene-stage-mobile-poster .mobile-pan-button:only-child {
+    margin-right: auto;
+    margin-left: 0;
   }
 
   .hotspot span {

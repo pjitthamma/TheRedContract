@@ -1,4 +1,4 @@
-import { ArrowLeft, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type HotspotAction, type SceneId, scenes } from "./scenes";
@@ -9,6 +9,7 @@ type PopupContent = {
 };
 
 type TransitionPhase = "idle" | "playing" | "revealing";
+type MobileLandingView = "door" | "poster";
 
 type ClickCounts = {
   door: number;
@@ -24,6 +25,7 @@ function App() {
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [isHotspotAudioPlaying, setIsHotspotAudioPlaying] = useState(false);
+  const [mobileLandingView, setMobileLandingView] = useState<MobileLandingView>("door");
   const [clickCounts, setClickCounts] = useState<ClickCounts>({
     door: 0,
     poster: 0,
@@ -33,6 +35,7 @@ function App() {
   });
   const displayedScene = transitionPhase !== "idle" ? scenes.archive : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
+  const isMobilePosterView = displayedScene.id === "atrium" && mobileLandingView === "poster";
 
   const canGoBack = displayedScene.id !== "atrium";
 
@@ -90,6 +93,7 @@ function App() {
     if (sceneId === "atrium" && action.target === "archive") {
       setClickCounts((current) => ({ ...current, door: current.door + 1 }));
       void new Audio("/assets/whoosp.mp3").play();
+      setMobileLandingView("door");
       setTransitionPhase("playing");
       return;
     }
@@ -133,7 +137,9 @@ function App() {
   return (
     <main className="game-shell">
       <section
-        className={`scene-stage${isTransitioning ? " scene-stage-transitioning" : ""}`}
+        className={`scene-stage${isTransitioning ? " scene-stage-transitioning" : ""}${
+          isMobilePosterView ? " scene-stage-mobile-poster" : ""
+        }`}
         style={{ "--scene-aspect-ratio": displayedScene.aspectRatio } as CSSProperties}
         aria-label={displayedScene.name || "Atrium"}
       >
@@ -153,6 +159,7 @@ function App() {
               aria-label="Back to atrium"
               onClick={() => {
                 setTransitionPhase("idle");
+                setMobileLandingView("door");
                 setSceneId("atrium");
               }}
             >
@@ -175,6 +182,31 @@ function App() {
 
         {displayedScene.id === "atrium" ? (
           <div className="club-counter">Club Visited: {clickCounts.clubVisited}</div>
+        ) : null}
+
+        {displayedScene.id === "atrium" && !isTransitioning ? (
+          <div className="mobile-pan-controls" aria-label="Mobile scene view controls">
+            {mobileLandingView === "poster" ? (
+              <button
+                className="mobile-pan-button"
+                type="button"
+                aria-label="Show door"
+                onClick={() => setMobileLandingView("door")}
+              >
+                <ChevronLeft size={22} aria-hidden="true" />
+              </button>
+            ) : null}
+            {mobileLandingView === "door" ? (
+              <button
+                className="mobile-pan-button"
+                type="button"
+                aria-label="Show poster"
+                onClick={() => setMobileLandingView("poster")}
+              >
+                <ChevronRight size={22} aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </section>
 
