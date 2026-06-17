@@ -1,5 +1,5 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
-import type { CSSProperties } from "react";
+import { ArrowLeft, Volume2, VolumeX, X } from "lucide-react";
+import type { CSSProperties, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type HotspotAction, type SceneId, scenes } from "./scenes";
 
@@ -9,7 +9,6 @@ type PopupContent = {
 };
 
 type TransitionPhase = "idle" | "playing" | "revealing";
-type MobileLandingView = "door" | "poster";
 
 type ClickCounts = {
   door: number;
@@ -25,7 +24,11 @@ function App() {
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [isHotspotAudioPlaying, setIsHotspotAudioPlaying] = useState(false);
-  const [mobileLandingView, setMobileLandingView] = useState<MobileLandingView>("door");
+  const [scenePan, setScenePan] = useState({ x: 0, y: 0 });
+  const [isDraggingScene, setIsDraggingScene] = useState(false);
+  const dragStartRef = useRef<{ pointerId: number; x: number; y: number; panX: number; panY: number; moved: boolean } | null>(
+    null,
+  );
   const [clickCounts, setClickCounts] = useState<ClickCounts>({
     door: 0,
     poster: 0,
@@ -35,9 +38,42 @@ function App() {
   });
   const displayedScene = transitionPhase !== "idle" ? scenes.archive : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
-  const isMobilePosterView = displayedScene.id === "atrium" && mobileLandingView === "poster";
 
   const canGoBack = displayedScene.id !== "atrium";
+  const sceneStyle = {
+    "--scene-aspect-ratio": displayedScene.aspectRatio,
+    "--scene-pan-x": `${scenePan.x}px`,
+    "--scene-pan-y": `${scenePan.y}px`,
+  } as CSSProperties;
+
+  const clampScenePan = (x: number, y: number) => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const sceneWidth = Math.max(viewportWidth, viewportHeight * displayedScene.aspectRatio);
+    const sceneHeight = Math.max(viewportHeight, viewportWidth / displayedScene.aspectRatio);
+    const maxX = Math.max(0, (sceneWidth - viewportWidth) / 2);
+    const maxY = Math.max(0, (sceneHeight - viewportHeight) / 2);
+
+    return {
+      x: Math.min(maxX, Math.max(-maxX, x)),
+      y: Math.min(maxY, Math.max(-maxY, y)),
+    };
+  };
+
+  const canDragScene = () => window.matchMedia("(max-width: 720px)").matches;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 720px)");
+    const resetDesktopPan = () => {
+      if (!mediaQuery.matches) {
+        setScenePan({ x: 0, y: 0 });
+      }
+    };
+
+    resetDesktopPan();
+    mediaQuery.addEventListener("change", resetDesktopPan);
+    return () => mediaQuery.removeEventListener("change", resetDesktopPan);
+  }, []);
 
   const handleHotspot = (hotspotId: string, action: HotspotAction) => {
     if (action.type === "popup") {
@@ -46,6 +82,9 @@ function App() {
     }
 
     if (action.type === "image") {
+      if (dragStartRef.current?.moved) {
+        return;
+      }
       if (hotspotId === "atrium-poster") {
         setClickCounts((current) => ({ ...current, poster: current.poster + 1 }));
       }
@@ -57,6 +96,9 @@ function App() {
     }
 
     if (action.type === "audio") {
+      if (dragStartRef.current?.moved) {
+        return;
+      }
       if (isHotspotAudioPlaying) {
         return;
       }
@@ -90,10 +132,14 @@ function App() {
 
     setPopup(null);
 
+    if (dragStartRef.current?.moved) {
+      return;
+    }
+
     if (sceneId === "atrium" && action.target === "archive") {
       setClickCounts((current) => ({ ...current, door: current.door + 1 }));
       void new Audio("/assets/whoosp.mp3").play();
-      setMobileLandingView("door");
+      setScenePan({ x: 0, y: 0 });
       setTransitionPhase("playing");
       return;
     }
@@ -134,13 +180,78 @@ function App() {
     setTransitionPhase("idle");
   };
 
+  const handleScenePointerDown = (event: PointerEvent<HTMLElement>) => {
+    const target = event.target;
+    if (
+      isTransitioning ||
+      imageOverlaySrc ||
+      !canDragScene() ||
+      (target instanceof Element && target.closest(".icon-button, .close-button"))
+    ) {
+      return;
+    }
+
+    dragStartRef.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      panX: scenePan.x,
+      panY: scenePan.y,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setIsDraggingScene(true);
+  };
+
+  const handleScenePointerMove = (event: PointerEvent<HTMLElement>) => {
+    const dragStart = dragStartRef.current;
+    if (!dragStart || dragStart.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = dragStart.x - event.clientX;
+    const deltaY = dragStart.y - event.clientY;
+    if (Math.hypot(deltaX, deltaY) > 8) {
+      dragStart.moved = true;
+    }
+
+    setScenePan(clampScenePan(dragStart.panX - deltaX, dragStart.panY - deltaY));
+  };
+
+  const handleScenePointerUp = (event: PointerEvent<HTMLElement>) => {
+    const dragStart = dragStartRef.current;
+    if (!dragStart || dragStart.pointerId !== event.pointerId) {
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    dragStartRef.current = dragStart.moved ? dragStart : null;
+    setIsDraggingScene(false);
+    setScenePan((current) => clampScenePan(current.x, current.y));
+
+    if (dragStart.moved) {
+      window.setTimeout(() => {
+        if (dragStartRef.current === dragStart) {
+          dragStartRef.current = null;
+        }
+      }, 0);
+    }
+  };
+
   return (
     <main className="game-shell">
       <section
         className={`scene-stage${isTransitioning ? " scene-stage-transitioning" : ""}${
-          isMobilePosterView ? " scene-stage-mobile-poster" : ""
+          isDraggingScene ? " scene-stage-dragging" : ""
         }`}
-        style={{ "--scene-aspect-ratio": displayedScene.aspectRatio } as CSSProperties}
+        style={sceneStyle}
+        onPointerDown={handleScenePointerDown}
+        onPointerMove={handleScenePointerMove}
+        onPointerUp={handleScenePointerUp}
+        onPointerCancel={handleScenePointerUp}
+        onLostPointerCapture={handleScenePointerUp}
         aria-label={displayedScene.name || "Atrium"}
       >
         <VideoScene sceneId={displayedScene.id} src={displayedScene.videoSrc} fallbackClassName={displayedScene.fallbackClassName} />
@@ -159,7 +270,7 @@ function App() {
               aria-label="Back to atrium"
               onClick={() => {
                 setTransitionPhase("idle");
-                setMobileLandingView("door");
+                setScenePan({ x: 0, y: 0 });
                 setSceneId("atrium");
               }}
             >
@@ -184,30 +295,6 @@ function App() {
           <div className="club-counter">Club Visited: {clickCounts.clubVisited}</div>
         ) : null}
 
-        {displayedScene.id === "atrium" && !isTransitioning ? (
-          <div className="mobile-pan-controls" aria-label="Mobile scene view controls">
-            {mobileLandingView === "poster" ? (
-              <button
-                className="mobile-pan-button"
-                type="button"
-                aria-label="Show door"
-                onClick={() => setMobileLandingView("door")}
-              >
-                <ChevronLeft size={22} aria-hidden="true" />
-              </button>
-            ) : null}
-            {mobileLandingView === "door" ? (
-              <button
-                className="mobile-pan-button"
-                type="button"
-                aria-label="Show poster"
-                onClick={() => setMobileLandingView("poster")}
-              >
-                <ChevronRight size={22} aria-hidden="true" />
-              </button>
-            ) : null}
-          </div>
-        ) : null}
       </section>
 
       {popup ? (
@@ -366,7 +453,7 @@ function VideoScene({ sceneId, src, fallbackClassName }: VideoSceneProps) {
   const [videoFailed, setVideoFailed] = useState(false);
 
   return (
-    <>
+    <div className="scene-media-layer">
       <div className={`animated-fallback ${fallbackClassName}`} aria-hidden="true" />
       {!videoFailed ? (
         <video
@@ -380,7 +467,7 @@ function VideoScene({ sceneId, src, fallbackClassName }: VideoSceneProps) {
           onError={() => setVideoFailed(true)}
         />
       ) : null}
-    </>
+    </div>
   );
 }
 
