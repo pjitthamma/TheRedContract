@@ -401,7 +401,7 @@ function SoundButton() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const audio = new Audio("/assets/sound.wav");
+    const audio = new Audio("/assets/sound.mp3");
     audio.loop = true;
     audioRef.current = audio;
 
@@ -417,7 +417,7 @@ function SoundButton() {
   }, []);
 
   const toggleSound = () => {
-    const audio = audioRef.current ?? new Audio("/assets/sound.wav");
+    const audio = audioRef.current ?? new Audio("/assets/sound.mp3");
     audio.loop = true;
     audioRef.current = audio;
 
