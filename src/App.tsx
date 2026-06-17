@@ -10,24 +10,42 @@ type PopupContent = {
 
 type TransitionPhase = "idle" | "playing" | "revealing";
 
+type ClickCounts = {
+  door: number;
+  poster: number;
+  knock: number;
+  card: number;
+  clubVisited: number;
+};
+
 function App() {
   const [sceneId, setSceneId] = useState<SceneId>("atrium");
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [isHotspotAudioPlaying, setIsHotspotAudioPlaying] = useState(false);
+  const [clickCounts, setClickCounts] = useState<ClickCounts>({
+    door: 0,
+    poster: 0,
+    knock: 0,
+    card: 0,
+    clubVisited: 1,
+  });
   const displayedScene = transitionPhase !== "idle" ? scenes.archive : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
 
   const canGoBack = displayedScene.id !== "atrium";
 
-  const handleHotspot = (action: HotspotAction) => {
+  const handleHotspot = (hotspotId: string, action: HotspotAction) => {
     if (action.type === "popup") {
       setPopup({ title: action.title, body: action.body });
       return;
     }
 
     if (action.type === "image") {
+      if (hotspotId === "atrium-poster") {
+        setClickCounts((current) => ({ ...current, poster: current.poster + 1 }));
+      }
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
       }
@@ -38,6 +56,13 @@ function App() {
     if (action.type === "audio") {
       if (isHotspotAudioPlaying) {
         return;
+      }
+
+      if (hotspotId === "archive-outside-card") {
+        setClickCounts((current) => ({ ...current, knock: current.knock + 1 }));
+      }
+      if (hotspotId === "card") {
+        setClickCounts((current) => ({ ...current, card: current.card + 1 }));
       }
 
       const audio = new Audio(action.src);
@@ -63,6 +88,7 @@ function App() {
     setPopup(null);
 
     if (sceneId === "atrium" && action.target === "archive") {
+      setClickCounts((current) => ({ ...current, door: current.door + 1 }));
       void new Audio("/assets/whoosp.mp3").play();
       setTransitionPhase("playing");
       return;
@@ -87,7 +113,7 @@ function App() {
           type="button"
           disabled={isTransitioning || (hotspot.action.type === "audio" && isHotspotAudioPlaying)}
           aria-label={hotspot.label}
-          onClick={() => handleHotspot(hotspot.action)}
+          onClick={() => handleHotspot(hotspot.id, hotspot.action)}
         >
           <span>{hotspot.label}</span>
         </button>
@@ -135,7 +161,7 @@ function App() {
           ) : (
             <span className="top-bar-spacer" />
           )}
-          {displayedScene.name ? <p>{displayedScene.name}</p> : <span />}
+          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} />
           <SoundButton />
         </div>
 
@@ -145,6 +171,10 @@ function App() {
             onFinish={finishTransition}
             onRevealComplete={completeReveal}
           />
+        ) : null}
+
+        {displayedScene.id === "atrium" ? (
+          <div className="club-counter">Club Visited: {clickCounts.clubVisited}</div>
         ) : null}
       </section>
 
@@ -171,6 +201,29 @@ function App() {
         </div>
       ) : null}
     </main>
+  );
+}
+
+type ClickCounterProps = {
+  sceneId: SceneId;
+  counts: ClickCounts;
+};
+
+function ClickCounter({ sceneId, counts }: ClickCounterProps) {
+  return (
+    <div className="click-counter" aria-live="polite">
+      {sceneId === "atrium" ? (
+        <>
+          <span>Door Clicked: {counts.door}</span>
+          <span>Poster Clicked: {counts.poster}</span>
+        </>
+      ) : (
+        <>
+          <span>Door Knocked: {counts.knock}</span>
+          <span>Card Clicked: {counts.card}</span>
+        </>
+      )}
+    </div>
   );
 }
 

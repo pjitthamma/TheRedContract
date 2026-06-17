@@ -295,6 +295,49 @@ button {
   height: 2.75rem;
 }
 
+.click-counter {
+  justify-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 1rem;
+  max-width: 100%;
+  padding: 0.35rem 0.65rem;
+  color: #d6a94a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-shadow:
+    0 1px 10px rgba(0, 0, 0, 0.88),
+    0 0 14px rgba(214, 169, 74, 0.32);
+  pointer-events: none;
+}
+
+.click-counter span {
+  white-space: nowrap;
+}
+
+.club-counter {
+  position: absolute;
+  left: clamp(0.85rem, 2vw, 1.5rem);
+  bottom: clamp(0.85rem, 2vw, 1.5rem);
+  z-index: 5;
+  color: #d6a94a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow:
+    0 1px 10px rgba(0, 0, 0, 0.9),
+    0 0 14px rgba(214, 169, 74, 0.34);
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.scene-stage-transitioning .club-counter {
+  opacity: 0;
+}
+
 .icon-button,
 .close-button {
   display: inline-grid;
@@ -434,6 +477,15 @@ button {
 
   .top-bar p {
     font-size: 0.85rem;
+  }
+
+  .click-counter {
+    gap: 0.2rem 0.7rem;
+    font-size: 0.78rem;
+  }
+
+  .club-counter {
+    font-size: 0.78rem;
   }
 
   .hotspot span {
