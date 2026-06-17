@@ -168,7 +168,8 @@ button {
   border-radius: 6px;
 }
 
-.hotspot[data-hotspot-id="archive-door"] {
+.hotspot[data-hotspot-id="archive-door"],
+.hotspot[data-hotspot-id="atrium-poster"] {
   background: rgba(218, 165, 32, 0.06);
   border: 2px solid #ffd875;
   box-shadow: none;
@@ -181,7 +182,9 @@ button {
 }
 
 .hotspot[data-hotspot-id="archive-door"]:hover,
-.hotspot[data-hotspot-id="archive-door"]:focus-visible {
+.hotspot[data-hotspot-id="archive-door"]:focus-visible,
+.hotspot[data-hotspot-id="atrium-poster"]:hover,
+.hotspot[data-hotspot-id="atrium-poster"]:focus-visible {
   background: rgba(218, 165, 32, 0.08);
   box-shadow:
     0 0 0 1px rgba(255, 248, 204, 0.42),
@@ -192,7 +195,8 @@ button {
   transform: none;
 }
 
-.hotspot[data-hotspot-id="archive-door"] span {
+.hotspot[data-hotspot-id="archive-door"] span,
+.hotspot[data-hotspot-id="atrium-poster"] span {
   opacity: 0;
 }
 
@@ -327,6 +331,27 @@ button {
   padding: 1rem;
   background: rgba(2, 6, 23, 0.62);
   backdrop-filter: blur(8px);
+}
+
+.image-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.image-overlay {
+  display: block;
+  max-width: min(88vw, 46rem);
+  max-height: 86vh;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 1.5rem 3rem rgba(0, 0, 0, 0.72))
+    drop-shadow(0 0 1.5rem rgba(214, 169, 74, 0.22));
 }
 
 .dialog-card {

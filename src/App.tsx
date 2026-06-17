@@ -13,6 +13,7 @@ type TransitionPhase = "idle" | "playing" | "revealing";
 function App() {
   const [sceneId, setSceneId] = useState<SceneId>("atrium");
   const [popup, setPopup] = useState<PopupContent | null>(null);
+  const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [isHotspotAudioPlaying, setIsHotspotAudioPlaying] = useState(false);
   const displayedScene = transitionPhase !== "idle" ? scenes.archive : scenes[sceneId];
@@ -23,6 +24,14 @@ function App() {
   const handleHotspot = (action: HotspotAction) => {
     if (action.type === "popup") {
       setPopup({ title: action.title, body: action.body });
+      return;
+    }
+
+    if (action.type === "image") {
+      if (action.audioSrc) {
+        void new Audio(action.audioSrc).play();
+      }
+      setImageOverlaySrc(action.imageSrc);
       return;
     }
 
@@ -148,6 +157,17 @@ function App() {
             <h1 id="dialog-title">{popup.title}</h1>
             <p>{popup.body}</p>
           </dialog>
+        </div>
+      ) : null}
+
+      {imageOverlaySrc ? (
+        <div className="image-backdrop" role="presentation" onClick={() => setImageOverlaySrc(null)}>
+          <img
+            className="image-overlay"
+            src={imageOverlaySrc}
+            alt=""
+            onClick={(event) => event.stopPropagation()}
+          />
         </div>
       ) : null}
     </main>

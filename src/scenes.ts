@@ -13,6 +13,11 @@ export type HotspotAction =
   | {
       type: "audio";
       src: string;
+    }
+  | {
+      type: "image";
+      imageSrc: string;
+      audioSrc?: string;
     };
 
 export type Hotspot = {
@@ -52,6 +57,19 @@ export const scenes: Record<SceneId, Scene> = {
         action: {
           type: "scene",
           target: "archive",
+        },
+      },
+      {
+        id: "atrium-poster",
+        label: "Wall poster",
+        x: 75.4,
+        y: 25.8,
+        width: 10,
+        height: 25.7,
+        action: {
+          type: "image",
+          imageSrc: "/assets/poster.png",
+          audioSrc: "/assets/flip.mp3",
         },
       },
     ],
