@@ -1,32 +1,29 @@
-# WHIF Point-and-Click Video Demo
+# The Red Contract
 
-A small React + TypeScript starter for a point-and-click mini game.
+Interactive invitation experience built with React, Vite, Netlify Functions, and Supabase event tracking.
 
-## Run
+## Run Locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open the local URL shown by Vite.
+## Build
 
-## Add Your Videos
+```bash
+npm run build
+```
 
-Put your files in `public/assets/`:
+## Deploy
 
-- `scene-atrium.mp4`
-- `scene-archive.mp4`
+Netlify settings:
 
-Or change the file names in `src/scenes.ts`.
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Functions directory: `netlify/functions`
 
-## Move Clickable Areas
+Required Netlify environment variables:
 
-Edit the hotspot values in `src/scenes.ts`.
-
-The numbers are percentages of the screen:
-
-- `x`: distance from the left
-- `y`: distance from the top
-- `width`: clickable area width
-- `height`: clickable area height
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`

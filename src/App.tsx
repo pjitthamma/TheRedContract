@@ -18,6 +18,29 @@ type ClickCounts = {
   clubVisited: number;
 };
 
+type EventName = "club_visited" | "door_clicked" | "poster_clicked" | "door_knocked" | "card_clicked";
+
+const SESSION_ID_KEY = "red-contract-session-id";
+
+const getSessionId = () => {
+  const existingSessionId = window.localStorage.getItem(SESSION_ID_KEY);
+  if (existingSessionId) {
+    return existingSessionId;
+  }
+
+  const sessionId = window.crypto.randomUUID();
+  window.localStorage.setItem(SESSION_ID_KEY, sessionId);
+  return sessionId;
+};
+
+const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => ({
+  door: counts?.door_clicked ?? 0,
+  poster: counts?.poster_clicked ?? 0,
+  knock: counts?.door_knocked ?? 0,
+  card: counts?.card_clicked ?? 0,
+  clubVisited: counts?.club_visited ?? 0,
+});
+
 function App() {
   const [sceneId, setSceneId] = useState<SceneId>("atrium");
   const [popup, setPopup] = useState<PopupContent | null>(null);
@@ -29,12 +52,13 @@ function App() {
   const dragStartRef = useRef<{ pointerId: number; x: number; y: number; panX: number; panY: number; moved: boolean } | null>(
     null,
   );
+  const visitTrackedRef = useRef(false);
   const [clickCounts, setClickCounts] = useState<ClickCounts>({
     door: 0,
     poster: 0,
     knock: 0,
     card: 0,
-    clubVisited: 1,
+    clubVisited: 0,
   });
   const displayedScene = transitionPhase !== "idle" ? scenes.archive : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
@@ -75,6 +99,62 @@ function App() {
     return () => mediaQuery.removeEventListener("change", resetDesktopPan);
   }, []);
 
+  const fetchCounts = async () => {
+    const response = await fetch("/.netlify/functions/get-counts");
+    if (!response.ok) {
+      return;
+    }
+
+    const data = (await response.json()) as { counts?: Partial<Record<EventName, number>> };
+    setClickCounts(mapCounts(data.counts));
+  };
+
+  const trackEvent = async (eventName: EventName) => {
+    setClickCounts((current) => {
+      if (eventName === "club_visited") {
+        return { ...current, clubVisited: current.clubVisited + 1 };
+      }
+      if (eventName === "door_clicked") {
+        return { ...current, door: current.door + 1 };
+      }
+      if (eventName === "poster_clicked") {
+        return { ...current, poster: current.poster + 1 };
+      }
+      if (eventName === "door_knocked") {
+        return { ...current, knock: current.knock + 1 };
+      }
+      return { ...current, card: current.card + 1 };
+    });
+
+    try {
+      const response = await fetch("/.netlify/functions/track-event", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          eventName,
+          sessionId: getSessionId(),
+        }),
+      });
+
+      if (response.ok) {
+        await fetchCounts();
+      }
+    } catch {
+      // Keep optimistic local counts if tracking is unavailable.
+    }
+  };
+
+  useEffect(() => {
+    if (visitTrackedRef.current) {
+      return;
+    }
+
+    visitTrackedRef.current = true;
+    void fetchCounts().then(() => trackEvent("club_visited"));
+  }, []);
+
   const handleHotspot = (hotspotId: string, action: HotspotAction) => {
     if (action.type === "popup") {
       setPopup({ title: action.title, body: action.body });
@@ -86,7 +166,7 @@ function App() {
         return;
       }
       if (hotspotId === "atrium-poster") {
-        setClickCounts((current) => ({ ...current, poster: current.poster + 1 }));
+        void trackEvent("poster_clicked");
       }
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
@@ -104,10 +184,10 @@ function App() {
       }
 
       if (hotspotId === "archive-outside-card") {
-        setClickCounts((current) => ({ ...current, knock: current.knock + 1 }));
+        void trackEvent("door_knocked");
       }
       if (hotspotId === "card") {
-        setClickCounts((current) => ({ ...current, card: current.card + 1 }));
+        void trackEvent("card_clicked");
       }
 
       const audio = new Audio(action.src);
@@ -137,7 +217,7 @@ function App() {
     }
 
     if (sceneId === "atrium" && action.target === "archive") {
-      setClickCounts((current) => ({ ...current, door: current.door + 1 }));
+      void trackEvent("door_clicked");
       void new Audio("/assets/whoosp.mp3").play();
       setScenePan({ x: 0, y: 0 });
       setTransitionPhase("playing");
