@@ -9,6 +9,10 @@ export type HotspotAction =
   | {
       type: "scene";
       target: SceneId;
+    }
+  | {
+      type: "audio";
+      src: string;
     };
 
 export type Hotspot = {
@@ -25,6 +29,7 @@ export type Scene = {
   id: SceneId;
   name: string;
   videoSrc: string;
+  aspectRatio: number;
   fallbackClassName: string;
   hotspots: Hotspot[];
 };
@@ -32,29 +37,17 @@ export type Scene = {
 export const scenes: Record<SceneId, Scene> = {
   atrium: {
     id: "atrium",
-    name: "Moonlit Atrium",
-    videoSrc: "/assets/scene-atrium.mp4",
+    name: "",
+    videoSrc: "/assets/landing-page.mp4",
+    aspectRatio: 16 / 9,
     fallbackClassName: "fallback-atrium",
     hotspots: [
       {
-        id: "glass-case",
-        label: "Inspect glass case",
-        x: 17,
-        y: 48,
-        width: 15,
-        height: 22,
-        action: {
-          type: "popup",
-          title: "Glass Case",
-          body: "The display is locked, but a faint light pulses inside. This is where you can reveal story clues, item descriptions, or puzzle hints.",
-        },
-      },
-      {
         id: "archive-door",
         label: "Front door",
-        x: 35.2,
+        x: 37.3,
         y: 23.8,
-        width: 29.2,
+        width: 25.1,
         height: 54.6,
         action: {
           type: "scene",
@@ -65,21 +58,33 @@ export const scenes: Record<SceneId, Scene> = {
   },
   archive: {
     id: "archive",
-    name: "Quiet Archive",
-    videoSrc: "/assets/scene-archive.mp4",
+    name: "",
+    videoSrc: "/assets/noted.mp4",
+    aspectRatio: 16 / 9,
     fallbackClassName: "fallback-archive",
     hotspots: [
       {
-        id: "desk-note",
-        label: "Read note",
-        x: 39,
-        y: 59,
-        width: 20,
-        height: 14,
+        id: "archive-outside-card",
+        label: "Outside card area",
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
         action: {
-          type: "popup",
-          title: "Desk Note",
-          body: "A handwritten note says: replace these placeholders with your real videos, then adjust hotspot positions in src/scenes.ts.",
+          type: "audio",
+          src: "/assets/door-knock.mp3",
+        },
+      },
+      {
+        id: "card",
+        label: "Card",
+        x: 35.6,
+        y: 25.1,
+        width: 36.4,
+        height: 50.5,
+        action: {
+          type: "audio",
+          src: "/assets/master-voice.mp3",
         },
       },
     ],
