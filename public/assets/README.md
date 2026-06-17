@@ -1,10 +1,14 @@
-# Video Assets
+# Public Assets
 
-Place your own scene videos in this folder.
+These files are required by the current site and should be deployed with the app:
 
-The demo currently looks for:
-
-- `scene-atrium.mp4`
-- `scene-archive.mp4`
-
-MP4 is a good default for browser support. WebM also works if you update the `videoSrc` values in `src/scenes.ts`.
+- `landing-page.mp4`
+- `transition.mp4`
+- `noted.mp4`
+- `sound.wav`
+- `whoosp.mp3`
+- `door-knock.mp3`
+- `master-voice.mp3`
+- `flip.mp3`
+- `poster.png`
+- `invitation-sign.png`

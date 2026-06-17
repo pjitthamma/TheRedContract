@@ -2,7 +2,5 @@ node_modules/
 dist/
 .DS_Store
 
-# Local media assets can exceed GitHub's normal file size limits.
-# Copy these into public/assets after cloning, or use Git LFS later.
-public/assets/*
-!public/assets/README.md
+.npm-cache/
+vite-localhost*.log
