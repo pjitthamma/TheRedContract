@@ -334,7 +334,12 @@ function App() {
         onLostPointerCapture={handleScenePointerUp}
         aria-label={displayedScene.name || "Atrium"}
       >
-        <VideoScene sceneId={displayedScene.id} src={displayedScene.videoSrc} fallbackClassName={displayedScene.fallbackClassName} />
+        <VideoScene
+          sceneId={displayedScene.id}
+          src={displayedScene.videoSrc}
+          posterSrc={displayedScene.posterSrc}
+          fallbackClassName={displayedScene.fallbackClassName}
+        />
         <div className="scene-coordinate-layer">
           <div className="hotspot-layer">{hotspotButtons}</div>
           {displayedScene.id === "atrium" ? (
@@ -526,24 +531,35 @@ function SoundButton() {
 type VideoSceneProps = {
   sceneId: SceneId;
   src: string;
+  posterSrc?: string;
   fallbackClassName: string;
 };
 
-function VideoScene({ sceneId, src, fallbackClassName }: VideoSceneProps) {
+function VideoScene({ sceneId, src, posterSrc, fallbackClassName }: VideoSceneProps) {
   const [videoFailed, setVideoFailed] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    setVideoFailed(false);
+    setVideoReady(false);
+  }, [sceneId, src]);
 
   return (
     <div className="scene-media-layer">
       <div className={`animated-fallback ${fallbackClassName}`} aria-hidden="true" />
+      {posterSrc ? <img className="scene-poster" src={posterSrc} alt="" aria-hidden="true" /> : null}
       {!videoFailed ? (
         <video
           key={sceneId}
-          className="scene-video"
+          className={`scene-video${videoReady ? " scene-video-ready" : ""}`}
           src={src}
           autoPlay
           muted
           loop
           playsInline
+          poster={posterSrc}
+          preload="auto"
+          onCanPlay={() => setVideoReady(true)}
           onError={() => setVideoFailed(true)}
         />
       ) : null}

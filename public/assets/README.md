@@ -5,6 +5,7 @@ These files are required by the current site and should be deployed with the app
 - `landing-page.mp4`
 - `transition.mp4`
 - `noted.mp4`
+- `outside.png`
 - `sound.mp3`
 - `whoosp.mp3`
 - `door-knock.mp3`

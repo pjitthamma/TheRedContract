@@ -34,6 +34,7 @@ export type Scene = {
   id: SceneId;
   name: string;
   videoSrc: string;
+  posterSrc?: string;
   aspectRatio: number;
   fallbackClassName: string;
   hotspots: Hotspot[];
@@ -44,6 +45,7 @@ export const scenes: Record<SceneId, Scene> = {
     id: "atrium",
     name: "",
     videoSrc: "/assets/landing-page.mp4",
+    posterSrc: "/assets/outside.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-atrium",
     hotspots: [

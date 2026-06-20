@@ -61,6 +61,7 @@ button {
   z-index: 1;
 }
 
+.scene-poster,
 .scene-video,
 .animated-fallback {
   position: absolute;
@@ -70,6 +71,20 @@ button {
   object-fit: cover;
   -webkit-user-select: none;
   user-select: none;
+}
+
+.scene-poster {
+  z-index: 1;
+}
+
+.scene-video {
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+
+.scene-video-ready {
+  opacity: 1;
 }
 
 .animated-fallback {
