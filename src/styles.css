@@ -89,36 +89,20 @@ button {
 
 .animated-fallback {
   z-index: 0;
-  background-size: 200% 200%;
-  animation: drift 12s ease-in-out infinite alternate;
+  background: #000;
 }
 
 .fallback-atrium {
-  background:
-    radial-gradient(circle at 22% 42%, rgba(249, 220, 126, 0.42), transparent 17%),
-    radial-gradient(circle at 72% 36%, rgba(75, 184, 214, 0.34), transparent 19%),
-    linear-gradient(125deg, #182234 0%, #253b3f 39%, #10131c 68%, #081119 100%);
+  background: #000;
 }
 
 .fallback-archive {
-  background:
-    radial-gradient(circle at 45% 68%, rgba(239, 176, 94, 0.35), transparent 18%),
-    radial-gradient(circle at 76% 28%, rgba(111, 171, 152, 0.28), transparent 20%),
-    linear-gradient(130deg, #1d1719 0%, #32302b 44%, #111925 100%);
+  background: #000;
 }
 
 .fallback-atrium::before,
 .fallback-archive::before {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background:
-    linear-gradient(90deg, transparent 0 17%, rgba(255, 255, 255, 0.08) 17% 18%, transparent 18% 100%),
-    linear-gradient(0deg, transparent 0 63%, rgba(255, 255, 255, 0.08) 63% 64%, transparent 64% 100%);
-  background-size: 18rem 18rem;
-  opacity: 0.42;
-  transform-origin: center;
-  animation: shimmer 9s linear infinite;
+  display: none;
 }
 
 .scene-coordinate-layer {
