@@ -2,6 +2,10 @@ const EVENT_NAMES = [
   "club_visited",
   "door_clicked",
   "poster_clicked",
+  "lineup_bluerose_clicked",
+  "lineup_decree_clicked",
+  "lineup_stray_clicked",
+  "lineup_meteor_clicked",
   "door_knocked",
   "card_clicked",
 ] as const;

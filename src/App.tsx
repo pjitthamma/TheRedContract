@@ -1,7 +1,7 @@
 import { ArrowLeft, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { type HotspotAction, type SceneId, scenes } from "./scenes";
+import { type HotspotAction, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
 type PopupContent = {
   title: string;
@@ -13,12 +13,25 @@ type TransitionPhase = "idle" | "playing" | "revealing";
 type ClickCounts = {
   door: number;
   poster: number;
+  bluerosePoster: number;
+  decreePoster: number;
+  strayPoster: number;
+  meteorPoster: number;
   knock: number;
   card: number;
   clubVisited: number;
 };
 
-type EventName = "club_visited" | "door_clicked" | "poster_clicked" | "door_knocked" | "card_clicked";
+type EventName =
+  | "club_visited"
+  | "door_clicked"
+  | "poster_clicked"
+  | "lineup_bluerose_clicked"
+  | "lineup_decree_clicked"
+  | "lineup_stray_clicked"
+  | "lineup_meteor_clicked"
+  | "door_knocked"
+  | "card_clicked";
 
 const SESSION_ID_KEY = "red-contract-session-id";
 
@@ -36,10 +49,20 @@ const getSessionId = () => {
 const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => ({
   door: counts?.door_clicked ?? 0,
   poster: counts?.poster_clicked ?? 0,
+  bluerosePoster: counts?.lineup_bluerose_clicked ?? 0,
+  decreePoster: counts?.lineup_decree_clicked ?? 0,
+  strayPoster: counts?.lineup_stray_clicked ?? 0,
+  meteorPoster: counts?.lineup_meteor_clicked ?? 0,
   knock: counts?.door_knocked ?? 0,
   card: counts?.card_clicked ?? 0,
   clubVisited: counts?.club_visited ?? 0,
 });
+
+const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
+  door: "atrium",
+  archive: "door",
+  lineup: "archive",
+};
 
 function App() {
   const [sceneId, setSceneId] = useState<SceneId>("atrium");
@@ -59,6 +82,10 @@ function App() {
   const [clickCounts, setClickCounts] = useState<ClickCounts>({
     door: 0,
     poster: 0,
+    bluerosePoster: 0,
+    decreePoster: 0,
+    strayPoster: 0,
+    meteorPoster: 0,
     knock: 0,
     card: 0,
     clubVisited: 0,
@@ -123,6 +150,18 @@ function App() {
       if (eventName === "poster_clicked") {
         return { ...current, poster: current.poster + 1 };
       }
+      if (eventName === "lineup_bluerose_clicked") {
+        return { ...current, bluerosePoster: current.bluerosePoster + 1 };
+      }
+      if (eventName === "lineup_decree_clicked") {
+        return { ...current, decreePoster: current.decreePoster + 1 };
+      }
+      if (eventName === "lineup_stray_clicked") {
+        return { ...current, strayPoster: current.strayPoster + 1 };
+      }
+      if (eventName === "lineup_meteor_clicked") {
+        return { ...current, meteorPoster: current.meteorPoster + 1 };
+      }
       if (eventName === "door_knocked") {
         return { ...current, knock: current.knock + 1 };
       }
@@ -170,6 +209,18 @@ function App() {
       }
       if (hotspotId === "atrium-poster") {
         void trackEvent("poster_clicked");
+      }
+      if (hotspotId === "lineup-bluerose") {
+        void trackEvent("lineup_bluerose_clicked");
+      }
+      if (hotspotId === "lineup-decree") {
+        void trackEvent("lineup_decree_clicked");
+      }
+      if (hotspotId === "lineup-stray") {
+        void trackEvent("lineup_stray_clicked");
+      }
+      if (hotspotId === "lineup-meteor") {
+        void trackEvent("lineup_meteor_clicked");
       }
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
@@ -241,6 +292,22 @@ function App() {
     setSceneId(action.target);
   };
 
+  const getPosterClickCount = (hotspotId: string) => {
+    if (hotspotId === "lineup-bluerose") {
+      return clickCounts.bluerosePoster;
+    }
+    if (hotspotId === "lineup-decree") {
+      return clickCounts.decreePoster;
+    }
+    if (hotspotId === "lineup-stray") {
+      return clickCounts.strayPoster;
+    }
+    if (hotspotId === "lineup-meteor") {
+      return clickCounts.meteorPoster;
+    }
+    return null;
+  };
+
   const hotspotButtons = useMemo(
     () =>
       displayedScene.hotspots.map((hotspot) => (
@@ -255,21 +322,43 @@ function App() {
             height: `${hotspot.height}%`,
           }}
           type="button"
-          disabled={isTransitioning || (hotspot.action.type === "audio" && isHotspotAudioPlaying)}
+          disabled={isTransitioning || (hotspot.action?.type === "audio" && isHotspotAudioPlaying)}
           aria-label={hotspot.label}
-          onClick={() => handleHotspot(hotspot.id, hotspot.action)}
+          onClick={() => {
+            if (hotspot.action) {
+              handleHotspot(hotspot.id, hotspot.action);
+            }
+          }}
         >
+          {hotspot.id.startsWith("lineup-") ? (
+            <span className="lineup-poster-counter">Poster Clicked: {getPosterClickCount(hotspot.id)}</span>
+          ) : null}
           <span>{hotspot.label}</span>
         </button>
       )),
-    [displayedScene.hotspots, isHotspotAudioPlaying, isTransitioning, sceneId],
+    [clickCounts, displayedScene.hotspots, isHotspotAudioPlaying, isTransitioning, sceneId],
   );
+
+  const handleSceneOverlay = (overlay: SceneOverlay) => {
+    if (!overlay.action || dragStartRef.current?.moved || isTransitioning) {
+      return;
+    }
+
+    if (overlay.action.audioSrc) {
+      void new Audio(overlay.action.audioSrc).play();
+    }
+
+    setScenePan({ x: 0, y: 0 });
+    setSceneId(overlay.action.target);
+    setScenePlaybackKey((current) => current + 1);
+  };
 
   const sceneOverlays = useMemo(
     () =>
       displayedScene.overlays?.map((overlay) => (
         <button
           className="scene-overlay-hotspot"
+          data-clickable={overlay.action ? "true" : "false"}
           data-overlay-id={overlay.id}
           key={overlay.id}
           style={{
@@ -279,11 +368,12 @@ function App() {
           }}
           type="button"
           aria-label={overlay.label}
+          onClick={() => handleSceneOverlay(overlay)}
         >
           <img src={overlay.src} alt="" aria-hidden="true" draggable={false} />
         </button>
       )) ?? [],
-    [displayedScene.overlays],
+    [displayedScene.overlays, isTransitioning],
   );
 
   const finishTransition = () => {
@@ -356,6 +446,15 @@ function App() {
     }
   };
 
+  const handleBack = () => {
+    const previousSceneId = previousSceneBySceneId[sceneId] ?? "atrium";
+    setTransitionPhase("idle");
+    setScenePan({ x: 0, y: 0 });
+    setSceneId(previousSceneId);
+    setScenePlaybackKey((current) => current + 1);
+    setTransitionTargetSceneId("archive");
+  };
+
   return (
     <main className="game-shell">
       <section
@@ -391,13 +490,8 @@ function App() {
             <button
               className="icon-button"
               type="button"
-              aria-label="Back to atrium"
-              onClick={() => {
-                setTransitionPhase("idle");
-                setScenePan({ x: 0, y: 0 });
-                setSceneId("atrium");
-                setTransitionTargetSceneId("archive");
-              }}
+              aria-label="Back"
+              onClick={handleBack}
             >
               <ArrowLeft size={20} aria-hidden="true" />
             </button>

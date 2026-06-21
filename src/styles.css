@@ -97,13 +97,15 @@ button {
 }
 
 .fallback-door,
-.fallback-archive {
+.fallback-archive,
+.fallback-lineup {
   background: #000;
 }
 
 .fallback-atrium::before,
 .fallback-door::before,
-.fallback-archive::before {
+.fallback-archive::before,
+.fallback-lineup::before {
   display: none;
 }
 
@@ -135,7 +137,7 @@ button {
   min-width: 44px;
   min-height: 44px;
   padding: 0;
-  cursor: pointer;
+  cursor: default;
   background: transparent;
   border: 2px solid transparent;
   border-radius: 6px;
@@ -150,6 +152,10 @@ button {
     background 160ms ease,
     box-shadow 160ms ease,
     filter 160ms ease;
+}
+
+.scene-overlay-hotspot[data-clickable="true"] {
+  cursor: pointer;
 }
 
 .scene-overlay-hotspot:hover,
@@ -239,7 +245,8 @@ button {
 }
 
 .hotspot[data-hotspot-id="archive-door"],
-.hotspot[data-hotspot-id="atrium-poster"] {
+.hotspot[data-hotspot-id="atrium-poster"],
+.hotspot[data-hotspot-id^="lineup-"] {
   background: rgba(218, 165, 32, 0.06);
   border: 2px solid #ffd875;
   box-shadow: none;
@@ -254,7 +261,9 @@ button {
 .hotspot[data-hotspot-id="archive-door"]:hover,
 .hotspot[data-hotspot-id="archive-door"]:focus-visible,
 .hotspot[data-hotspot-id="atrium-poster"]:hover,
-.hotspot[data-hotspot-id="atrium-poster"]:focus-visible {
+.hotspot[data-hotspot-id="atrium-poster"]:focus-visible,
+.hotspot[data-hotspot-id^="lineup-"]:hover,
+.hotspot[data-hotspot-id^="lineup-"]:focus-visible {
   background: rgba(218, 165, 32, 0.08);
   box-shadow:
     0 0 0 1px rgba(255, 248, 204, 0.42),
@@ -266,8 +275,31 @@ button {
 }
 
 .hotspot[data-hotspot-id="archive-door"] span,
-.hotspot[data-hotspot-id="atrium-poster"] span {
+.hotspot[data-hotspot-id="atrium-poster"] span,
+.hotspot[data-hotspot-id^="lineup-"] > span:not(.lineup-poster-counter) {
   opacity: 0;
+}
+
+.lineup-poster-counter {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.35rem);
+  z-index: 2;
+  min-width: max-content;
+  padding: 0;
+  color: #d6a94a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-shadow:
+    0 1px 10px rgba(0, 0, 0, 0.9),
+    0 0 12px rgba(214, 169, 74, 0.34);
+  background: transparent;
+  border-radius: 0;
+  opacity: 1;
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .hotspot[data-hotspot-id="door-handle"],

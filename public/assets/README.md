@@ -7,6 +7,7 @@ These files are required by the current site and should be deployed with the app
 - `door_open.mp4`
 - `transition2.mp4`
 - `lobby-video.mp4`
+- `line-up.mp4`
 - `outside.png`
 - `sound.mp3`
 - `whoosp.mp3`
@@ -18,3 +19,7 @@ These files are required by the current site and should be deployed with the app
 - `board.png`
 - `board2.png`
 - `room-explaining.png`
+- `b_cover.png`
+- `d_cover.png`
+- `s_cover.png`
+- `m_cover.png`

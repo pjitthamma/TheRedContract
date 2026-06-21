@@ -1,4 +1,4 @@
-export type SceneId = "atrium" | "door" | "archive";
+export type SceneId = "atrium" | "door" | "archive" | "lineup";
 
 export type HotspotAction =
   | {
@@ -27,7 +27,7 @@ export type Hotspot = {
   y: number;
   width: number;
   height: number;
-  action: HotspotAction;
+  action?: HotspotAction;
 };
 
 export type SceneOverlay = {
@@ -37,6 +37,11 @@ export type SceneOverlay = {
   x: number;
   y: number;
   width: number;
+  action?: {
+    type: "scene";
+    target: SceneId;
+    audioSrc?: string;
+  };
 };
 
 export type Scene = {
@@ -133,6 +138,11 @@ export const scenes: Record<SceneId, Scene> = {
         x: 16.5,
         y: 13.4,
         width: 20.2,
+        action: {
+          type: "scene",
+          target: "lineup",
+          audioSrc: "/assets/whoosp.mp3",
+        },
       },
       {
         id: "room-explaining",
@@ -174,6 +184,67 @@ export const scenes: Record<SceneId, Scene> = {
         action: {
           type: "audio",
           src: "/assets/master-voice.mp3",
+        },
+      },
+    ],
+  },
+  lineup: {
+    id: "lineup",
+    name: "",
+    videoSrc: "/assets/line-up.mp4",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-lineup",
+    hotspots: [
+      {
+        id: "lineup-bluerose",
+        label: "Bluerose poster",
+        x: 13.2,
+        y: 33.8,
+        width: 18.1,
+        height: 49.8,
+        action: {
+          type: "image",
+          imageSrc: "/assets/b_cover.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+      {
+        id: "lineup-decree",
+        label: "Decree poster",
+        x: 32,
+        y: 32.8,
+        width: 17.2,
+        height: 50.8,
+        action: {
+          type: "image",
+          imageSrc: "/assets/d_cover.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+      {
+        id: "lineup-stray",
+        label: "Stray poster",
+        x: 50.2,
+        y: 32.8,
+        width: 18.2,
+        height: 50.8,
+        action: {
+          type: "image",
+          imageSrc: "/assets/s_cover.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+      {
+        id: "lineup-meteor",
+        label: "Meteor poster",
+        x: 68.9,
+        y: 32.8,
+        width: 18.2,
+        height: 50.8,
+        action: {
+          type: "image",
+          imageSrc: "/assets/m_cover.png",
+          audioSrc: "/assets/flip.mp3",
         },
       },
     ],
