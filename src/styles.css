@@ -549,6 +549,77 @@ button {
   backdrop-filter: blur(4px);
 }
 
+.language-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(5px);
+}
+
+.language-card {
+  width: min(24rem, 100%);
+  padding: 1.2rem;
+  color: #d6a94a;
+  background: rgba(5, 7, 11, 0.88);
+  border: 1px solid rgba(214, 169, 74, 0.52);
+  border-radius: 8px;
+  box-shadow:
+    0 1.4rem 3rem rgba(0, 0, 0, 0.62),
+    0 0 2rem rgba(214, 169, 74, 0.16);
+}
+
+.language-card p {
+  margin: 0 0 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.9);
+}
+
+.language-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.language-choice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 3.25rem;
+  padding: 0.65rem 0.8rem;
+  color: #fff8cc;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(214, 169, 74, 0.42);
+  border-radius: 8px;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.language-choice:hover,
+.language-choice:focus-visible {
+  background: rgba(22, 30, 45, 0.92);
+  border-color: rgba(255, 216, 117, 0.88);
+  box-shadow:
+    0 0 0 1px rgba(255, 248, 204, 0.22),
+    0 0 20px rgba(214, 169, 74, 0.28);
+}
+
+.language-flag {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
 .image-overlay {
   display: block;
   max-width: min(88vw, 46rem);

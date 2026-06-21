@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { type HotspotAction, type SceneId, type SceneOverlay, scenes } from "./scenes";
+import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
 type PopupContent = {
   title: string;
@@ -49,6 +49,16 @@ type EventName =
   | "card_clicked";
 
 const SESSION_ID_KEY = "red-contract-session-id";
+const LANGUAGE_KEY = "red-contract-language";
+
+const getStoredLanguage = (): Language | null => {
+  const storedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
+  if (storedLanguage === "en" || storedLanguage === "th") {
+    return storedLanguage;
+  }
+
+  return null;
+};
 
 const getSessionId = () => {
   const existingSessionId = window.localStorage.getItem(SESSION_ID_KEY);
@@ -96,10 +106,13 @@ const randomBreachedAttemptAudio = [
 const getNextRandomBreachedAttemptMilestone = (from: number) => from + 10 + Math.floor(Math.random() * 61);
 
 function App() {
+  const initialLanguage = getStoredLanguage();
   const [sceneId, setSceneId] = useState<SceneId>("atrium");
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(initialLanguage ?? "en");
+  const [isLanguageChooserOpen, setIsLanguageChooserOpen] = useState(initialLanguage === null);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
   const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
@@ -155,6 +168,12 @@ function App() {
   };
 
   const canDragScene = () => window.matchMedia("(max-width: 720px)").matches;
+
+  const chooseLanguage = (language: Language) => {
+    setSelectedLanguage(language);
+    window.localStorage.setItem(LANGUAGE_KEY, language);
+    setIsLanguageChooserOpen(false);
+  };
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 720px)");
@@ -280,7 +299,7 @@ function App() {
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
       }
-      setImageOverlaySrc(action.imageSrc);
+      setImageOverlaySrc(action.localizedImageSrcs?.[selectedLanguage] ?? action.imageSrc);
       return;
     }
 
@@ -294,7 +313,7 @@ function App() {
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
       }
-      setGalleryOverlay({ imageSrcs: action.imageSrcs, index: 0 });
+      setGalleryOverlay({ imageSrcs: action.localizedImageSrcs?.[selectedLanguage] ?? action.imageSrcs, index: 0 });
       return;
     }
 
@@ -412,7 +431,7 @@ function App() {
           <span>{hotspot.label}</span>
         </button>
       )),
-    [clickCounts, displayedScene.hotspots, isHotspotAudioPlaying, isTransitioning, sceneId],
+    [clickCounts, displayedScene.hotspots, isHotspotAudioPlaying, isTransitioning, sceneId, selectedLanguage],
   );
 
   const handleSceneOverlay = (overlay: SceneOverlay) => {
@@ -435,12 +454,15 @@ function App() {
     }
 
     if (overlay.action.type === "gallery") {
-      setGalleryOverlay({ imageSrcs: overlay.action.imageSrcs, index: 0 });
+      setGalleryOverlay({
+        imageSrcs: overlay.action.localizedImageSrcs?.[selectedLanguage] ?? overlay.action.imageSrcs,
+        index: 0,
+      });
       return;
     }
 
     if (overlay.action.type === "image") {
-      setImageOverlaySrc(overlay.action.imageSrc);
+      setImageOverlaySrc(overlay.action.localizedImageSrcs?.[selectedLanguage] ?? overlay.action.imageSrc);
       return;
     }
 
@@ -507,7 +529,7 @@ function App() {
           <img src={overlay.src} alt="" aria-hidden="true" draggable={false} />
         </button>
       )) ?? [],
-    [displayedScene.overlays, isTransitioning],
+    [displayedScene.overlays, isTransitioning, selectedLanguage],
   );
 
   const finishTransition = () => {
@@ -526,6 +548,7 @@ function App() {
       isTransitioning ||
       imageOverlaySrc ||
       galleryOverlay ||
+      isLanguageChooserOpen ||
       !canDragScene() ||
       (target instanceof Element && target.closest(".icon-button, .close-button"))
     ) {
@@ -597,6 +620,7 @@ function App() {
       isTransitioning ||
       imageOverlaySrc ||
       galleryOverlay ||
+      isLanguageChooserOpen ||
       (target instanceof Element && target.closest(".icon-button, .close-button, .gallery-arrow"))
     ) {
       return;
@@ -758,6 +782,28 @@ function App() {
           >
             <ChevronRight size={28} aria-hidden="true" />
           </button>
+        </div>
+      ) : null}
+
+      {isLanguageChooserOpen ? (
+        <div className="language-backdrop" role="presentation">
+          <div className="language-card" role="dialog" aria-modal="true" aria-label="Choose language">
+            <p>Choose language</p>
+            <div className="language-actions">
+              <button className="language-choice" type="button" onClick={() => chooseLanguage("en")}>
+                <span className="language-flag" aria-hidden="true">
+                  🇬🇧
+                </span>
+                <span>English</span>
+              </button>
+              <button className="language-choice" type="button" onClick={() => chooseLanguage("th")}>
+                <span className="language-flag" aria-hidden="true">
+                  🇹🇭
+                </span>
+                <span>ไทย</span>
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </main>

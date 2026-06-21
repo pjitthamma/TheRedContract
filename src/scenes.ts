@@ -1,5 +1,11 @@
 export type SceneId = "atrium" | "door" | "archive" | "lineup" | "inside";
 
+export type Language = "en" | "th";
+
+export type LocalizedImageSrcs = Record<Language, string>;
+
+export type LocalizedGallerySrcs = Record<Language, string[]>;
+
 export type HotspotAction =
   | {
       type: "popup";
@@ -17,11 +23,13 @@ export type HotspotAction =
   | {
       type: "image";
       imageSrc: string;
+      localizedImageSrcs?: LocalizedImageSrcs;
       audioSrc?: string;
     }
   | {
       type: "gallery";
       imageSrcs: string[];
+      localizedImageSrcs?: LocalizedGallerySrcs;
       audioSrc?: string;
     };
 
@@ -49,10 +57,12 @@ export type SceneOverlay = {
   } | {
     type: "image";
     imageSrc: string;
+    localizedImageSrcs?: LocalizedImageSrcs;
     audioSrc?: string;
   } | {
     type: "gallery";
     imageSrcs: string[];
+    localizedImageSrcs?: LocalizedGallerySrcs;
     audioSrc?: string;
   };
 };
@@ -174,6 +184,20 @@ export const scenes: Record<SceneId, Scene> = {
             "/assets/s-room-en.png",
             "/assets/m-room-en.png",
           ],
+          localizedImageSrcs: {
+            en: [
+              "/assets/b-room-en.png",
+              "/assets/d-room-en.png",
+              "/assets/s-room-en.png",
+              "/assets/m-room-en.png",
+            ],
+            th: [
+              "/assets/b-room-th.png",
+              "/assets/d-room-th.png",
+              "/assets/s-room-th.png",
+              "/assets/m-room-th.png",
+            ],
+          },
         },
       },
       {
@@ -186,6 +210,10 @@ export const scenes: Record<SceneId, Scene> = {
         action: {
           type: "image",
           imageSrc: "/assets/member_en.png",
+          localizedImageSrcs: {
+            en: "/assets/member_en.png",
+            th: "/assets/member_th.png",
+          },
           audioSrc: "/assets/flip.mp3",
         },
       },
@@ -201,6 +229,10 @@ export const scenes: Record<SceneId, Scene> = {
         action: {
           type: "gallery",
           imageSrcs: ["/assets/rule_en_1.png", "/assets/rule_en_2.png"],
+          localizedImageSrcs: {
+            en: ["/assets/rule_en_1.png", "/assets/rule_en_2.png"],
+            th: ["/assets/rule_th_1.png", "/assets/rule_th_2.png"],
+          },
           audioSrc: "/assets/flip.mp3",
         },
       },
