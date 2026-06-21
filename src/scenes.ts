@@ -222,6 +222,7 @@ export const scenes: Record<SceneId, Scene> = {
     id: "lineup",
     name: "",
     videoSrc: "/assets/line-up.mp4",
+    posterSrc: "/assets/line-up-all.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-lineup",
     hotspots: [
@@ -283,6 +284,7 @@ export const scenes: Record<SceneId, Scene> = {
     id: "inside",
     name: "",
     videoSrc: "/assets/inside.mp4",
+    posterSrc: "/assets/lobby.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-inside",
     hotspots: [],
