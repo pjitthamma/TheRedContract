@@ -791,15 +791,11 @@ function App() {
             <p>Choose language</p>
             <div className="language-actions">
               <button className="language-choice" type="button" onClick={() => chooseLanguage("en")}>
-                <span className="language-flag" aria-hidden="true">
-                  🇬🇧
-                </span>
+                <img className="language-flag" src="/assets/en.png" alt="" aria-hidden="true" draggable={false} />
                 <span>English</span>
               </button>
               <button className="language-choice" type="button" onClick={() => chooseLanguage("th")}>
-                <span className="language-flag" aria-hidden="true">
-                  🇹🇭
-                </span>
+                <img className="language-flag" src="/assets/th.png" alt="" aria-hidden="true" draggable={false} />
                 <span>ไทย</span>
               </button>
             </div>

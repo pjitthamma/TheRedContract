@@ -316,7 +316,7 @@ export const scenes: Record<SceneId, Scene> = {
     id: "inside",
     name: "",
     videoSrc: "/assets/inside.mp4",
-    posterSrc: "/assets/lobby.png",
+    posterSrc: "/assets/inside.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-inside",
     hotspots: [],

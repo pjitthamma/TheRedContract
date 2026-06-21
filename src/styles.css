@@ -616,8 +616,12 @@ button {
 }
 
 .language-flag {
-  font-size: 1.45rem;
-  line-height: 1;
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 0.18rem 0.55rem rgba(0, 0, 0, 0.42);
 }
 
 .image-overlay {

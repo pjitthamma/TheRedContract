@@ -13,7 +13,10 @@ These files are required by the current site and should be deployed with the app
 - `lobby-to-inside.mp4`
 - `inside.mp4`
 - `lobby.png`
+- `inside.png`
 - `outside.png`
+- `en.png`
+- `th.png`
 - `sound.mp3`
 - `whoosp.mp3`
 - `door-knock.mp3`
