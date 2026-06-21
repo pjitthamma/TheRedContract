@@ -111,8 +111,7 @@ function App() {
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>(initialLanguage ?? "en");
-  const [isLanguageChooserOpen, setIsLanguageChooserOpen] = useState(initialLanguage === null);
+  const [selectedLanguage] = useState<Language>(initialLanguage ?? "en");
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
   const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
@@ -168,12 +167,6 @@ function App() {
   };
 
   const canDragScene = () => window.matchMedia("(max-width: 720px)").matches;
-
-  const chooseLanguage = (language: Language) => {
-    setSelectedLanguage(language);
-    window.localStorage.setItem(LANGUAGE_KEY, language);
-    setIsLanguageChooserOpen(false);
-  };
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 720px)");
@@ -548,9 +541,8 @@ function App() {
       isTransitioning ||
       imageOverlaySrc ||
       galleryOverlay ||
-      isLanguageChooserOpen ||
       !canDragScene() ||
-      (target instanceof Element && target.closest(".icon-button, .close-button"))
+      (target instanceof Element && target.closest(".icon-button, .language-toggle, .close-button"))
     ) {
       return;
     }
@@ -620,8 +612,7 @@ function App() {
       isTransitioning ||
       imageOverlaySrc ||
       galleryOverlay ||
-      isLanguageChooserOpen ||
-      (target instanceof Element && target.closest(".icon-button, .close-button, .gallery-arrow"))
+      (target instanceof Element && target.closest(".icon-button, .language-toggle, .close-button, .gallery-arrow"))
     ) {
       return;
     }
@@ -701,7 +692,10 @@ function App() {
             <span className="top-bar-spacer" />
           )}
           <ClickCounter sceneId={displayedScene.id} counts={clickCounts} />
-          <SoundButton />
+          <div className="top-controls">
+            <SoundButton />
+            <LanguageButton selectedLanguage={selectedLanguage} />
+          </div>
         </div>
 
         {isTransitioning ? (
@@ -782,24 +776,6 @@ function App() {
           >
             <ChevronRight size={28} aria-hidden="true" />
           </button>
-        </div>
-      ) : null}
-
-      {isLanguageChooserOpen ? (
-        <div className="language-backdrop" role="presentation">
-          <div className="language-card" role="dialog" aria-modal="true" aria-label="Choose language">
-            <p>Choose language</p>
-            <div className="language-actions">
-              <button className="language-choice" type="button" onClick={() => chooseLanguage("en")}>
-                <img className="language-flag" src="/assets/en.png" alt="" aria-hidden="true" draggable={false} />
-                <span>English</span>
-              </button>
-              <button className="language-choice" type="button" onClick={() => chooseLanguage("th")}>
-                <img className="language-flag" src="/assets/th.png" alt="" aria-hidden="true" draggable={false} />
-                <span>ไทย</span>
-              </button>
-            </div>
-          </div>
         </div>
       ) : null}
     </main>
@@ -946,6 +922,37 @@ function SoundButton() {
       onClick={toggleSound}
     >
       {isSoundOn ? <Volume2 size={20} aria-hidden="true" /> : <VolumeX size={20} aria-hidden="true" />}
+    </button>
+  );
+}
+
+type LanguageButtonProps = {
+  selectedLanguage: Language;
+};
+
+function LanguageButton({ selectedLanguage }: LanguageButtonProps) {
+  const nextLanguage: Language = selectedLanguage === "en" ? "th" : "en";
+  const nextLanguageLabel = nextLanguage === "en" ? "English" : "ไทย";
+
+  const switchLanguage = () => {
+    window.localStorage.setItem(LANGUAGE_KEY, nextLanguage);
+    window.location.reload();
+  };
+
+  return (
+    <button
+      className="language-toggle"
+      type="button"
+      aria-label={`Switch language to ${nextLanguageLabel}`}
+      title={`Switch language to ${nextLanguageLabel}`}
+      onClick={switchLanguage}
+    >
+      <img
+        src={selectedLanguage === "en" ? "/assets/en.png" : "/assets/th.png"}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+      />
     </button>
   );
 }
