@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type HotspotAction, type SceneId, type SceneOverlay, scenes } from "./scenes";
@@ -79,6 +79,7 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   door: "atrium",
   archive: "door",
   lineup: "archive",
+  inside: "archive",
 };
 
 function App() {
@@ -335,6 +336,15 @@ function App() {
       return;
     }
 
+    if (sceneId === "archive" && action.target === "inside") {
+      void new Audio("/assets/whoosp.mp3").play();
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("inside");
+      setTransitionVideoSrc("/assets/transition3.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
     setSceneId(action.target);
   };
 
@@ -379,6 +389,7 @@ function App() {
           {hotspot.id.startsWith("lineup-") ? (
             <span className="lineup-poster-counter">Poster Clicked: {getPosterClickCount(hotspot.id)}</span>
           ) : null}
+          {hotspot.id === "lobby-up-button" ? <ArrowUp size={24} aria-hidden="true" /> : null}
           <span>{hotspot.label}</span>
         </button>
       )),

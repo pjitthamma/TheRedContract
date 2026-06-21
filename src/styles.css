@@ -98,14 +98,16 @@ button {
 
 .fallback-door,
 .fallback-archive,
-.fallback-lineup {
+.fallback-lineup,
+.fallback-inside {
   background: #000;
 }
 
 .fallback-atrium::before,
 .fallback-door::before,
 .fallback-archive::before,
-.fallback-lineup::before {
+.fallback-lineup::before,
+.fallback-inside::before {
   display: none;
 }
 
@@ -258,6 +260,32 @@ button {
     box-shadow 180ms ease;
 }
 
+.hotspot[data-hotspot-id="lobby-up-button"] {
+  color: #f8fafc;
+  background: rgba(2, 6, 23, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  box-shadow:
+    0 0.75rem 1.8rem rgba(0, 0, 0, 0.38),
+    0 0 1rem rgba(214, 169, 74, 0.22);
+  opacity: 0.92;
+  transform: none;
+  backdrop-filter: blur(14px);
+}
+
+.hotspot[data-hotspot-id="lobby-up-button"]:hover,
+.hotspot[data-hotspot-id="lobby-up-button"]:focus-visible {
+  color: #fff8cc;
+  background: rgba(15, 23, 42, 0.86);
+  border-color: rgba(255, 216, 117, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(255, 248, 204, 0.26),
+    0 0 18px rgba(255, 216, 117, 0.45),
+    0 0 36px rgba(255, 216, 117, 0.22);
+  opacity: 1;
+  transform: none;
+}
+
 .hotspot[data-hotspot-id^="lineup-"] {
   background: transparent;
   border: 2px solid transparent;
@@ -331,11 +359,7 @@ button {
 .hotspot[data-hotspot-id="door-outside-handle"],
 .hotspot[data-hotspot-id="door-outside-handle"]:hover,
 .hotspot[data-hotspot-id="door-outside-handle"]:focus-visible,
-.hotspot[data-hotspot-id="door-outside-handle"]:disabled,
-.hotspot[data-hotspot-id="card"],
-.hotspot[data-hotspot-id="card"]:hover,
-.hotspot[data-hotspot-id="card"]:focus-visible,
-.hotspot[data-hotspot-id="card"]:disabled {
+.hotspot[data-hotspot-id="door-outside-handle"]:disabled {
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -347,8 +371,7 @@ button {
   z-index: 1;
 }
 
-.hotspot[data-hotspot-id="door-handle"],
-.hotspot[data-hotspot-id="card"] {
+.hotspot[data-hotspot-id="door-handle"] {
   z-index: 2;
 }
 
@@ -358,7 +381,7 @@ button {
 
 .hotspot[data-hotspot-id="door-handle"] span,
 .hotspot[data-hotspot-id="door-outside-handle"] span,
-.hotspot[data-hotspot-id="card"] span {
+.hotspot[data-hotspot-id="lobby-up-button"] span {
   display: none;
 }
 

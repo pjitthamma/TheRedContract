@@ -1,4 +1,4 @@
-export type SceneId = "atrium" | "door" | "archive" | "lineup";
+export type SceneId = "atrium" | "door" | "archive" | "lineup" | "inside";
 
 export type HotspotAction =
   | {
@@ -191,14 +191,6 @@ export const scenes: Record<SceneId, Scene> = {
     ],
     hotspots: [
       {
-        id: "card",
-        label: "Card",
-        x: 35.6,
-        y: 25.1,
-        width: 36.4,
-        height: 50.5,
-      },
-      {
         id: "club-rules",
         label: "Club rules",
         x: 64.5,
@@ -209,6 +201,18 @@ export const scenes: Record<SceneId, Scene> = {
           type: "gallery",
           imageSrcs: ["/assets/rule_en_1.png", "/assets/rule_en_2.png"],
           audioSrc: "/assets/flip.mp3",
+        },
+      },
+      {
+        id: "lobby-up-button",
+        label: "Go inside",
+        x: 47.1,
+        y: 32.2,
+        width: 4.8,
+        height: 8.6,
+        action: {
+          type: "scene",
+          target: "inside",
         },
       },
     ],
@@ -273,5 +277,13 @@ export const scenes: Record<SceneId, Scene> = {
         },
       },
     ],
+  },
+  inside: {
+    id: "inside",
+    name: "",
+    videoSrc: "/assets/lobby-to-inside.mp4",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-inside",
+    hotspots: [],
   },
 };

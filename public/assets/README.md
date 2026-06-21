@@ -8,6 +8,8 @@ These files are required by the current site and should be deployed with the app
 - `transition2.mp4`
 - `lobby-video.mp4`
 - `line-up.mp4`
+- `transition3.mp4`
+- `lobby-to-inside.mp4`
 - `outside.png`
 - `sound.mp3`
 - `whoosp.mp3`
