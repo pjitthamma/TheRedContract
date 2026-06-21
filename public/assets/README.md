@@ -32,3 +32,11 @@ These files are required by the current site and should be deployed with the app
 - `rule_en_1.png`
 - `rule_en_2.png`
 - `member_en.png`
+- `10.mp3`
+- `50.mp3`
+- `100.mp3`
+- `ran1.mp3`
+- `ran2.mp3`
+- `ran3.mp3`
+- `ran4.mp3`
+- `ran5.mp3`

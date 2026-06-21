@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
-import type { CSSProperties, PointerEvent } from "react";
+import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type HotspotAction, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
@@ -82,6 +82,14 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   inside: "archive",
 };
 
+const randomBreachedAttemptAudio = [
+  "/assets/ran1.mp3",
+  "/assets/ran2.mp3",
+  "/assets/ran3.mp3",
+  "/assets/ran4.mp3",
+  "/assets/ran5.mp3",
+];
+
 function App() {
   const [sceneId, setSceneId] = useState<SceneId>("atrium");
   const [popup, setPopup] = useState<PopupContent | null>(null);
@@ -92,6 +100,7 @@ function App() {
   const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
   const [scenePlaybackKey, setScenePlaybackKey] = useState(0);
   const [isHotspotAudioPlaying, setIsHotspotAudioPlaying] = useState(false);
+  const [breachedAttempts, setBreachedAttempts] = useState(0);
   const [scenePan, setScenePan] = useState({ x: 0, y: 0 });
   const [isDraggingScene, setIsDraggingScene] = useState(false);
   const dragStartRef = useRef<{ pointerId: number; x: number; y: number; panX: number; panY: number; moved: boolean } | null>(
@@ -571,6 +580,40 @@ function App() {
     setTransitionTargetSceneId("archive");
   };
 
+  const handleSceneClick = (event: MouseEvent<HTMLElement>) => {
+    const target = event.target;
+    if (
+      sceneId !== "inside" ||
+      isTransitioning ||
+      imageOverlaySrc ||
+      galleryOverlay ||
+      (target instanceof Element && target.closest(".icon-button, .close-button, .gallery-arrow"))
+    ) {
+      return;
+    }
+
+    setBreachedAttempts((current) => {
+      const next = current + 1;
+      let audioSrc: string | null = null;
+
+      if (next === 10) {
+        audioSrc = "/assets/10.mp3";
+      } else if (next === 50) {
+        audioSrc = "/assets/50.mp3";
+      } else if (next === 100) {
+        audioSrc = "/assets/100.mp3";
+      } else if (next > 100) {
+        audioSrc = randomBreachedAttemptAudio[Math.floor(Math.random() * randomBreachedAttemptAudio.length)];
+      }
+
+      if (audioSrc) {
+        void new Audio(audioSrc).play();
+      }
+
+      return next;
+    });
+  };
+
   return (
     <main className="game-shell">
       <section
@@ -583,6 +626,7 @@ function App() {
         onPointerUp={handleScenePointerUp}
         onPointerCancel={handleScenePointerUp}
         onLostPointerCapture={handleScenePointerUp}
+        onClick={handleSceneClick}
         aria-label={displayedScene.name || "Atrium"}
       >
         <VideoScene
@@ -615,7 +659,7 @@ function App() {
           ) : (
             <span className="top-bar-spacer" />
           )}
-          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} />
+          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} breachedAttempts={breachedAttempts} />
           <SoundButton />
         </div>
 
@@ -706,9 +750,10 @@ function App() {
 type ClickCounterProps = {
   sceneId: SceneId;
   counts: ClickCounts;
+  breachedAttempts: number;
 };
 
-function ClickCounter({ sceneId, counts }: ClickCounterProps) {
+function ClickCounter({ sceneId, counts, breachedAttempts }: ClickCounterProps) {
   if (sceneId === "door") {
     return (
       <div className="click-counter" aria-live="polite">
@@ -724,6 +769,14 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
         <span>Brochure Clicked: {counts.brochure}</span>
         <span>Club Rules Clicked: {counts.clubRules}</span>
         <span>Member Card Clicked: {counts.memberCard}</span>
+      </div>
+    );
+  }
+
+  if (sceneId === "inside") {
+    return (
+      <div className="click-counter" aria-live="polite">
+        <span>Breached attempt: {breachedAttempts}</span>
       </div>
     );
   }
