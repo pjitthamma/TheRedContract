@@ -18,6 +18,11 @@ export type HotspotAction =
       type: "image";
       imageSrc: string;
       audioSrc?: string;
+    }
+  | {
+      type: "gallery";
+      imageSrcs: string[];
+      audioSrc?: string;
     };
 
 export type Hotspot = {
@@ -40,6 +45,10 @@ export type SceneOverlay = {
   action?: {
     type: "scene";
     target: SceneId;
+    audioSrc?: string;
+  } | {
+    type: "image";
+    imageSrc: string;
     audioSrc?: string;
   } | {
     type: "gallery";
@@ -173,21 +182,14 @@ export const scenes: Record<SceneId, Scene> = {
         x: 80.6,
         y: 41.8,
         width: 12.4,
+        action: {
+          type: "image",
+          imageSrc: "/assets/member_en.png",
+          audioSrc: "/assets/flip.mp3",
+        },
       },
     ],
     hotspots: [
-      {
-        id: "archive-outside-card",
-        label: "Outside card area",
-        x: 0,
-        y: 0,
-        width: 100,
-        height: 100,
-        action: {
-          type: "audio",
-          src: "/assets/door-knock.mp3",
-        },
-      },
       {
         id: "card",
         label: "Card",
@@ -195,10 +197,6 @@ export const scenes: Record<SceneId, Scene> = {
         y: 25.1,
         width: 36.4,
         height: 50.5,
-        action: {
-          type: "audio",
-          src: "/assets/master-voice.mp3",
-        },
       },
       {
         id: "club-rules",
@@ -207,6 +205,11 @@ export const scenes: Record<SceneId, Scene> = {
         y: 25.6,
         width: 9.3,
         height: 30.5,
+        action: {
+          type: "gallery",
+          imageSrcs: ["/assets/rule_en_1.png", "/assets/rule_en_2.png"],
+          audioSrc: "/assets/flip.mp3",
+        },
       },
     ],
   },

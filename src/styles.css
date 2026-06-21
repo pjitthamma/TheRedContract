@@ -332,10 +332,6 @@ button {
 .hotspot[data-hotspot-id="door-outside-handle"]:hover,
 .hotspot[data-hotspot-id="door-outside-handle"]:focus-visible,
 .hotspot[data-hotspot-id="door-outside-handle"]:disabled,
-.hotspot[data-hotspot-id="archive-outside-card"],
-.hotspot[data-hotspot-id="archive-outside-card"]:hover,
-.hotspot[data-hotspot-id="archive-outside-card"]:focus-visible,
-.hotspot[data-hotspot-id="archive-outside-card"]:disabled,
 .hotspot[data-hotspot-id="card"],
 .hotspot[data-hotspot-id="card"]:hover,
 .hotspot[data-hotspot-id="card"]:focus-visible,
@@ -347,8 +343,7 @@ button {
   transform: none;
 }
 
-.hotspot[data-hotspot-id="door-outside-handle"],
-.hotspot[data-hotspot-id="archive-outside-card"] {
+.hotspot[data-hotspot-id="door-outside-handle"] {
   z-index: 1;
 }
 
@@ -363,7 +358,6 @@ button {
 
 .hotspot[data-hotspot-id="door-handle"] span,
 .hotspot[data-hotspot-id="door-outside-handle"] span,
-.hotspot[data-hotspot-id="archive-outside-card"] span,
 .hotspot[data-hotspot-id="card"] span {
   display: none;
 }

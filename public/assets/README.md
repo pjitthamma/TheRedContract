@@ -12,7 +12,6 @@ These files are required by the current site and should be deployed with the app
 - `sound.mp3`
 - `whoosp.mp3`
 - `door-knock.mp3`
-- `master-voice.mp3`
 - `flip.mp3`
 - `poster.png`
 - `invitation-sign.png`
@@ -27,3 +26,6 @@ These files are required by the current site and should be deployed with the app
 - `d-room-en.png`
 - `s-room-en.png`
 - `m-room-en.png`
+- `rule_en_1.png`
+- `rule_en_2.png`
+- `member_en.png`

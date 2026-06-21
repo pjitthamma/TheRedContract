@@ -236,6 +236,17 @@ function App() {
       return;
     }
 
+    if (action.type === "gallery") {
+      if (dragStartRef.current?.moved) {
+        return;
+      }
+      if (action.audioSrc) {
+        void new Audio(action.audioSrc).play();
+      }
+      setGalleryOverlay({ imageSrcs: action.imageSrcs, index: 0 });
+      return;
+    }
+
     if (action.type === "audio") {
       if (dragStartRef.current?.moved) {
         return;
@@ -244,11 +255,8 @@ function App() {
         return;
       }
 
-      if (hotspotId === "archive-outside-card" || hotspotId === "door-outside-handle") {
+      if (hotspotId === "door-outside-handle") {
         void trackEvent("door_knocked");
-      }
-      if (hotspotId === "card") {
-        void trackEvent("card_clicked");
       }
 
       const audio = new Audio(action.src);
@@ -357,6 +365,11 @@ function App() {
 
     if (overlay.action.type === "gallery") {
       setGalleryOverlay({ imageSrcs: overlay.action.imageSrcs, index: 0 });
+      return;
+    }
+
+    if (overlay.action.type === "image") {
+      setImageOverlaySrc(overlay.action.imageSrc);
       return;
     }
 
