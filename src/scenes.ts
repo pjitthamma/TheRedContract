@@ -283,7 +283,6 @@ export const scenes: Record<SceneId, Scene> = {
     id: "inside",
     name: "",
     videoSrc: "/assets/inside.mp4",
-    loop: false,
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-inside",
     hotspots: [],

@@ -26,6 +26,7 @@ type ClickCounts = {
   brochure: number;
   clubRules: number;
   memberCard: number;
+  breachedAttempt: number;
   knock: number;
   card: number;
   clubVisited: number;
@@ -43,6 +44,7 @@ type EventName =
   | "brochure_clicked"
   | "club_rules_clicked"
   | "member_card_clicked"
+  | "breached_attempt_clicked"
   | "door_knocked"
   | "card_clicked";
 
@@ -70,6 +72,7 @@ const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => 
   brochure: counts?.brochure_clicked ?? 0,
   clubRules: counts?.club_rules_clicked ?? 0,
   memberCard: counts?.member_card_clicked ?? 0,
+  breachedAttempt: counts?.breached_attempt_clicked ?? 0,
   knock: counts?.door_knocked ?? 0,
   card: counts?.card_clicked ?? 0,
   clubVisited: counts?.club_visited ?? 0,
@@ -90,6 +93,8 @@ const randomBreachedAttemptAudio = [
   "/assets/ran5.mp3",
 ];
 
+const getNextRandomBreachedAttemptMilestone = (from: number) => from + 10 + Math.floor(Math.random() * 61);
+
 function App() {
   const [sceneId, setSceneId] = useState<SceneId>("atrium");
   const [popup, setPopup] = useState<PopupContent | null>(null);
@@ -107,6 +112,7 @@ function App() {
     null,
   );
   const gallerySwipeStartRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+  const nextRandomBreachedAttemptRef = useRef<number | null>(null);
   const visitTrackedRef = useRef(false);
   const [clickCounts, setClickCounts] = useState<ClickCounts>({
     door: 0,
@@ -119,6 +125,7 @@ function App() {
     brochure: 0,
     clubRules: 0,
     memberCard: 0,
+    breachedAttempt: 0,
     knock: 0,
     card: 0,
     clubVisited: 0,
@@ -206,6 +213,9 @@ function App() {
       }
       if (eventName === "member_card_clicked") {
         return { ...current, memberCard: current.memberCard + 1 };
+      }
+      if (eventName === "breached_attempt_clicked") {
+        return { ...current, breachedAttempt: current.breachedAttempt + 1 };
       }
       if (eventName === "door_knocked") {
         return { ...current, knock: current.knock + 1 };
@@ -592,6 +602,9 @@ function App() {
       return;
     }
 
+    void trackEvent("breached_attempt_clicked");
+    void new Audio("/assets/chain.mp3").play();
+
     setBreachedAttempts((current) => {
       const next = current + 1;
       let audioSrc: string | null = null;
@@ -602,8 +615,12 @@ function App() {
         audioSrc = "/assets/50.mp3";
       } else if (next === 100) {
         audioSrc = "/assets/100.mp3";
-      } else if (next > 100) {
+        nextRandomBreachedAttemptRef.current = getNextRandomBreachedAttemptMilestone(next);
+      } else if (next > 100 && nextRandomBreachedAttemptRef.current === null) {
+        nextRandomBreachedAttemptRef.current = getNextRandomBreachedAttemptMilestone(next);
+      } else if (nextRandomBreachedAttemptRef.current === next) {
         audioSrc = randomBreachedAttemptAudio[Math.floor(Math.random() * randomBreachedAttemptAudio.length)];
+        nextRandomBreachedAttemptRef.current = getNextRandomBreachedAttemptMilestone(next);
       }
 
       if (audioSrc) {
@@ -659,7 +676,7 @@ function App() {
           ) : (
             <span className="top-bar-spacer" />
           )}
-          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} breachedAttempts={breachedAttempts} />
+          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} />
           <SoundButton />
         </div>
 
@@ -750,10 +767,9 @@ function App() {
 type ClickCounterProps = {
   sceneId: SceneId;
   counts: ClickCounts;
-  breachedAttempts: number;
 };
 
-function ClickCounter({ sceneId, counts, breachedAttempts }: ClickCounterProps) {
+function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   if (sceneId === "door") {
     return (
       <div className="click-counter" aria-live="polite">
@@ -776,7 +792,7 @@ function ClickCounter({ sceneId, counts, breachedAttempts }: ClickCounterProps) 
   if (sceneId === "inside") {
     return (
       <div className="click-counter" aria-live="polite">
-        <span>Breached attempt: {breachedAttempts}</span>
+        <span>Breached attempt: {counts.breachedAttempt}</span>
       </div>
     );
   }

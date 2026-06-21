@@ -10,6 +10,7 @@ const ALLOWED_EVENTS = new Set([
   "brochure_clicked",
   "club_rules_clicked",
   "member_card_clicked",
+  "breached_attempt_clicked",
   "door_knocked",
   "card_clicked",
 ]);

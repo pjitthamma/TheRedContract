@@ -35,6 +35,7 @@ These files are required by the current site and should be deployed with the app
 - `10.mp3`
 - `50.mp3`
 - `100.mp3`
+- `chain.mp3`
 - `ran1.mp3`
 - `ran2.mp3`
 - `ran3.mp3`
