@@ -46,6 +46,9 @@ function App() {
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
+  const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
+  const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
+  const [scenePlaybackKey, setScenePlaybackKey] = useState(0);
   const [isHotspotAudioPlaying, setIsHotspotAudioPlaying] = useState(false);
   const [scenePan, setScenePan] = useState({ x: 0, y: 0 });
   const [isDraggingScene, setIsDraggingScene] = useState(false);
@@ -60,7 +63,7 @@ function App() {
     card: 0,
     clubVisited: 0,
   });
-  const displayedScene = transitionPhase !== "idle" ? scenes.archive : scenes[sceneId];
+  const displayedScene = transitionPhase !== "idle" ? scenes[transitionTargetSceneId] : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
 
   const canGoBack = displayedScene.id !== "atrium";
@@ -183,7 +186,7 @@ function App() {
         return;
       }
 
-      if (hotspotId === "archive-outside-card") {
+      if (hotspotId === "archive-outside-card" || hotspotId === "door-outside-handle") {
         void trackEvent("door_knocked");
       }
       if (hotspotId === "card") {
@@ -216,10 +219,21 @@ function App() {
       return;
     }
 
-    if (sceneId === "atrium" && action.target === "archive") {
+    if (sceneId === "atrium" && action.target === "door") {
       void trackEvent("door_clicked");
       void new Audio("/assets/whoosp.mp3").play();
       setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("door");
+      setTransitionVideoSrc("/assets/transition1.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (sceneId === "door" && action.target === "archive") {
+      void new Audio("/assets/door-open.mp3").play();
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("archive");
+      setTransitionVideoSrc("/assets/transition2.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -248,7 +262,28 @@ function App() {
           <span>{hotspot.label}</span>
         </button>
       )),
-    [displayedScene.hotspots, isHotspotAudioPlaying, isTransitioning],
+    [displayedScene.hotspots, isHotspotAudioPlaying, isTransitioning, sceneId],
+  );
+
+  const sceneOverlays = useMemo(
+    () =>
+      displayedScene.overlays?.map((overlay) => (
+        <button
+          className="scene-overlay-hotspot"
+          data-overlay-id={overlay.id}
+          key={overlay.id}
+          style={{
+            left: `${overlay.x}%`,
+            top: `${overlay.y}%`,
+            width: `${overlay.width}%`,
+          }}
+          type="button"
+          aria-label={overlay.label}
+        >
+          <img src={overlay.src} alt="" aria-hidden="true" draggable={false} />
+        </button>
+      )) ?? [],
+    [displayedScene.overlays],
   );
 
   const finishTransition = () => {
@@ -256,7 +291,8 @@ function App() {
   };
 
   const completeReveal = () => {
-    setSceneId("archive");
+    setSceneId(transitionTargetSceneId);
+    setScenePlaybackKey((current) => current + 1);
     setTransitionPhase("idle");
   };
 
@@ -336,12 +372,15 @@ function App() {
       >
         <VideoScene
           sceneId={displayedScene.id}
+          playbackKey={scenePlaybackKey}
+          shouldPlay={!isTransitioning}
           src={displayedScene.videoSrc}
           posterSrc={displayedScene.posterSrc}
           fallbackClassName={displayedScene.fallbackClassName}
         />
         <div className="scene-coordinate-layer">
           <div className="hotspot-layer">{hotspotButtons}</div>
+          <div className="scene-overlay-layer">{sceneOverlays}</div>
           {displayedScene.id === "atrium" ? (
             <img className="invitation-sign-overlay" src="/assets/invitation-sign.png" alt="" aria-hidden="true" />
           ) : null}
@@ -357,6 +396,7 @@ function App() {
                 setTransitionPhase("idle");
                 setScenePan({ x: 0, y: 0 });
                 setSceneId("atrium");
+                setTransitionTargetSceneId("archive");
               }}
             >
               <ArrowLeft size={20} aria-hidden="true" />
@@ -371,6 +411,7 @@ function App() {
         {isTransitioning ? (
           <TransitionVideo
             phase={transitionPhase}
+            src={transitionVideoSrc}
             onFinish={finishTransition}
             onRevealComplete={completeReveal}
           />
@@ -414,30 +455,34 @@ type ClickCounterProps = {
 };
 
 function ClickCounter({ sceneId, counts }: ClickCounterProps) {
+  if (sceneId === "door") {
+    return (
+      <div className="click-counter" aria-live="polite">
+        <span>Door Knocked: {counts.knock}</span>
+      </div>
+    );
+  }
+
+  if (sceneId !== "atrium") {
+    return <span className="top-bar-spacer" aria-hidden="true" />;
+  }
+
   return (
     <div className="click-counter" aria-live="polite">
-      {sceneId === "atrium" ? (
-        <>
-          <span>Door Clicked: {counts.door}</span>
-          <span>Poster Clicked: {counts.poster}</span>
-        </>
-      ) : (
-        <>
-          <span>Door Knocked: {counts.knock}</span>
-          <span>Card Clicked: {counts.card}</span>
-        </>
-      )}
+      <span>Door Clicked: {counts.door}</span>
+      <span>Poster Clicked: {counts.poster}</span>
     </div>
   );
 }
 
 type TransitionVideoProps = {
   phase: TransitionPhase;
+  src: string;
   onFinish: () => void;
   onRevealComplete: () => void;
 };
 
-function TransitionVideo({ phase, onFinish, onRevealComplete }: TransitionVideoProps) {
+function TransitionVideo({ phase, src, onFinish, onRevealComplete }: TransitionVideoProps) {
   const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
@@ -467,8 +512,9 @@ function TransitionVideo({ phase, onFinish, onRevealComplete }: TransitionVideoP
     >
       {!videoFailed ? (
         <video
+          key={src}
           className="transition-video"
-          src="/assets/transition.mp4"
+          src={src}
           autoPlay
           muted
           playsInline
@@ -530,12 +576,14 @@ function SoundButton() {
 
 type VideoSceneProps = {
   sceneId: SceneId;
+  playbackKey: number;
+  shouldPlay: boolean;
   src: string;
   posterSrc?: string;
   fallbackClassName: string;
 };
 
-function VideoScene({ sceneId, src, posterSrc, fallbackClassName }: VideoSceneProps) {
+function VideoScene({ sceneId, playbackKey, shouldPlay, src, posterSrc, fallbackClassName }: VideoSceneProps) {
   const [videoFailed, setVideoFailed] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
 
@@ -550,10 +598,10 @@ function VideoScene({ sceneId, src, posterSrc, fallbackClassName }: VideoScenePr
       {posterSrc ? <img className="scene-poster" src={posterSrc} alt="" aria-hidden="true" /> : null}
       {!videoFailed ? (
         <video
-          key={sceneId}
+          key={`${sceneId}-${playbackKey}`}
           className={`scene-video${videoReady ? " scene-video-ready" : ""}`}
           src={src}
-          autoPlay
+          autoPlay={shouldPlay}
           muted
           loop
           playsInline

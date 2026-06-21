@@ -3,8 +3,10 @@
 These files are required by the current site and should be deployed with the app:
 
 - `landing-page.mp4`
-- `transition.mp4`
-- `noted.mp4`
+- `transition1.mp4`
+- `door_open.mp4`
+- `transition2.mp4`
+- `lobby-video.mp4`
 - `outside.png`
 - `sound.mp3`
 - `whoosp.mp3`
@@ -13,3 +15,6 @@ These files are required by the current site and should be deployed with the app
 - `flip.mp3`
 - `poster.png`
 - `invitation-sign.png`
+- `board.png`
+- `board2.png`
+- `room-explaining.png`

@@ -96,11 +96,13 @@ button {
   background: #000;
 }
 
+.fallback-door,
 .fallback-archive {
   background: #000;
 }
 
 .fallback-atrium::before,
+.fallback-door::before,
 .fallback-archive::before {
   display: none;
 }
@@ -117,6 +119,61 @@ button {
   position: absolute;
   inset: 0;
   z-index: 1;
+}
+
+.scene-overlay-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.scene-overlay-hotspot {
+  position: absolute;
+  display: block;
+  height: auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  opacity: 1;
+  pointer-events: auto;
+  outline: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+
+.scene-overlay-hotspot:hover,
+.scene-overlay-hotspot:focus-visible {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.scene-overlay-hotspot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 1rem 1.35rem rgba(0, 0, 0, 0.62));
+}
+
+.scene-overlay-hotspot:hover img,
+.scene-overlay-hotspot:focus-visible img {
+  filter:
+    drop-shadow(0 0 0.08rem rgba(255, 248, 204, 0.95))
+    drop-shadow(0 0 0.22rem rgba(255, 216, 117, 0.82))
+    drop-shadow(0 0 0.58rem rgba(255, 216, 117, 0.62))
+    drop-shadow(0 1rem 1.35rem rgba(0, 0, 0, 0.62));
 }
 
 .invitation-sign-overlay {
@@ -213,6 +270,14 @@ button {
   opacity: 0;
 }
 
+.hotspot[data-hotspot-id="door-handle"],
+.hotspot[data-hotspot-id="door-handle"]:hover,
+.hotspot[data-hotspot-id="door-handle"]:focus-visible,
+.hotspot[data-hotspot-id="door-handle"]:disabled,
+.hotspot[data-hotspot-id="door-outside-handle"],
+.hotspot[data-hotspot-id="door-outside-handle"]:hover,
+.hotspot[data-hotspot-id="door-outside-handle"]:focus-visible,
+.hotspot[data-hotspot-id="door-outside-handle"]:disabled,
 .hotspot[data-hotspot-id="archive-outside-card"],
 .hotspot[data-hotspot-id="archive-outside-card"]:hover,
 .hotspot[data-hotspot-id="archive-outside-card"]:focus-visible,
@@ -228,14 +293,18 @@ button {
   transform: none;
 }
 
+.hotspot[data-hotspot-id="door-outside-handle"],
 .hotspot[data-hotspot-id="archive-outside-card"] {
   z-index: 1;
 }
 
+.hotspot[data-hotspot-id="door-handle"],
 .hotspot[data-hotspot-id="card"] {
   z-index: 2;
 }
 
+.hotspot[data-hotspot-id="door-handle"] span,
+.hotspot[data-hotspot-id="door-outside-handle"] span,
 .hotspot[data-hotspot-id="archive-outside-card"] span,
 .hotspot[data-hotspot-id="card"] span {
   display: none;

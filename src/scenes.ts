@@ -1,4 +1,4 @@
-export type SceneId = "atrium" | "archive";
+export type SceneId = "atrium" | "door" | "archive";
 
 export type HotspotAction =
   | {
@@ -30,6 +30,15 @@ export type Hotspot = {
   action: HotspotAction;
 };
 
+export type SceneOverlay = {
+  id: string;
+  label: string;
+  src: string;
+  x: number;
+  y: number;
+  width: number;
+};
+
 export type Scene = {
   id: SceneId;
   name: string;
@@ -37,6 +46,7 @@ export type Scene = {
   posterSrc?: string;
   aspectRatio: number;
   fallbackClassName: string;
+  overlays?: SceneOverlay[];
   hotspots: Hotspot[];
 };
 
@@ -58,7 +68,7 @@ export const scenes: Record<SceneId, Scene> = {
         height: 54.6,
         action: {
           type: "scene",
-          target: "archive",
+          target: "door",
         },
       },
       {
@@ -76,12 +86,71 @@ export const scenes: Record<SceneId, Scene> = {
       },
     ],
   },
+  door: {
+    id: "door",
+    name: "",
+    videoSrc: "/assets/door_open.mp4",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-door",
+    hotspots: [
+      {
+        id: "door-outside-handle",
+        label: "Outside door handle area",
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        action: {
+          type: "audio",
+          src: "/assets/door-knock.mp3",
+        },
+      },
+      {
+        id: "door-handle",
+        label: "Door handle",
+        x: 39.4,
+        y: 12.8,
+        width: 17.6,
+        height: 79.4,
+        action: {
+          type: "scene",
+          target: "archive",
+        },
+      },
+    ],
+  },
   archive: {
     id: "archive",
     name: "",
-    videoSrc: "/assets/noted.mp4",
+    videoSrc: "/assets/lobby-video.mp4",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-archive",
+    overlays: [
+      {
+        id: "board",
+        label: "Board",
+        src: "/assets/board.png",
+        x: 16.5,
+        y: 13.4,
+        width: 20.2,
+      },
+      {
+        id: "room-explaining",
+        label: "Room explaining",
+        src: "/assets/room-explaining.png",
+        x: 46.8,
+        y: 57.2,
+        width: 9.6,
+      },
+      {
+        id: "board2",
+        label: "Board 2",
+        src: "/assets/board2.png",
+        x: 80.6,
+        y: 41.8,
+        width: 12.4,
+      },
+    ],
     hotspots: [
       {
         id: "archive-outside-card",
