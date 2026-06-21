@@ -62,6 +62,7 @@ export type Scene = {
   name: string;
   videoSrc: string;
   posterSrc?: string;
+  loop?: boolean;
   aspectRatio: number;
   fallbackClassName: string;
   overlays?: SceneOverlay[];
@@ -281,7 +282,8 @@ export const scenes: Record<SceneId, Scene> = {
   inside: {
     id: "inside",
     name: "",
-    videoSrc: "/assets/lobby-to-inside.mp4",
+    videoSrc: "/assets/inside.mp4",
+    loop: false,
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-inside",
     hotspots: [],

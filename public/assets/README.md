@@ -10,6 +10,7 @@ These files are required by the current site and should be deployed with the app
 - `line-up.mp4`
 - `transition3.mp4`
 - `lobby-to-inside.mp4`
+- `inside.mp4`
 - `outside.png`
 - `sound.mp3`
 - `whoosp.mp3`

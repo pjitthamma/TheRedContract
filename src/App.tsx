@@ -591,6 +591,7 @@ function App() {
           shouldPlay={!isTransitioning}
           src={displayedScene.videoSrc}
           posterSrc={displayedScene.posterSrc}
+          loop={displayedScene.loop ?? true}
           fallbackClassName={displayedScene.fallbackClassName}
         />
         <div className="scene-coordinate-layer">
@@ -844,10 +845,11 @@ type VideoSceneProps = {
   shouldPlay: boolean;
   src: string;
   posterSrc?: string;
+  loop: boolean;
   fallbackClassName: string;
 };
 
-function VideoScene({ sceneId, playbackKey, shouldPlay, src, posterSrc, fallbackClassName }: VideoSceneProps) {
+function VideoScene({ sceneId, playbackKey, shouldPlay, src, posterSrc, loop, fallbackClassName }: VideoSceneProps) {
   const [videoFailed, setVideoFailed] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
 
@@ -867,7 +869,7 @@ function VideoScene({ sceneId, playbackKey, shouldPlay, src, posterSrc, fallback
           src={src}
           autoPlay={shouldPlay}
           muted
-          loop
+          loop={loop}
           playsInline
           poster={posterSrc}
           preload="auto"
