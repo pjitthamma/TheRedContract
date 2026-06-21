@@ -22,6 +22,10 @@ type ClickCounts = {
   decreePoster: number;
   strayPoster: number;
   meteorPoster: number;
+  posterLineup: number;
+  brochure: number;
+  clubRules: number;
+  memberCard: number;
   knock: number;
   card: number;
   clubVisited: number;
@@ -35,6 +39,10 @@ type EventName =
   | "lineup_decree_clicked"
   | "lineup_stray_clicked"
   | "lineup_meteor_clicked"
+  | "poster_lineup_clicked"
+  | "brochure_clicked"
+  | "club_rules_clicked"
+  | "member_card_clicked"
   | "door_knocked"
   | "card_clicked";
 
@@ -58,6 +66,10 @@ const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => 
   decreePoster: counts?.lineup_decree_clicked ?? 0,
   strayPoster: counts?.lineup_stray_clicked ?? 0,
   meteorPoster: counts?.lineup_meteor_clicked ?? 0,
+  posterLineup: counts?.poster_lineup_clicked ?? 0,
+  brochure: counts?.brochure_clicked ?? 0,
+  clubRules: counts?.club_rules_clicked ?? 0,
+  memberCard: counts?.member_card_clicked ?? 0,
   knock: counts?.door_knocked ?? 0,
   card: counts?.card_clicked ?? 0,
   clubVisited: counts?.club_visited ?? 0,
@@ -93,6 +105,10 @@ function App() {
     decreePoster: 0,
     strayPoster: 0,
     meteorPoster: 0,
+    posterLineup: 0,
+    brochure: 0,
+    clubRules: 0,
+    memberCard: 0,
     knock: 0,
     card: 0,
     clubVisited: 0,
@@ -169,6 +185,18 @@ function App() {
       if (eventName === "lineup_meteor_clicked") {
         return { ...current, meteorPoster: current.meteorPoster + 1 };
       }
+      if (eventName === "poster_lineup_clicked") {
+        return { ...current, posterLineup: current.posterLineup + 1 };
+      }
+      if (eventName === "brochure_clicked") {
+        return { ...current, brochure: current.brochure + 1 };
+      }
+      if (eventName === "club_rules_clicked") {
+        return { ...current, clubRules: current.clubRules + 1 };
+      }
+      if (eventName === "member_card_clicked") {
+        return { ...current, memberCard: current.memberCard + 1 };
+      }
       if (eventName === "door_knocked") {
         return { ...current, knock: current.knock + 1 };
       }
@@ -239,6 +267,9 @@ function App() {
     if (action.type === "gallery") {
       if (dragStartRef.current?.moved) {
         return;
+      }
+      if (hotspotId === "club-rules") {
+        void trackEvent("club_rules_clicked");
       }
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
@@ -357,6 +388,16 @@ function App() {
   const handleSceneOverlay = (overlay: SceneOverlay) => {
     if (!overlay.action || dragStartRef.current?.moved || isTransitioning) {
       return;
+    }
+
+    if (overlay.id === "board") {
+      void trackEvent("poster_lineup_clicked");
+    }
+    if (overlay.id === "room-explaining") {
+      void trackEvent("brochure_clicked");
+    }
+    if (overlay.id === "board2") {
+      void trackEvent("member_card_clicked");
     }
 
     if (overlay.action.audioSrc) {
@@ -660,6 +701,17 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
     return (
       <div className="click-counter" aria-live="polite">
         <span>Door Knocked: {counts.knock}</span>
+      </div>
+    );
+  }
+
+  if (sceneId === "archive") {
+    return (
+      <div className="click-counter lobby-counter" aria-live="polite">
+        <span>Poster Lineup Clicked: {counts.posterLineup}</span>
+        <span>Brochure Clicked: {counts.brochure}</span>
+        <span>Club Rules Clicked: {counts.clubRules}</span>
+        <span>Member Card Clicked: {counts.memberCard}</span>
       </div>
     );
   }

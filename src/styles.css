@@ -452,6 +452,11 @@ button {
   white-space: nowrap;
 }
 
+.lobby-counter {
+  gap: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+}
+
 .club-counter {
   position: absolute;
   left: clamp(0.85rem, 2vw, 1.5rem);
