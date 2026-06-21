@@ -41,6 +41,10 @@ export type SceneOverlay = {
     type: "scene";
     target: SceneId;
     audioSrc?: string;
+  } | {
+    type: "gallery";
+    imageSrcs: string[];
+    audioSrc?: string;
   };
 };
 
@@ -151,6 +155,16 @@ export const scenes: Record<SceneId, Scene> = {
         x: 46.8,
         y: 57.2,
         width: 9.6,
+        action: {
+          type: "gallery",
+          audioSrc: "/assets/flip.mp3",
+          imageSrcs: [
+            "/assets/b-room-en.png",
+            "/assets/d-room-en.png",
+            "/assets/s-room-en.png",
+            "/assets/m-room-en.png",
+          ],
+        },
       },
       {
         id: "board2",
@@ -185,6 +199,14 @@ export const scenes: Record<SceneId, Scene> = {
           type: "audio",
           src: "/assets/master-voice.mp3",
         },
+      },
+      {
+        id: "club-rules",
+        label: "Club rules",
+        x: 64.5,
+        y: 25.6,
+        width: 9.3,
+        height: 30.5,
       },
     ],
   },

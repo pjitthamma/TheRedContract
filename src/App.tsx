@@ -1,4 +1,4 @@
-import { ArrowLeft, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type HotspotAction, type SceneId, type SceneOverlay, scenes } from "./scenes";
@@ -6,6 +6,11 @@ import { type HotspotAction, type SceneId, type SceneOverlay, scenes } from "./s
 type PopupContent = {
   title: string;
   body: string;
+};
+
+type GalleryOverlay = {
+  imageSrcs: string[];
+  index: number;
 };
 
 type TransitionPhase = "idle" | "playing" | "revealing";
@@ -68,6 +73,7 @@ function App() {
   const [sceneId, setSceneId] = useState<SceneId>("atrium");
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
+  const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
   const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
@@ -78,6 +84,7 @@ function App() {
   const dragStartRef = useRef<{ pointerId: number; x: number; y: number; panX: number; panY: number; moved: boolean } | null>(
     null,
   );
+  const gallerySwipeStartRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const visitTrackedRef = useRef(false);
   const [clickCounts, setClickCounts] = useState<ClickCounts>({
     door: 0,
@@ -348,9 +355,52 @@ function App() {
       void new Audio(overlay.action.audioSrc).play();
     }
 
+    if (overlay.action.type === "gallery") {
+      setGalleryOverlay({ imageSrcs: overlay.action.imageSrcs, index: 0 });
+      return;
+    }
+
     setScenePan({ x: 0, y: 0 });
     setSceneId(overlay.action.target);
     setScenePlaybackKey((current) => current + 1);
+  };
+
+  const moveGallery = (direction: -1 | 1) => {
+    void new Audio("/assets/flip.mp3").play();
+    setGalleryOverlay((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        index: (current.index + direction + current.imageSrcs.length) % current.imageSrcs.length,
+      };
+    });
+  };
+
+  const handleGalleryPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    gallerySwipeStartRef.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    };
+  };
+
+  const handleGalleryPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const swipeStart = gallerySwipeStartRef.current;
+    if (!swipeStart || swipeStart.pointerId !== event.pointerId) {
+      return;
+    }
+
+    gallerySwipeStartRef.current = null;
+    const deltaX = event.clientX - swipeStart.x;
+    const deltaY = event.clientY - swipeStart.y;
+    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) {
+      return;
+    }
+
+    moveGallery(deltaX < 0 ? 1 : -1);
   };
 
   const sceneOverlays = useMemo(
@@ -391,6 +441,7 @@ function App() {
     if (
       isTransitioning ||
       imageOverlaySrc ||
+      galleryOverlay ||
       !canDragScene() ||
       (target instanceof Element && target.closest(".icon-button, .close-button"))
     ) {
@@ -537,6 +588,49 @@ function App() {
             alt=""
             onClick={(event) => event.stopPropagation()}
           />
+        </div>
+      ) : null}
+
+      {galleryOverlay ? (
+        <div
+          className="image-backdrop gallery-backdrop"
+          role="presentation"
+          onClick={() => setGalleryOverlay(null)}
+          onPointerDown={handleGalleryPointerDown}
+          onPointerUp={handleGalleryPointerUp}
+          onPointerCancel={() => {
+            gallerySwipeStartRef.current = null;
+          }}
+        >
+          <button
+            className="gallery-arrow gallery-arrow-left"
+            type="button"
+            aria-label="Previous room image"
+            onClick={(event) => {
+              event.stopPropagation();
+              moveGallery(-1);
+            }}
+          >
+            <ChevronLeft size={28} aria-hidden="true" />
+          </button>
+          <img
+            className="image-overlay gallery-image"
+            src={galleryOverlay.imageSrcs[galleryOverlay.index]}
+            alt=""
+            onClick={(event) => event.stopPropagation()}
+            draggable={false}
+          />
+          <button
+            className="gallery-arrow gallery-arrow-right"
+            type="button"
+            aria-label="Next room image"
+            onClick={(event) => {
+              event.stopPropagation();
+              moveGallery(1);
+            }}
+          >
+            <ChevronRight size={28} aria-hidden="true" />
+          </button>
         </div>
       ) : null}
     </main>

@@ -23,3 +23,7 @@ These files are required by the current site and should be deployed with the app
 - `d_cover.png`
 - `s_cover.png`
 - `m_cover.png`
+- `b-room-en.png`
+- `d-room-en.png`
+- `s-room-en.png`
+- `m-room-en.png`
