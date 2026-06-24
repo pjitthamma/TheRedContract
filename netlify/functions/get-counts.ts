@@ -17,6 +17,10 @@ const EVENT_NAMES = [
   "b_host_profile_clicked",
   "b_photos_clicked",
   "b_ring_bell_clicked",
+  "b_wing_clicked",
+  "d_wing_clicked",
+  "s_wing_clicked",
+  "m_wing_clicked",
 ] as const;
 
 const json = (statusCode: number, body: unknown) => ({

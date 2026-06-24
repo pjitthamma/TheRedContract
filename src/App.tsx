@@ -34,6 +34,10 @@ type ClickCounts = {
   bHostProfile: number;
   bPhotos: number;
   bRingBell: number;
+  bWing: number;
+  dWing: number;
+  sWing: number;
+  mWing: number;
 };
 
 type EventName =
@@ -54,7 +58,11 @@ type EventName =
   | "b_picture_clicked"
   | "b_host_profile_clicked"
   | "b_photos_clicked"
-  | "b_ring_bell_clicked";
+  | "b_ring_bell_clicked"
+  | "b_wing_clicked"
+  | "d_wing_clicked"
+  | "s_wing_clicked"
+  | "m_wing_clicked";
 
 const SESSION_ID_KEY = "red-contract-session-id";
 const LANGUAGE_KEY = "red-contract-language";
@@ -98,6 +106,10 @@ const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => 
   bHostProfile: counts?.b_host_profile_clicked ?? 0,
   bPhotos: counts?.b_photos_clicked ?? 0,
   bRingBell: counts?.b_ring_bell_clicked ?? 0,
+  bWing: counts?.b_wing_clicked ?? 0,
+  dWing: counts?.d_wing_clicked ?? 0,
+  sWing: counts?.s_wing_clicked ?? 0,
+  mWing: counts?.m_wing_clicked ?? 0,
 });
 
 const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
@@ -141,6 +153,22 @@ const randomBreachedAttemptAudio = [
 
 const getNextRandomBreachedAttemptMilestone = (from: number) => from + 10 + Math.floor(Math.random() * 61);
 
+const getWingEventName = (hotspotId: string): EventName | null => {
+  if (hotspotId === "inside-door-left") {
+    return "b_wing_clicked";
+  }
+  if (hotspotId === "inside-door-center-left") {
+    return "d_wing_clicked";
+  }
+  if (hotspotId === "inside-door-center-right") {
+    return "s_wing_clicked";
+  }
+  if (hotspotId === "inside-door-right") {
+    return "m_wing_clicked";
+  }
+  return null;
+};
+
 function App() {
   const initialLanguage = getStoredLanguage();
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
@@ -183,6 +211,10 @@ function App() {
     bHostProfile: 0,
     bPhotos: 0,
     bRingBell: 0,
+    bWing: 0,
+    dWing: 0,
+    sWing: 0,
+    mWing: 0,
   });
   const displayedScene = transitionPhase !== "idle" ? scenes[transitionTargetSceneId] : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
@@ -286,6 +318,18 @@ function App() {
       if (eventName === "b_ring_bell_clicked") {
         return { ...current, bRingBell: current.bRingBell + 1 };
       }
+      if (eventName === "b_wing_clicked") {
+        return { ...current, bWing: current.bWing + 1 };
+      }
+      if (eventName === "d_wing_clicked") {
+        return { ...current, dWing: current.dWing + 1 };
+      }
+      if (eventName === "s_wing_clicked") {
+        return { ...current, sWing: current.sWing + 1 };
+      }
+      if (eventName === "m_wing_clicked") {
+        return { ...current, mWing: current.mWing + 1 };
+      }
       return { ...current, card: current.card + 1 };
     });
 
@@ -319,6 +363,11 @@ function App() {
   }, []);
 
   const handleHotspot = (hotspotId: string, action: HotspotAction) => {
+    const wingEventName = getWingEventName(hotspotId);
+    if (wingEventName) {
+      void trackEvent(wingEventName);
+    }
+
     if (action.type === "popup") {
       setPopup({ title: action.title, body: action.body });
       return;
@@ -479,6 +528,12 @@ function App() {
           disabled={isTransitioning || (hotspot.action?.type === "audio" && isHotspotAudioPlaying)}
           aria-label={hotspot.label}
           onClick={(event) => {
+            const wingEventName = getWingEventName(hotspot.id);
+            if (wingEventName && !hotspot.action) {
+              event.stopPropagation();
+              void trackEvent(wingEventName);
+              return;
+            }
             if (hotspot.action) {
               event.stopPropagation();
               handleHotspot(hotspot.id, hotspot.action);
@@ -951,8 +1006,12 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
 
   if (sceneId === "inside") {
     return (
-      <div className="click-counter" aria-live="polite">
+      <div className="click-counter lobby-counter" aria-live="polite">
         <span>Breach Successful: {counts.breachedAttempt}</span>
+        <span>B Wing: {counts.bWing}</span>
+        <span>D Wing: {counts.dWing}</span>
+        <span>S Wing: {counts.sWing}</span>
+        <span>M Wing: {counts.mWing}</span>
       </div>
     );
   }

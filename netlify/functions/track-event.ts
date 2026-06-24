@@ -17,6 +17,10 @@ const ALLOWED_EVENTS = new Set([
   "b_host_profile_clicked",
   "b_photos_clicked",
   "b_ring_bell_clicked",
+  "b_wing_clicked",
+  "d_wing_clicked",
+  "s_wing_clicked",
+  "m_wing_clicked",
 ]);
 
 const json = (statusCode: number, body: unknown) => ({
