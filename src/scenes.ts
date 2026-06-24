@@ -1,4 +1,4 @@
-export type SceneId = "atrium" | "door" | "archive" | "lineup" | "inside" | "B-room";
+export type SceneId = "atrium" | "door" | "archive" | "lineup" | "inside" | "B-room" | "B-desk" | "B-sofa";
 
 export type Language = "en" | "th";
 
@@ -65,6 +65,10 @@ export type SceneOverlay = {
     imageSrcs: string[];
     localizedImageSrcs?: LocalizedGallerySrcs;
     audioSrc?: string;
+  } | {
+    type: "audio-sequence";
+    audioSrcs: string[];
+    subtitleText?: string;
   };
 };
 
@@ -378,6 +382,11 @@ export const scenes: Record<SceneId, Scene> = {
         x: 53.6,
         y: 66.4,
         width: 9.2,
+        action: {
+          type: "audio-sequence",
+          audioSrcs: ["/assets/bell-ring.mp3", "/assets/rosen_voice.mp3"],
+          subtitleText: "โอเค ๆ! ขอเวลาผมแป๊บนึงนะ ที่รัก! ผมไม่ได้จะไปไหนหรอก เดี๋ยวก็ได้เจอกันแล้ว!",
+        },
       },
       {
         id: "b-item-2",
@@ -386,6 +395,11 @@ export const scenes: Record<SceneId, Scene> = {
         x: 34.6,
         y: 53.4,
         width: 18.2,
+        action: {
+          type: "scene",
+          target: "B-desk",
+          audioSrc: "/assets/whoosp.mp3",
+        },
       },
       {
         id: "b-item-3",
@@ -394,6 +408,11 @@ export const scenes: Record<SceneId, Scene> = {
         x: 79.8,
         y: 60.6,
         width: 12.8,
+        action: {
+          type: "image",
+          imageSrc: "/assets/lyrics_b.png",
+          audioSrc: "/assets/flip.mp3",
+        },
       },
       {
         id: "b-item-4",
@@ -402,6 +421,69 @@ export const scenes: Record<SceneId, Scene> = {
         x: 48.8,
         y: 55.8,
         width: 15.4,
+        action: {
+          type: "scene",
+          target: "B-sofa",
+          audioSrc: "/assets/whoosp.mp3",
+        },
+      },
+    ],
+    hotspots: [],
+  },
+  "B-desk": {
+    id: "B-desk",
+    name: "",
+    videoSrc: "/assets/b room profile.mp4",
+    posterSrc: "/assets/b-desk.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-b-room",
+    hotspots: [
+      {
+        id: "b-host-profile",
+        label: "Host Profile",
+        x: 15.8,
+        y: 5.2,
+        width: 40.2,
+        height: 89.6,
+        action: {
+          type: "image",
+          imageSrc: "/assets/b_profile.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+  },
+  "B-sofa": {
+    id: "B-sofa",
+    name: "",
+    videoSrc: "/assets/b room sofa.mp4",
+    posterSrc: "/assets/b-sofa.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-b-room",
+    overlays: [
+      {
+        id: "b-photo",
+        label: "Photo",
+        src: "/assets/photo.png",
+        x: 36.8,
+        y: 34.4,
+        width: 36.6,
+        action: {
+          type: "gallery",
+          imageSrcs: [
+            "/assets/b1.png",
+            "/assets/b2.png",
+            "/assets/b3.png",
+            "/assets/b4.png",
+            "/assets/b5.png",
+            "/assets/b6.png",
+            "/assets/b7.png",
+            "/assets/b8.png",
+            "/assets/b9.png",
+            "/assets/b10.png",
+          ],
+          audioSrc: "/assets/flip.mp3",
+        },
       },
     ],
     hotspots: [],

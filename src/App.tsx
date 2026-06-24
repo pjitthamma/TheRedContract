@@ -94,10 +94,14 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   lineup: "archive",
   inside: "archive",
   "B-room": "inside",
+  "B-desk": "B-room",
+  "B-sofa": "B-room",
 };
 
 const scenePathBySceneId: Partial<Record<SceneId, string>> = {
   "B-room": "/B-room",
+  "B-desk": "/B-room",
+  "B-sofa": "/B-room",
 };
 
 const getInitialSceneId = (): SceneId => {
@@ -137,6 +141,8 @@ function App() {
   const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
   const [scenePlaybackKey, setScenePlaybackKey] = useState(0);
   const [isHotspotAudioPlaying, setIsHotspotAudioPlaying] = useState(false);
+  const [isOverlayAudioSequencePlaying, setIsOverlayAudioSequencePlaying] = useState(false);
+  const [subtitleText, setSubtitleText] = useState<string | null>(null);
   const [breachedAttempts, setBreachedAttempts] = useState(0);
   const [scenePan, setScenePan] = useState({ x: 0, y: 0 });
   const [isDraggingScene, setIsDraggingScene] = useState(false);
@@ -474,8 +480,46 @@ function App() {
       void trackEvent("member_card_clicked");
     }
 
-    if (overlay.action.audioSrc) {
+    if ("audioSrc" in overlay.action && overlay.action.audioSrc) {
       void new Audio(overlay.action.audioSrc).play();
+    }
+
+    if (overlay.action.type === "audio-sequence") {
+      if (isOverlayAudioSequencePlaying) {
+        return;
+      }
+
+      const [firstAudioSrc, ...remainingAudioSrcs] = overlay.action.audioSrcs;
+      if (!firstAudioSrc) {
+        return;
+      }
+
+      setIsOverlayAudioSequencePlaying(true);
+      setSubtitleText(overlay.action.subtitleText ?? null);
+
+      const playAudioSequence = (audioSrcs: string[]) => {
+        const [audioSrc, ...nextAudioSrcs] = audioSrcs;
+        if (!audioSrc) {
+          setIsOverlayAudioSequencePlaying(false);
+          setSubtitleText(null);
+          return;
+        }
+
+        const audio = new Audio(audioSrc);
+        audio.addEventListener(
+          "ended",
+          () => {
+            playAudioSequence(nextAudioSrcs);
+          },
+          { once: true },
+        );
+        void audio.play().catch(() => {
+          playAudioSequence(nextAudioSrcs);
+        });
+      };
+
+      playAudioSequence([firstAudioSrc, ...remainingAudioSrcs]);
+      return;
     }
 
     if (overlay.action.type === "gallery") {
@@ -491,9 +535,26 @@ function App() {
       return;
     }
 
+    if (displayedScene.id === "B-room" && overlay.action.target === "B-desk") {
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("B-desk");
+      setTransitionVideoSrc("/assets/transition4.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (displayedScene.id === "B-room" && overlay.action.target === "B-sofa") {
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("B-sofa");
+      setTransitionVideoSrc("/assets/transition5.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
     setScenePan({ x: 0, y: 0 });
     setSceneId(overlay.action.target);
     setScenePlaybackKey((current) => current + 1);
+    updateScenePath(overlay.action.target);
   };
 
   const moveGallery = (direction: -1 | 1) => {
@@ -548,13 +609,14 @@ function App() {
             width: `${overlay.width}%`,
           }}
           type="button"
+          disabled={overlay.action?.type === "audio-sequence" && isOverlayAudioSequencePlaying}
           aria-label={overlay.label}
           onClick={() => handleSceneOverlay(overlay)}
         >
           <img src={overlay.src} alt="" aria-hidden="true" draggable={false} />
         </button>
       )) ?? [],
-    [displayedScene.overlays, isTransitioning, selectedLanguage],
+    [displayedScene.overlays, isOverlayAudioSequencePlaying, isTransitioning, selectedLanguage],
   );
 
   const finishTransition = () => {
@@ -731,6 +793,8 @@ function App() {
             <LanguageButton selectedLanguage={selectedLanguage} />
           </div>
         </div>
+
+        {subtitleText ? <div className="scene-subtitle">{subtitleText}</div> : null}
 
         {isTransitioning ? (
           <TransitionVideo
@@ -926,7 +990,8 @@ type SoundButtonProps = {
   sceneId: SceneId;
 };
 
-const getSceneAudioSrc = (sceneId: SceneId) => (sceneId === "B-room" ? "/assets/Rosen B.mp3" : "/assets/sound.mp3");
+const getSceneAudioSrc = (sceneId: SceneId) =>
+  sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa" ? "/assets/Rosen B.mp3" : "/assets/sound.mp3";
 
 function SoundButton({ sceneId }: SoundButtonProps) {
   const [isSoundOn, setIsSoundOn] = useState(true);

@@ -325,6 +325,20 @@ button {
   opacity: 0;
 }
 
+.hotspot[data-hotspot-id="b-host-profile"],
+.hotspot[data-hotspot-id="b-host-profile"]:hover,
+.hotspot[data-hotspot-id="b-host-profile"]:focus-visible {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+}
+
+.hotspot[data-hotspot-id="b-host-profile"] span {
+  opacity: 0;
+}
+
 .hotspot[data-hotspot-id^="inside-door-"] {
   overflow: visible;
   background: transparent;
@@ -469,6 +483,28 @@ button {
 
 .transition-overlay-revealing {
   opacity: 0;
+  pointer-events: none;
+}
+
+.scene-subtitle {
+  position: absolute;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: max(1rem, env(safe-area-inset-left));
+  z-index: 5;
+  max-width: min(64rem, calc(100vw - 2rem));
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+  color: #fff8cc;
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+  background: rgba(2, 6, 23, 0.72);
+  border: 1px solid rgba(255, 216, 117, 0.28);
+  border-radius: 8px;
+  backdrop-filter: blur(12px);
   pointer-events: none;
 }
 
