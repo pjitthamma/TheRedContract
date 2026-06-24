@@ -789,7 +789,7 @@ function App() {
           )}
           <ClickCounter sceneId={displayedScene.id} counts={clickCounts} />
           <div className="top-controls">
-            <SoundButton sceneId={sceneId} />
+            <SoundButton audioSrc={getSceneAudioSrc(sceneId)} />
             <LanguageButton selectedLanguage={selectedLanguage} />
           </div>
         </div>
@@ -987,13 +987,13 @@ function TransitionVideo({ phase, src, onFinish, onRevealComplete }: TransitionV
 }
 
 type SoundButtonProps = {
-  sceneId: SceneId;
+  audioSrc: string;
 };
 
 const getSceneAudioSrc = (sceneId: SceneId) =>
   sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa" ? "/assets/Rosen B.mp3" : "/assets/sound.mp3";
 
-function SoundButton({ sceneId }: SoundButtonProps) {
+function SoundButton({ audioSrc }: SoundButtonProps) {
   const [isSoundOn, setIsSoundOn] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioSrcRef = useRef<string | null>(null);
@@ -1004,17 +1004,16 @@ function SoundButton({ sceneId }: SoundButtonProps) {
   }, [isSoundOn]);
 
   useEffect(() => {
-    const nextAudioSrc = getSceneAudioSrc(sceneId);
-    if (audioRef.current && audioSrcRef.current === nextAudioSrc) {
+    if (audioRef.current && audioSrcRef.current === audioSrc) {
       return;
     }
 
     audioRef.current?.pause();
 
-    const audio = new Audio(nextAudioSrc);
+    const audio = new Audio(audioSrc);
     audio.loop = true;
     audioRef.current = audio;
-    audioSrcRef.current = nextAudioSrc;
+    audioSrcRef.current = audioSrc;
 
     if (isSoundOnRef.current) {
       void audio.play().catch(() => {
@@ -1030,13 +1029,13 @@ function SoundButton({ sceneId }: SoundButtonProps) {
         audioSrcRef.current = null;
       }
     };
-  }, [sceneId]);
+  }, [audioSrc]);
 
   const toggleSound = () => {
-    const audio = audioRef.current ?? new Audio(getSceneAudioSrc(sceneId));
+    const audio = audioRef.current ?? new Audio(audioSrc);
     audio.loop = true;
     audioRef.current = audio;
-    audioSrcRef.current = getSceneAudioSrc(sceneId);
+    audioSrcRef.current = audioSrc;
 
     if (isSoundOn) {
       audio.pause();

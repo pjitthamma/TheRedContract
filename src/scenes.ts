@@ -465,9 +465,9 @@ export const scenes: Record<SceneId, Scene> = {
         id: "b-photo",
         label: "Photo",
         src: "/assets/photo.png",
-        x: 36.8,
-        y: 34.4,
-        width: 36.6,
+        x: 32.8,
+        y: 29.4,
+        width: 45.6,
         action: {
           type: "gallery",
           imageSrcs: [
