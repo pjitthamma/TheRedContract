@@ -811,7 +811,7 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   if (sceneId === "inside") {
     return (
       <div className="click-counter" aria-live="polite">
-        <span>Breached attempt: {counts.breachedAttempt}</span>
+        <span>Breach Successful: {counts.breachedAttempt}</span>
       </div>
     );
   }
