@@ -1,4 +1,13 @@
-export type SceneId = "atrium" | "door" | "archive" | "lineup" | "inside" | "B-room" | "B-desk" | "B-sofa";
+export type SceneId =
+  | "atrium"
+  | "door"
+  | "archive"
+  | "lineup"
+  | "inside"
+  | "B-room"
+  | "B-desk"
+  | "B-sofa"
+  | "D-room";
 
 export type Language = "en" | "th";
 
@@ -352,6 +361,10 @@ export const scenes: Record<SceneId, Scene> = {
         width: 12.2,
         height: 62.7,
         imageSrc: "/assets/red.png",
+        action: {
+          type: "scene",
+          target: "D-room",
+        },
       },
       {
         id: "inside-door-center-right",
@@ -518,6 +531,15 @@ export const scenes: Record<SceneId, Scene> = {
         },
       },
     ],
+    hotspots: [],
+  },
+  "D-room": {
+    id: "D-room",
+    name: "",
+    videoSrc: "/assets/d room.mp4",
+    posterSrc: "/assets/d_room_1.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-d-room",
     hotspots: [],
   },
 };

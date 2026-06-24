@@ -100,7 +100,8 @@ button {
 .fallback-archive,
 .fallback-lineup,
 .fallback-inside,
-.fallback-b-room {
+.fallback-b-room,
+.fallback-d-room {
   background: #000;
 }
 
@@ -109,7 +110,8 @@ button {
 .fallback-archive::before,
 .fallback-lineup::before,
 .fallback-inside::before,
-.fallback-b-room::before {
+.fallback-b-room::before,
+.fallback-d-room::before {
   display: none;
 }
 

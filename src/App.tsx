@@ -120,17 +120,22 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   "B-room": "inside",
   "B-desk": "B-room",
   "B-sofa": "B-room",
+  "D-room": "inside",
 };
 
 const scenePathBySceneId: Partial<Record<SceneId, string>> = {
   "B-room": "/B-room",
   "B-desk": "/B-room",
   "B-sofa": "/B-room",
+  "D-room": "/D-room",
 };
 
 const getInitialSceneId = (): SceneId => {
   if (window.location.pathname === "/B-room") {
     return "B-room";
+  }
+  if (window.location.pathname === "/D-room") {
+    return "D-room";
   }
 
   return "atrium";
@@ -487,6 +492,15 @@ function App() {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("B-room");
       setTransitionVideoSrc("");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (sceneId === "inside" && action.target === "D-room") {
+      void new Audio("/assets/door-open.mp3").play();
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("D-room");
+      setTransitionVideoSrc("/assets/transition6.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1105,7 +1119,11 @@ type SoundButtonProps = {
 };
 
 const getSceneAudioSrc = (sceneId: SceneId) =>
-  sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa" ? "/assets/Rosen B.mp3" : "/assets/sound.mp3";
+  sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa"
+    ? "/assets/Rosen B.mp3"
+    : sceneId === "D-room"
+      ? "/assets/Michael D.mp3"
+      : "/assets/sound.mp3";
 
 function SoundButton({ audioSrc }: SoundButtonProps) {
   const [isSoundOn, setIsSoundOn] = useState(true);
