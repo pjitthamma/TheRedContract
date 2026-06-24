@@ -1,4 +1,4 @@
-export type SceneId = "atrium" | "door" | "archive" | "lineup" | "inside";
+export type SceneId = "atrium" | "door" | "archive" | "lineup" | "inside" | "B-room";
 
 export type Language = "en" | "th";
 
@@ -329,6 +329,10 @@ export const scenes: Record<SceneId, Scene> = {
         width: 17.3,
         height: 80.2,
         imageSrc: "/assets/green.png",
+        action: {
+          type: "scene",
+          target: "B-room",
+        },
       },
       {
         id: "inside-door-center-left",
@@ -358,5 +362,48 @@ export const scenes: Record<SceneId, Scene> = {
         imageSrc: "/assets/blue.png",
       },
     ],
+  },
+  "B-room": {
+    id: "B-room",
+    name: "",
+    videoSrc: "/assets/b room.mp4",
+    posterSrc: "/assets/b_room_1.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-b-room",
+    overlays: [
+      {
+        id: "b-item-1",
+        label: "B item 1",
+        src: "/assets/b_item_1.png",
+        x: 53.6,
+        y: 66.4,
+        width: 9.2,
+      },
+      {
+        id: "b-item-2",
+        label: "B item 2",
+        src: "/assets/b_item_2.png",
+        x: 34.6,
+        y: 53.4,
+        width: 18.2,
+      },
+      {
+        id: "b-item-3",
+        label: "B item 3",
+        src: "/assets/b_item_3.png",
+        x: 79.8,
+        y: 60.6,
+        width: 12.8,
+      },
+      {
+        id: "b-item-4",
+        label: "B item 4",
+        src: "/assets/b_item_4.png",
+        x: 48.8,
+        y: 55.8,
+        width: 15.4,
+      },
+    ],
+    hotspots: [],
   },
 };

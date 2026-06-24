@@ -99,7 +99,8 @@ button {
 .fallback-door,
 .fallback-archive,
 .fallback-lineup,
-.fallback-inside {
+.fallback-inside,
+.fallback-b-room {
   background: #000;
 }
 
@@ -107,7 +108,8 @@ button {
 .fallback-door::before,
 .fallback-archive::before,
 .fallback-lineup::before,
-.fallback-inside::before {
+.fallback-inside::before,
+.fallback-b-room::before {
   display: none;
 }
 

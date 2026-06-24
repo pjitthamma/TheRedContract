@@ -93,6 +93,26 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   archive: "door",
   lineup: "archive",
   inside: "archive",
+  "B-room": "inside",
+};
+
+const scenePathBySceneId: Partial<Record<SceneId, string>> = {
+  "B-room": "/B-room",
+};
+
+const getInitialSceneId = (): SceneId => {
+  if (window.location.pathname === "/B-room") {
+    return "B-room";
+  }
+
+  return "atrium";
+};
+
+const updateScenePath = (nextSceneId: SceneId) => {
+  const nextPath = scenePathBySceneId[nextSceneId] ?? "/";
+  if (window.location.pathname !== nextPath) {
+    window.history.pushState({}, "", nextPath);
+  }
 };
 
 const randomBreachedAttemptAudio = [
@@ -107,7 +127,7 @@ const getNextRandomBreachedAttemptMilestone = (from: number) => from + 10 + Math
 
 function App() {
   const initialLanguage = getStoredLanguage();
-  const [sceneId, setSceneId] = useState<SceneId>("atrium");
+  const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
@@ -376,7 +396,17 @@ function App() {
       return;
     }
 
+    if (sceneId === "inside" && action.target === "B-room") {
+      void new Audio("/assets/door-open.mp3").play();
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("B-room");
+      setTransitionVideoSrc("");
+      setTransitionPhase("playing");
+      return;
+    }
+
     setSceneId(action.target);
+    updateScenePath(action.target);
   };
 
   const getPosterClickCount = (hotspotId: string) => {
@@ -411,8 +441,9 @@ function App() {
           type="button"
           disabled={isTransitioning || (hotspot.action?.type === "audio" && isHotspotAudioPlaying)}
           aria-label={hotspot.label}
-          onClick={() => {
+          onClick={(event) => {
             if (hotspot.action) {
+              event.stopPropagation();
               handleHotspot(hotspot.id, hotspot.action);
             }
           }}
@@ -534,6 +565,7 @@ function App() {
     setSceneId(transitionTargetSceneId);
     setScenePlaybackKey((current) => current + 1);
     setTransitionPhase("idle");
+    updateScenePath(transitionTargetSceneId);
   };
 
   const handleScenePointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -604,6 +636,7 @@ function App() {
     setSceneId(previousSceneId);
     setScenePlaybackKey((current) => current + 1);
     setTransitionTargetSceneId("archive");
+    updateScenePath(previousSceneId);
   };
 
   const handleSceneClick = (event: MouseEvent<HTMLElement>) => {
@@ -694,7 +727,7 @@ function App() {
           )}
           <ClickCounter sceneId={displayedScene.id} counts={clickCounts} />
           <div className="top-controls">
-            <SoundButton />
+            <SoundButton sceneId={sceneId} />
             <LanguageButton selectedLanguage={selectedLanguage} />
           </div>
         </div>
@@ -839,6 +872,15 @@ function TransitionVideo({ phase, src, onFinish, onRevealComplete }: TransitionV
   const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
+    if (src || phase !== "playing") {
+      return;
+    }
+
+    const blackScreenTimer = window.setTimeout(onFinish, 650);
+    return () => window.clearTimeout(blackScreenTimer);
+  }, [onFinish, phase, src]);
+
+  useEffect(() => {
     if (!videoFailed) {
       return;
     }
@@ -863,7 +905,7 @@ function TransitionVideo({ phase, src, onFinish, onRevealComplete }: TransitionV
       }`}
       aria-hidden="true"
     >
-      {!videoFailed ? (
+      {src && !videoFailed ? (
         <video
           key={src}
           className="transition-video"
@@ -880,30 +922,56 @@ function TransitionVideo({ phase, src, onFinish, onRevealComplete }: TransitionV
   );
 }
 
-function SoundButton() {
+type SoundButtonProps = {
+  sceneId: SceneId;
+};
+
+const getSceneAudioSrc = (sceneId: SceneId) => (sceneId === "B-room" ? "/assets/Rosen B.mp3" : "/assets/sound.mp3");
+
+function SoundButton({ sceneId }: SoundButtonProps) {
   const [isSoundOn, setIsSoundOn] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioSrcRef = useRef<string | null>(null);
+  const isSoundOnRef = useRef(isSoundOn);
 
   useEffect(() => {
-    const audio = new Audio("/assets/sound.mp3");
+    isSoundOnRef.current = isSoundOn;
+  }, [isSoundOn]);
+
+  useEffect(() => {
+    const nextAudioSrc = getSceneAudioSrc(sceneId);
+    if (audioRef.current && audioSrcRef.current === nextAudioSrc) {
+      return;
+    }
+
+    audioRef.current?.pause();
+
+    const audio = new Audio(nextAudioSrc);
     audio.loop = true;
     audioRef.current = audio;
+    audioSrcRef.current = nextAudioSrc;
 
-    void audio.play().catch(() => {
-      // Browsers can block unmuted autoplay until the first user gesture.
-      setIsSoundOn(false);
-    });
+    if (isSoundOnRef.current) {
+      void audio.play().catch(() => {
+        // Browsers can block unmuted autoplay until the first user gesture.
+        setIsSoundOn(false);
+      });
+    }
 
     return () => {
       audio.pause();
-      audioRef.current = null;
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+        audioSrcRef.current = null;
+      }
     };
-  }, []);
+  }, [sceneId]);
 
   const toggleSound = () => {
-    const audio = audioRef.current ?? new Audio("/assets/sound.mp3");
+    const audio = audioRef.current ?? new Audio(getSceneAudioSrc(sceneId));
     audio.loop = true;
     audioRef.current = audio;
+    audioSrcRef.current = getSceneAudioSrc(sceneId);
 
     if (isSoundOn) {
       audio.pause();
