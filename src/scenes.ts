@@ -40,6 +40,7 @@ export type Hotspot = {
   y: number;
   width: number;
   height: number;
+  imageSrc?: string;
   action?: HotspotAction;
 };
 
@@ -319,6 +320,43 @@ export const scenes: Record<SceneId, Scene> = {
     posterSrc: "/assets/inside.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-inside",
-    hotspots: [],
+    hotspots: [
+      {
+        id: "inside-door-left",
+        label: "B door",
+        x: 15.1,
+        y: 14.8,
+        width: 17.3,
+        height: 80.2,
+        imageSrc: "/assets/green.png",
+      },
+      {
+        id: "inside-door-center-left",
+        label: "D door",
+        x: 26.2,
+        y: 23.9,
+        width: 12.2,
+        height: 62.7,
+        imageSrc: "/assets/red.png",
+      },
+      {
+        id: "inside-door-center-right",
+        label: "S door",
+        x: 61,
+        y: 20.4,
+        width: 13.7,
+        height: 72.3,
+        imageSrc: "/assets/black.png",
+      },
+      {
+        id: "inside-door-right",
+        label: "M door",
+        x: 69.7,
+        y: 14.9,
+        width: 13.9,
+        height: 95.4,
+        imageSrc: "/assets/blue.png",
+      },
+    ],
   },
 };

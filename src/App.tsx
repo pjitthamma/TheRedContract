@@ -421,6 +421,7 @@ function App() {
             <span className="lineup-poster-counter">Poster Clicked: {getPosterClickCount(hotspot.id)}</span>
           ) : null}
           {hotspot.id === "lobby-up-button" ? <ArrowUp size={24} aria-hidden="true" /> : null}
+          {hotspot.imageSrc ? <img src={hotspot.imageSrc} alt="" aria-hidden="true" draggable={false} /> : null}
           <span>{hotspot.label}</span>
         </button>
       )),
