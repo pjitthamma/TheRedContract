@@ -51,6 +51,12 @@ export type SceneOverlay = {
   x: number;
   y: number;
   width: number;
+  hitbox?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
   action?: {
     type: "scene";
     target: SceneId;
@@ -382,6 +388,12 @@ export const scenes: Record<SceneId, Scene> = {
         x: 53.6,
         y: 66.4,
         width: 9.2,
+        hitbox: {
+          x: 34,
+          y: 42,
+          width: 32,
+          height: 36,
+        },
         action: {
           type: "audio-sequence",
           audioSrcs: ["/assets/bell-ring.mp3", "/assets/rosen_voice.mp3"],
@@ -421,6 +433,12 @@ export const scenes: Record<SceneId, Scene> = {
         x: 48.8,
         y: 55.8,
         width: 15.4,
+        hitbox: {
+          x: 8,
+          y: 20,
+          width: 84,
+          height: 44,
+        },
         action: {
           type: "scene",
           target: "B-sofa",

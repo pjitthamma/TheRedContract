@@ -162,6 +162,20 @@ button {
   cursor: pointer;
 }
 
+.scene-overlay-hotspot-custom-hitbox {
+  pointer-events: none;
+}
+
+.scene-overlay-hotspot-custom-hitbox::after {
+  position: absolute;
+  left: var(--overlay-hitbox-left);
+  top: var(--overlay-hitbox-top);
+  width: var(--overlay-hitbox-width);
+  height: var(--overlay-hitbox-height);
+  content: "";
+  pointer-events: auto;
+}
+
 .scene-overlay-hotspot:hover,
 .scene-overlay-hotspot:focus-visible {
   background: transparent;

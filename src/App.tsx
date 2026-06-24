@@ -30,6 +30,10 @@ type ClickCounts = {
   knock: number;
   card: number;
   clubVisited: number;
+  bPicture: number;
+  bHostProfile: number;
+  bPhotos: number;
+  bRingBell: number;
 };
 
 type EventName =
@@ -46,7 +50,11 @@ type EventName =
   | "member_card_clicked"
   | "breached_attempt_clicked"
   | "door_knocked"
-  | "card_clicked";
+  | "card_clicked"
+  | "b_picture_clicked"
+  | "b_host_profile_clicked"
+  | "b_photos_clicked"
+  | "b_ring_bell_clicked";
 
 const SESSION_ID_KEY = "red-contract-session-id";
 const LANGUAGE_KEY = "red-contract-language";
@@ -86,6 +94,10 @@ const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => 
   knock: counts?.door_knocked ?? 0,
   card: counts?.card_clicked ?? 0,
   clubVisited: counts?.club_visited ?? 0,
+  bPicture: counts?.b_picture_clicked ?? 0,
+  bHostProfile: counts?.b_host_profile_clicked ?? 0,
+  bPhotos: counts?.b_photos_clicked ?? 0,
+  bRingBell: counts?.b_ring_bell_clicked ?? 0,
 });
 
 const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
@@ -167,6 +179,10 @@ function App() {
     knock: 0,
     card: 0,
     clubVisited: 0,
+    bPicture: 0,
+    bHostProfile: 0,
+    bPhotos: 0,
+    bRingBell: 0,
   });
   const displayedScene = transitionPhase !== "idle" ? scenes[transitionTargetSceneId] : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
@@ -258,6 +274,18 @@ function App() {
       if (eventName === "door_knocked") {
         return { ...current, knock: current.knock + 1 };
       }
+      if (eventName === "b_picture_clicked") {
+        return { ...current, bPicture: current.bPicture + 1 };
+      }
+      if (eventName === "b_host_profile_clicked") {
+        return { ...current, bHostProfile: current.bHostProfile + 1 };
+      }
+      if (eventName === "b_photos_clicked") {
+        return { ...current, bPhotos: current.bPhotos + 1 };
+      }
+      if (eventName === "b_ring_bell_clicked") {
+        return { ...current, bRingBell: current.bRingBell + 1 };
+      }
       return { ...current, card: current.card + 1 };
     });
 
@@ -314,6 +342,9 @@ function App() {
       }
       if (hotspotId === "lineup-meteor") {
         void trackEvent("lineup_meteor_clicked");
+      }
+      if (hotspotId === "b-wall-image") {
+        void trackEvent("b_picture_clicked");
       }
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
@@ -479,6 +510,15 @@ function App() {
     if (overlay.id === "board2") {
       void trackEvent("member_card_clicked");
     }
+    if (overlay.id === "b-item-1") {
+      void trackEvent("b_ring_bell_clicked");
+    }
+    if (overlay.id === "b-item-2") {
+      void trackEvent("b_host_profile_clicked");
+    }
+    if (overlay.id === "b-item-4") {
+      void trackEvent("b_photos_clicked");
+    }
 
     if ("audioSrc" in overlay.action && overlay.action.audioSrc) {
       void new Audio(overlay.action.audioSrc).play();
@@ -599,7 +639,7 @@ function App() {
     () =>
       displayedScene.overlays?.map((overlay) => (
         <button
-          className="scene-overlay-hotspot"
+          className={`scene-overlay-hotspot${overlay.hitbox ? " scene-overlay-hotspot-custom-hitbox" : ""}`}
           data-clickable={overlay.action ? "true" : "false"}
           data-overlay-id={overlay.id}
           key={overlay.id}
@@ -607,7 +647,11 @@ function App() {
             left: `${overlay.x}%`,
             top: `${overlay.y}%`,
             width: `${overlay.width}%`,
-          }}
+            "--overlay-hitbox-left": overlay.hitbox ? `${overlay.hitbox.x}%` : undefined,
+            "--overlay-hitbox-top": overlay.hitbox ? `${overlay.hitbox.y}%` : undefined,
+            "--overlay-hitbox-width": overlay.hitbox ? `${overlay.hitbox.width}%` : undefined,
+            "--overlay-hitbox-height": overlay.hitbox ? `${overlay.hitbox.height}%` : undefined,
+          } as CSSProperties}
           type="button"
           disabled={overlay.action?.type === "audio-sequence" && isOverlayAudioSequencePlaying}
           aria-label={overlay.label}
@@ -909,6 +953,17 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
     return (
       <div className="click-counter" aria-live="polite">
         <span>Breach Successful: {counts.breachedAttempt}</span>
+      </div>
+    );
+  }
+
+  if (sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa") {
+    return (
+      <div className="click-counter lobby-counter" aria-live="polite">
+        <span>Picture Clicked: {counts.bPicture}</span>
+        <span>Host Profile Clicked: {counts.bHostProfile}</span>
+        <span>Photos Clicked: {counts.bPhotos}</span>
+        <span>Ring Bell: {counts.bRingBell}</span>
       </div>
     );
   }
