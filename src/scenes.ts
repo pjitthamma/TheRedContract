@@ -159,9 +159,9 @@ export const scenes: Record<SceneId, Scene> = {
         id: "board",
         label: "Board",
         src: "/assets/board.png",
-        x: 16.5,
-        y: 13.4,
-        width: 20.2,
+        x: 16,
+        y: 15.4,
+        width: 22.2,
         action: {
           type: "scene",
           target: "lineup",
@@ -267,7 +267,7 @@ export const scenes: Record<SceneId, Scene> = {
         height: 49.8,
         action: {
           type: "image",
-          imageSrc: "/assets/b_cover.png",
+          imageSrc: "/assets/b_cover.webp",
           audioSrc: "/assets/flip.mp3",
         },
       },
@@ -280,7 +280,7 @@ export const scenes: Record<SceneId, Scene> = {
         height: 50.8,
         action: {
           type: "image",
-          imageSrc: "/assets/d_cover.png",
+          imageSrc: "/assets/d_cover.webp",
           audioSrc: "/assets/flip.mp3",
         },
       },
@@ -293,7 +293,7 @@ export const scenes: Record<SceneId, Scene> = {
         height: 50.8,
         action: {
           type: "image",
-          imageSrc: "/assets/s_cover.png",
+          imageSrc: "/assets/s_cover.webp",
           audioSrc: "/assets/flip.mp3",
         },
       },
@@ -306,7 +306,7 @@ export const scenes: Record<SceneId, Scene> = {
         height: 50.8,
         action: {
           type: "image",
-          imageSrc: "/assets/m_cover.png",
+          imageSrc: "/assets/m_cover.webp",
           audioSrc: "/assets/flip.mp3",
         },
       },
