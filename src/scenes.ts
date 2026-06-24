@@ -428,7 +428,21 @@ export const scenes: Record<SceneId, Scene> = {
         },
       },
     ],
-    hotspots: [],
+    hotspots: [
+      {
+        id: "b-wall-image",
+        label: "Wall image",
+        x: 31.9,
+        y: 9.2,
+        width: 37.4,
+        height: 41.8,
+        action: {
+          type: "image",
+          imageSrc: "/assets/b_wall.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
   },
   "B-desk": {
     id: "B-desk",
