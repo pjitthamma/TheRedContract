@@ -9,7 +9,10 @@ export type SceneId =
   | "B-sofa"
   | "D-room"
   | "D-desk"
-  | "D-sofa";
+  | "D-sofa"
+  | "S-room"
+  | "S-desk"
+  | "S-sofa";
 
 export type Language = "en" | "th";
 
@@ -376,6 +379,10 @@ export const scenes: Record<SceneId, Scene> = {
         width: 13.7,
         height: 72.3,
         imageSrc: "/assets/black.png",
+        action: {
+          type: "scene",
+          target: "S-room",
+        },
       },
       {
         id: "inside-door-right",
@@ -663,6 +670,141 @@ export const scenes: Record<SceneId, Scene> = {
             "/assets/d8.png",
             "/assets/d9.png",
             "/assets/d10.png",
+          ],
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+    hotspots: [],
+  },
+  "S-room": {
+    id: "S-room",
+    name: "",
+    videoSrc: "/assets/s room.mp4",
+    posterSrc: "/assets/s_room_1.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-s-room",
+    overlays: [
+      {
+        id: "s-item-1",
+        label: "S item 1",
+        src: "/assets/s_item_1.png",
+        x: 48.9,
+        y: 60.2,
+        width: 14.2,
+        action: {
+          type: "scene",
+          target: "S-desk",
+          audioSrc: "/assets/whoosp.mp3",
+        },
+      },
+      {
+        id: "s-item-2",
+        label: "S item 2",
+        src: "/assets/s_item_2.png",
+        x: 39.5,
+        y: 65.8,
+        width: 8.1,
+        action: {
+          type: "audio-sequence",
+          audioSrcs: ["/assets/bell-ring.mp3", "/assets/ryusei_sound.mp3"],
+          subtitleText: "เริ่มอยู่ไม่สุขแล้วสินะ? ไม่เอาน่า… ผมรู้ว่าคุณยังอดทนได้อีกหน่อย",
+        },
+      },
+      {
+        id: "s-item-3",
+        label: "S item 3",
+        src: "/assets/s_item_3.png",
+        x: 61.3,
+        y: 57.9,
+        width: 13.6,
+        action: {
+          type: "scene",
+          target: "S-sofa",
+          audioSrc: "/assets/whoosp.mp3",
+        },
+      },
+      {
+        id: "s-item-4",
+        label: "S item 4",
+        src: "/assets/s_item_4.png",
+        x: 22.4,
+        y: 58.4,
+        width: 15.2,
+        action: {
+          type: "image",
+          imageSrc: "/assets/lyrics_s.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+    hotspots: [
+      {
+        id: "s-wall-image",
+        label: "Wall image",
+        x: 31.4,
+        y: 8.6,
+        width: 38.5,
+        height: 40.2,
+        action: {
+          type: "image",
+          imageSrc: "/assets/s_wall.webp",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+  },
+  "S-desk": {
+    id: "S-desk",
+    name: "",
+    videoSrc: "/assets/s room profile.mp4",
+    posterSrc: "/assets/s-desk.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-s-room",
+    hotspots: [
+      {
+        id: "s-host-profile",
+        label: "Host Profile",
+        x: 52.2,
+        y: 3.6,
+        width: 35.1,
+        height: 91.4,
+        action: {
+          type: "image",
+          imageSrc: "/assets/s_profile.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+  },
+  "S-sofa": {
+    id: "S-sofa",
+    name: "",
+    videoSrc: "/assets/s room sofa.mp4",
+    posterSrc: "/assets/s-sofa.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-s-room",
+    overlays: [
+      {
+        id: "s-photo",
+        label: "Photo",
+        src: "/assets/photo3.png",
+        x: 18.8,
+        y: 26.4,
+        width: 70.6,
+        action: {
+          type: "gallery",
+          imageSrcs: [
+            "/assets/s1.webp",
+            "/assets/s2.webp",
+            "/assets/s3.webp",
+            "/assets/s4.webp",
+            "/assets/s5.webp",
+            "/assets/s6.webp",
+            "/assets/s7.webp",
+            "/assets/s8.webp",
+            "/assets/s9.webp",
+            "/assets/s10.webp",
           ],
           audioSrc: "/assets/flip.mp3",
         },

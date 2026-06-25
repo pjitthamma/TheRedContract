@@ -38,6 +38,10 @@ type ClickCounts = {
   dHostProfile: number;
   dPhotos: number;
   dRingBell: number;
+  sPicture: number;
+  sHostProfile: number;
+  sPhotos: number;
+  sRingBell: number;
   bWing: number;
   dWing: number;
   sWing: number;
@@ -67,6 +71,10 @@ type EventName =
   | "d_host_profile_clicked"
   | "d_photos_clicked"
   | "d_ring_bell_clicked"
+  | "s_picture_clicked"
+  | "s_host_profile_clicked"
+  | "s_photos_clicked"
+  | "s_ring_bell_clicked"
   | "b_wing_clicked"
   | "d_wing_clicked"
   | "s_wing_clicked"
@@ -118,6 +126,10 @@ const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => 
   dHostProfile: counts?.d_host_profile_clicked ?? 0,
   dPhotos: counts?.d_photos_clicked ?? 0,
   dRingBell: counts?.d_ring_bell_clicked ?? 0,
+  sPicture: counts?.s_picture_clicked ?? 0,
+  sHostProfile: counts?.s_host_profile_clicked ?? 0,
+  sPhotos: counts?.s_photos_clicked ?? 0,
+  sRingBell: counts?.s_ring_bell_clicked ?? 0,
   bWing: counts?.b_wing_clicked ?? 0,
   dWing: counts?.d_wing_clicked ?? 0,
   sWing: counts?.s_wing_clicked ?? 0,
@@ -135,6 +147,9 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   "D-room": "inside",
   "D-desk": "D-room",
   "D-sofa": "D-room",
+  "S-room": "inside",
+  "S-desk": "S-room",
+  "S-sofa": "S-room",
 };
 
 const scenePathBySceneId: Partial<Record<SceneId, string>> = {
@@ -144,6 +159,9 @@ const scenePathBySceneId: Partial<Record<SceneId, string>> = {
   "D-room": "/D-room",
   "D-desk": "/D-room",
   "D-sofa": "/D-room",
+  "S-room": "/S-room",
+  "S-desk": "/S-room",
+  "S-sofa": "/S-room",
 };
 
 const getInitialSceneId = (): SceneId => {
@@ -152,6 +170,9 @@ const getInitialSceneId = (): SceneId => {
   }
   if (window.location.pathname === "/D-room") {
     return "D-room";
+  }
+  if (window.location.pathname === "/S-room") {
+    return "S-room";
   }
 
   return "atrium";
@@ -236,6 +257,10 @@ function App() {
     dHostProfile: 0,
     dPhotos: 0,
     dRingBell: 0,
+    sPicture: 0,
+    sHostProfile: 0,
+    sPhotos: 0,
+    sRingBell: 0,
     bWing: 0,
     dWing: 0,
     sWing: 0,
@@ -355,6 +380,18 @@ function App() {
       if (eventName === "d_ring_bell_clicked") {
         return { ...current, dRingBell: current.dRingBell + 1 };
       }
+      if (eventName === "s_picture_clicked") {
+        return { ...current, sPicture: current.sPicture + 1 };
+      }
+      if (eventName === "s_host_profile_clicked") {
+        return { ...current, sHostProfile: current.sHostProfile + 1 };
+      }
+      if (eventName === "s_photos_clicked") {
+        return { ...current, sPhotos: current.sPhotos + 1 };
+      }
+      if (eventName === "s_ring_bell_clicked") {
+        return { ...current, sRingBell: current.sRingBell + 1 };
+      }
       if (eventName === "b_wing_clicked") {
         return { ...current, bWing: current.bWing + 1 };
       }
@@ -434,6 +471,9 @@ function App() {
       }
       if (hotspotId === "d-wall-image") {
         void trackEvent("d_picture_clicked");
+      }
+      if (hotspotId === "s-wall-image") {
+        void trackEvent("s_picture_clicked");
       }
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
@@ -540,6 +580,15 @@ function App() {
       return;
     }
 
+    if (sceneId === "inside" && action.target === "S-room") {
+      void new Audio("/assets/door-open.mp3").play();
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("S-room");
+      setTransitionVideoSrc("");
+      setTransitionPhase("playing");
+      return;
+    }
+
     setSceneId(action.target);
     updateScenePath(action.target);
   };
@@ -632,6 +681,15 @@ function App() {
     if (overlay.id === "d-item-3") {
       void trackEvent("d_photos_clicked");
     }
+    if (overlay.id === "s-item-1") {
+      void trackEvent("s_host_profile_clicked");
+    }
+    if (overlay.id === "s-item-2") {
+      void trackEvent("s_ring_bell_clicked");
+    }
+    if (overlay.id === "s-item-3") {
+      void trackEvent("s_photos_clicked");
+    }
 
     if ("audioSrc" in overlay.action && overlay.action.audioSrc) {
       void new Audio(overlay.action.audioSrc).play();
@@ -716,6 +774,22 @@ function App() {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("D-sofa");
       setTransitionVideoSrc("/assets/transition8.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (displayedScene.id === "S-room" && overlay.action.target === "S-desk") {
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("S-desk");
+      setTransitionVideoSrc("/assets/transition9.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (displayedScene.id === "S-room" && overlay.action.target === "S-sofa") {
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("S-sofa");
+      setTransitionVideoSrc("/assets/transition10.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1112,6 +1186,17 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
     );
   }
 
+  if (sceneId === "S-room" || sceneId === "S-desk" || sceneId === "S-sofa") {
+    return (
+      <div className="click-counter lobby-counter" aria-live="polite">
+        <span>Picture Clicked: {counts.sPicture}</span>
+        <span>Host Profile Clicked: {counts.sHostProfile}</span>
+        <span>Photos Clicked: {counts.sPhotos}</span>
+        <span>Ring Bell: {counts.sRingBell}</span>
+      </div>
+    );
+  }
+
   if (sceneId !== "atrium") {
     return <span className="top-bar-spacer" aria-hidden="true" />;
   }
@@ -1194,6 +1279,8 @@ const getSceneAudioSrc = (sceneId: SceneId) =>
     ? "/assets/Rosen B.mp3"
     : sceneId === "D-room" || sceneId === "D-desk" || sceneId === "D-sofa"
       ? "/assets/Michael D.mp3"
+      : sceneId === "S-room" || sceneId === "S-desk" || sceneId === "S-sofa"
+        ? "/assets/Ryusei S.mp3"
       : "/assets/sound.mp3";
 
 function SoundButton({ audioSrc }: SoundButtonProps) {
@@ -1316,7 +1403,7 @@ function VideoScene({ sceneId, playbackKey, shouldPlay, src, posterSrc, loop, fa
     <div className="scene-media-layer">
       <div className={`animated-fallback ${fallbackClassName}`} aria-hidden="true" />
       {posterSrc ? <img className="scene-poster" src={posterSrc} alt="" aria-hidden="true" /> : null}
-      {!videoFailed ? (
+      {src && !videoFailed ? (
         <video
           key={`${sceneId}-${playbackKey}`}
           className={`scene-video${videoReady ? " scene-video-ready" : ""}`}
