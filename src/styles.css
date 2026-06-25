@@ -875,11 +875,19 @@ button {
   outline: 0;
 }
 
-.bot-test-score {
+.bot-test-player-panel {
   position: absolute;
-  top: max(1rem, env(safe-area-inset-top));
-  left: 88%;
+  top: 5.9rem;
+  left: 86%;
   z-index: 2;
+  display: grid;
+  gap: 0.7rem;
+  width: min(12rem, 22vw);
+  transform: translateX(-50%);
+}
+
+.bot-test-score,
+.bot-test-guest-card {
   display: grid;
   justify-items: center;
   min-width: 7rem;
@@ -888,11 +896,11 @@ button {
   border: 1px solid rgba(255, 216, 117, 0.28);
   border-radius: 8px;
   box-shadow: 0 1rem 2.6rem rgba(0, 0, 0, 0.34);
-  transform: translateX(-50%);
   backdrop-filter: blur(14px);
 }
 
-.bot-test-score span {
+.bot-test-score span,
+.bot-test-guest-card span {
   color: #d6a94a;
   font-size: 0.78rem;
   font-weight: 700;
@@ -900,10 +908,23 @@ button {
   text-transform: uppercase;
 }
 
-.bot-test-score strong {
+.bot-test-score strong,
+.bot-test-guest-card strong {
   color: #fff8cc;
-  font-size: 2rem;
   line-height: 1;
+}
+
+.bot-test-score strong {
+  font-size: 2rem;
+}
+
+.bot-test-guest-card strong {
+  max-width: 100%;
+  margin-top: 0.35rem;
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bot-test-music-button {
@@ -929,6 +950,19 @@ button {
   background: rgba(15, 23, 42, 0.86);
   border-color: rgba(255, 255, 255, 0.48);
   outline: 0;
+}
+
+.bot-test-side-video {
+  position: absolute;
+  right: clamp(1rem, 4vw, 4rem);
+  bottom: 0;
+  z-index: 1;
+  width: 16rem;
+  max-height: 68vh;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .bot-test-leaderboard {
@@ -1083,6 +1117,20 @@ button {
 
   .club-counter {
     font-size: 0.78rem;
+  }
+
+  .bot-test-player-panel {
+    top: 4.25rem;
+    right: 0.75rem;
+    left: auto;
+    width: min(8.5rem, 34vw);
+    transform: none;
+  }
+
+  .bot-test-side-video {
+    right: -0.5rem;
+    width: min(34vw, 10rem);
+    max-height: 42vh;
   }
 
   .bot-test-hitbox {

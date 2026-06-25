@@ -81,9 +81,16 @@ function BotClickTest() {
         <ArrowLeft size={20} aria-hidden="true" />
       </a>
 
-      <div className="bot-test-score" aria-live="polite">
-        <span>Hits</span>
-        <strong>{clickCount}</strong>
+      <div className="bot-test-player-panel">
+        <div className="bot-test-guest-card">
+          <span>Guest Name:</span>
+          <strong>Loading...</strong>
+        </div>
+
+        <div className="bot-test-score" aria-live="polite">
+          <span>Hits</span>
+          <strong>{clickCount}</strong>
+        </div>
       </div>
 
       <button
@@ -95,6 +102,17 @@ function BotClickTest() {
       >
         {isMusicOn ? <Volume2 size={20} aria-hidden="true" /> : <VolumeX size={20} aria-hidden="true" />}
       </button>
+
+      <video
+        className="bot-test-side-video"
+        src="/assets/d-twerk.webm"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+      />
 
       <aside className="bot-test-leaderboard" aria-label="Leaderboard">
         <h1>Leaderboard</h1>
