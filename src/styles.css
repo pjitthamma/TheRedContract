@@ -863,13 +863,13 @@ button {
 
   .scene-subtitle {
     right: max(0.65rem, env(safe-area-inset-right));
-    bottom: max(0.85rem, env(safe-area-inset-bottom));
+    bottom: calc(max(0.85rem, env(safe-area-inset-bottom)) + 3.2rem);
     left: max(0.65rem, env(safe-area-inset-left));
-    max-height: min(24vh, 10.5rem);
-    padding: 0.55rem 0.7rem;
+    max-height: min(16vh, 6.5rem);
+    padding: 0.45rem 0.6rem;
     overflow-y: auto;
-    font-size: 0.9rem;
-    line-height: 1.32;
+    font-size: 0.78rem;
+    line-height: 1.26;
     text-align: center;
     scrollbar-width: none;
   }
