@@ -810,6 +810,7 @@ button {
   overflow: hidden;
   color: #f8fafc;
   background: #050305 url("/assets/splank_d.png") center / cover no-repeat;
+  cursor: url("/assets/palm.png") 24 24, pointer;
 }
 
 .bot-test-stage {
@@ -827,11 +828,12 @@ button {
 .bot-test-video {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 80%;
+  height: 99.6%;
   object-fit: contain;
   user-select: none;
   -webkit-user-select: none;
+  left: 6.8%;
 }
 
 .bot-test-video-end {
@@ -845,16 +847,16 @@ button {
 
 .bot-test-hitbox {
   position: absolute;
-  left: 23%;
-  bottom: 4%;
-  width: 54%;
-  height: 34%;
+  left: 5%;
+  bottom: 19%;
+  width: 59%;
+  height: 36%;
   padding: 0;
-  cursor: pointer;
-  background: rgba(255, 216, 117, 0.04);
-  border: 1px solid rgba(255, 216, 117, 0.22);
+  cursor: url("/assets/palm.png") 24 24, pointer;
+  background: transparent;
+  border: 0;
   border-radius: 8px;
-  opacity: 0.28;
+  opacity: 1;
   transition:
     background 160ms ease,
     border-color 160ms ease,
@@ -863,9 +865,9 @@ button {
 
 .bot-test-hitbox:hover,
 .bot-test-hitbox:focus-visible {
-  background: rgba(255, 216, 117, 0.1);
-  border-color: rgba(255, 216, 117, 0.68);
-  opacity: 0.78;
+  background: transparent;
+  border-color: transparent;
+  opacity: 1;
   outline: 0;
 }
 
@@ -911,6 +913,7 @@ button {
   height: 2.75rem;
   color: #f8fafc;
   text-decoration: none;
+  cursor: url("/assets/palm.png") 24 24, pointer;
   background: rgba(2, 6, 23, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
@@ -1010,10 +1013,10 @@ button {
   }
 
   .bot-test-hitbox {
-    left: 18%;
-    bottom: 2%;
-    width: 64%;
-    height: 38%;
+    left: 5%;
+    bottom: 19%;
+    width: 59%;
+    height: 36%;
   }
 
   .hotspot span {
