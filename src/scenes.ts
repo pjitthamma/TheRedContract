@@ -12,7 +12,10 @@ export type SceneId =
   | "D-sofa"
   | "S-room"
   | "S-desk"
-  | "S-sofa";
+  | "S-sofa"
+  | "M-room"
+  | "M-desk"
+  | "M-sofa";
 
 export type Language = "en" | "th";
 
@@ -392,6 +395,10 @@ export const scenes: Record<SceneId, Scene> = {
         width: 13.9,
         height: 95.4,
         imageSrc: "/assets/blue.png",
+        action: {
+          type: "scene",
+          target: "M-room",
+        },
       },
     ],
   },
@@ -805,6 +812,141 @@ export const scenes: Record<SceneId, Scene> = {
             "/assets/s8.webp",
             "/assets/s9.webp",
             "/assets/s10.webp",
+          ],
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+    hotspots: [],
+  },
+  "M-room": {
+    id: "M-room",
+    name: "",
+    videoSrc: "/assets/m room.mp4",
+    posterSrc: "/assets/m_room_1.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-m-room",
+    overlays: [
+      {
+        id: "m-item-1",
+        label: "M item 1",
+        src: "/assets/m_item_1.png",
+        x: 52.9,
+        y: 64.1,
+        width: 18.2,
+        action: {
+          type: "scene",
+          target: "M-desk",
+          audioSrc: "/assets/whoosp.mp3",
+        },
+      },
+      {
+        id: "m-item-2",
+        label: "M item 2",
+        src: "/assets/m_item_2.png",
+        x: 33.8,
+        y: 70.4,
+        width: 8.1,
+        action: {
+          type: "audio-sequence",
+          audioSrcs: ["/assets/bell-ring.mp3", "/assets/noel_sound.mp3"],
+          subtitleText: "ชู่วว… ผมยังเตรียมตัวอยู่เลยนะ มาสเตอร์..\nเคาะต่อไปสิ แล้วตั้งใจฟังให้ดีด้วยหล่ะ… อืมม",
+        },
+      },
+      {
+        id: "m-item-3",
+        label: "M item 3",
+        src: "/assets/m_item_3.png",
+        x: 36.4,
+        y: 58.2,
+        width: 14.6,
+        action: {
+          type: "scene",
+          target: "M-sofa",
+          audioSrc: "/assets/whoosp.mp3",
+        },
+      },
+      {
+        id: "m-item-4",
+        label: "M item 4",
+        src: "/assets/m_item_4.png",
+        x: 41.6,
+        y: 73.5,
+        width: 13.2,
+        action: {
+          type: "image",
+          imageSrc: "/assets/lyrics_m.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+    hotspots: [
+      {
+        id: "m-wall-image",
+        label: "Wall image",
+        x: 33.4,
+        y: 8.6,
+        width: 33.5,
+        height: 40.2,
+        action: {
+          type: "image",
+          imageSrc: "/assets/m_wall.jpg",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+  },
+  "M-desk": {
+    id: "M-desk",
+    name: "",
+    videoSrc: "/assets/m room profile.mp4",
+    posterSrc: "/assets/m-desk.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-m-room",
+    hotspots: [
+      {
+        id: "m-host-profile",
+        label: "Host Profile",
+        x: 15.8,
+        y: 5.2,
+        width: 40.2,
+        height: 89.6,
+        action: {
+          type: "image",
+          imageSrc: "/assets/m_profile.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+  },
+  "M-sofa": {
+    id: "M-sofa",
+    name: "",
+    videoSrc: "/assets/m room sofa.mp4",
+    posterSrc: "/assets/m-sofa.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-m-room",
+    overlays: [
+      {
+        id: "m-photo",
+        label: "Photo",
+        src: "/assets/photo4.png",
+        x: 25.8,
+        y: 32.4,
+        width: 61.6,
+        action: {
+          type: "gallery",
+          imageSrcs: [
+            "/assets/m1.jpg",
+            "/assets/m2.jpg",
+            "/assets/m3.jpg",
+            "/assets/m4.jpg",
+            "/assets/m5.jpg",
+            "/assets/m6.jpg",
+            "/assets/m7.jpg",
+            "/assets/m8.jpg",
+            "/assets/m9.jpg",
+            "/assets/m10.jpg",
           ],
           audioSrc: "/assets/flip.mp3",
         },

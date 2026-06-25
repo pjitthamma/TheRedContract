@@ -42,6 +42,10 @@ type ClickCounts = {
   sHostProfile: number;
   sPhotos: number;
   sRingBell: number;
+  mPicture: number;
+  mHostProfile: number;
+  mPhotos: number;
+  mRingBell: number;
   bWing: number;
   dWing: number;
   sWing: number;
@@ -75,6 +79,10 @@ type EventName =
   | "s_host_profile_clicked"
   | "s_photos_clicked"
   | "s_ring_bell_clicked"
+  | "m_picture_clicked"
+  | "m_host_profile_clicked"
+  | "m_photos_clicked"
+  | "m_ring_bell_clicked"
   | "b_wing_clicked"
   | "d_wing_clicked"
   | "s_wing_clicked"
@@ -130,6 +138,10 @@ const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => 
   sHostProfile: counts?.s_host_profile_clicked ?? 0,
   sPhotos: counts?.s_photos_clicked ?? 0,
   sRingBell: counts?.s_ring_bell_clicked ?? 0,
+  mPicture: counts?.m_picture_clicked ?? 0,
+  mHostProfile: counts?.m_host_profile_clicked ?? 0,
+  mPhotos: counts?.m_photos_clicked ?? 0,
+  mRingBell: counts?.m_ring_bell_clicked ?? 0,
   bWing: counts?.b_wing_clicked ?? 0,
   dWing: counts?.d_wing_clicked ?? 0,
   sWing: counts?.s_wing_clicked ?? 0,
@@ -150,6 +162,9 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   "S-room": "inside",
   "S-desk": "S-room",
   "S-sofa": "S-room",
+  "M-room": "inside",
+  "M-desk": "M-room",
+  "M-sofa": "M-room",
 };
 
 const scenePathBySceneId: Partial<Record<SceneId, string>> = {
@@ -162,6 +177,9 @@ const scenePathBySceneId: Partial<Record<SceneId, string>> = {
   "S-room": "/S-room",
   "S-desk": "/S-room",
   "S-sofa": "/S-room",
+  "M-room": "/M-room",
+  "M-desk": "/M-room",
+  "M-sofa": "/M-room",
 };
 
 const getInitialSceneId = (): SceneId => {
@@ -173,6 +191,9 @@ const getInitialSceneId = (): SceneId => {
   }
   if (window.location.pathname === "/S-room") {
     return "S-room";
+  }
+  if (window.location.pathname === "/M-room") {
+    return "M-room";
   }
 
   return "atrium";
@@ -261,6 +282,10 @@ function App() {
     sHostProfile: 0,
     sPhotos: 0,
     sRingBell: 0,
+    mPicture: 0,
+    mHostProfile: 0,
+    mPhotos: 0,
+    mRingBell: 0,
     bWing: 0,
     dWing: 0,
     sWing: 0,
@@ -392,6 +417,18 @@ function App() {
       if (eventName === "s_ring_bell_clicked") {
         return { ...current, sRingBell: current.sRingBell + 1 };
       }
+      if (eventName === "m_picture_clicked") {
+        return { ...current, mPicture: current.mPicture + 1 };
+      }
+      if (eventName === "m_host_profile_clicked") {
+        return { ...current, mHostProfile: current.mHostProfile + 1 };
+      }
+      if (eventName === "m_photos_clicked") {
+        return { ...current, mPhotos: current.mPhotos + 1 };
+      }
+      if (eventName === "m_ring_bell_clicked") {
+        return { ...current, mRingBell: current.mRingBell + 1 };
+      }
       if (eventName === "b_wing_clicked") {
         return { ...current, bWing: current.bWing + 1 };
       }
@@ -474,6 +511,9 @@ function App() {
       }
       if (hotspotId === "s-wall-image") {
         void trackEvent("s_picture_clicked");
+      }
+      if (hotspotId === "m-wall-image") {
+        void trackEvent("m_picture_clicked");
       }
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
@@ -575,7 +615,7 @@ function App() {
       void new Audio("/assets/door-open.mp3").play();
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("D-room");
-      setTransitionVideoSrc("/assets/transition6.mp4");
+      setTransitionVideoSrc("");
       setTransitionPhase("playing");
       return;
     }
@@ -584,6 +624,15 @@ function App() {
       void new Audio("/assets/door-open.mp3").play();
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("S-room");
+      setTransitionVideoSrc("");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (sceneId === "inside" && action.target === "M-room") {
+      void new Audio("/assets/door-open.mp3").play();
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("M-room");
       setTransitionVideoSrc("");
       setTransitionPhase("playing");
       return;
@@ -690,6 +739,15 @@ function App() {
     if (overlay.id === "s-item-3") {
       void trackEvent("s_photos_clicked");
     }
+    if (overlay.id === "m-item-1") {
+      void trackEvent("m_host_profile_clicked");
+    }
+    if (overlay.id === "m-item-2") {
+      void trackEvent("m_ring_bell_clicked");
+    }
+    if (overlay.id === "m-item-3") {
+      void trackEvent("m_photos_clicked");
+    }
 
     if ("audioSrc" in overlay.action && overlay.action.audioSrc) {
       void new Audio(overlay.action.audioSrc).play();
@@ -790,6 +848,22 @@ function App() {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("S-sofa");
       setTransitionVideoSrc("/assets/transition10.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (displayedScene.id === "M-room" && overlay.action.target === "M-desk") {
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("M-desk");
+      setTransitionVideoSrc("/assets/transition11.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (displayedScene.id === "M-room" && overlay.action.target === "M-sofa") {
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("M-sofa");
+      setTransitionVideoSrc("/assets/transition12.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1197,6 +1271,17 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
     );
   }
 
+  if (sceneId === "M-room" || sceneId === "M-desk" || sceneId === "M-sofa") {
+    return (
+      <div className="click-counter lobby-counter" aria-live="polite">
+        <span>Picture Clicked: {counts.mPicture}</span>
+        <span>Host Profile Clicked: {counts.mHostProfile}</span>
+        <span>Photos Clicked: {counts.mPhotos}</span>
+        <span>Ring Bell: {counts.mRingBell}</span>
+      </div>
+    );
+  }
+
   if (sceneId !== "atrium") {
     return <span className="top-bar-spacer" aria-hidden="true" />;
   }
@@ -1281,7 +1366,9 @@ const getSceneAudioSrc = (sceneId: SceneId) =>
       ? "/assets/Michael D.mp3"
       : sceneId === "S-room" || sceneId === "S-desk" || sceneId === "S-sofa"
         ? "/assets/Ryusei S.mp3"
-      : "/assets/sound.mp3";
+        : sceneId === "M-room" || sceneId === "M-desk" || sceneId === "M-sofa"
+          ? "/assets/Noel M.mp3"
+          : "/assets/sound.mp3";
 
 function SoundButton({ audioSrc }: SoundButtonProps) {
   const [isSoundOn, setIsSoundOn] = useState(true);

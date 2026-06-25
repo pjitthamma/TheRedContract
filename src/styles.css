@@ -102,7 +102,8 @@ button {
 .fallback-inside,
 .fallback-b-room,
 .fallback-d-room,
-.fallback-s-room {
+.fallback-s-room,
+.fallback-m-room {
   background: #000;
 }
 
@@ -113,7 +114,8 @@ button {
 .fallback-inside::before,
 .fallback-b-room::before,
 .fallback-d-room::before,
-.fallback-s-room::before {
+.fallback-s-room::before,
+.fallback-m-room::before {
   display: none;
 }
 
@@ -271,7 +273,8 @@ button {
 .hotspot[data-hotspot-id="club-rules"],
 .hotspot[data-hotspot-id="b-wall-image"],
 .hotspot[data-hotspot-id="d-wall-image"],
-.hotspot[data-hotspot-id="s-wall-image"] {
+.hotspot[data-hotspot-id="s-wall-image"],
+.hotspot[data-hotspot-id="m-wall-image"] {
   background: rgba(218, 165, 32, 0.06);
   border: 2px solid #ffd875;
   box-shadow: none;
@@ -333,6 +336,8 @@ button {
 .hotspot[data-hotspot-id="d-wall-image"]:focus-visible,
 .hotspot[data-hotspot-id="s-wall-image"]:hover,
 .hotspot[data-hotspot-id="s-wall-image"]:focus-visible,
+.hotspot[data-hotspot-id="m-wall-image"]:hover,
+.hotspot[data-hotspot-id="m-wall-image"]:focus-visible,
 .hotspot[data-hotspot-id^="lineup-"]:hover,
 .hotspot[data-hotspot-id^="lineup-"]:focus-visible {
   background: rgba(218, 165, 32, 0.08);
@@ -351,6 +356,7 @@ button {
 .hotspot[data-hotspot-id="b-wall-image"] span,
 .hotspot[data-hotspot-id="d-wall-image"] span,
 .hotspot[data-hotspot-id="s-wall-image"] span,
+.hotspot[data-hotspot-id="m-wall-image"] span,
 .hotspot[data-hotspot-id^="lineup-"] > span:not(.lineup-poster-counter) {
   opacity: 0;
 }
@@ -363,7 +369,10 @@ button {
 .hotspot[data-hotspot-id="d-host-profile"]:focus-visible,
 .hotspot[data-hotspot-id="s-host-profile"],
 .hotspot[data-hotspot-id="s-host-profile"]:hover,
-.hotspot[data-hotspot-id="s-host-profile"]:focus-visible {
+.hotspot[data-hotspot-id="s-host-profile"]:focus-visible,
+.hotspot[data-hotspot-id="m-host-profile"],
+.hotspot[data-hotspot-id="m-host-profile"]:hover,
+.hotspot[data-hotspot-id="m-host-profile"]:focus-visible {
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -373,7 +382,8 @@ button {
 
 .hotspot[data-hotspot-id="b-host-profile"] span,
 .hotspot[data-hotspot-id="d-host-profile"] span,
-.hotspot[data-hotspot-id="s-host-profile"] span {
+.hotspot[data-hotspot-id="s-host-profile"] span,
+.hotspot[data-hotspot-id="m-host-profile"] span {
   opacity: 0;
 }
 
