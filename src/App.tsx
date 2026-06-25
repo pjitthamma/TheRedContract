@@ -216,6 +216,14 @@ const randomBreachedAttemptAudio = [
 
 const getNextRandomBreachedAttemptMilestone = (from: number) => from + 10 + Math.floor(Math.random() * 61);
 
+const backgroundMusicFullVolume = 1;
+const backgroundMusicDuckedVolume = 0.3;
+const backgroundMusicDuckEvent = "red-contract-background-music-duck";
+
+const setBackgroundMusicDucked = (isDucked: boolean) => {
+  window.dispatchEvent(new CustomEvent(backgroundMusicDuckEvent, { detail: { isDucked } }));
+};
+
 const getWingEventName = (hotspotId: string): EventName | null => {
   if (hotspotId === "inside-door-left") {
     return "b_wing_clicked";
@@ -765,12 +773,14 @@ function App() {
 
       setIsOverlayAudioSequencePlaying(true);
       setSubtitleText(overlay.action.subtitleText ?? null);
+      setBackgroundMusicDucked(true);
 
       const playAudioSequence = (audioSrcs: string[]) => {
         const [audioSrc, ...nextAudioSrcs] = audioSrcs;
         if (!audioSrc) {
           setIsOverlayAudioSequencePlaying(false);
           setSubtitleText(null);
+          setBackgroundMusicDucked(false);
           return;
         }
 
@@ -1375,6 +1385,7 @@ function SoundButton({ audioSrc }: SoundButtonProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioSrcRef = useRef<string | null>(null);
   const isSoundOnRef = useRef(isSoundOn);
+  const isDuckedRef = useRef(false);
 
   useEffect(() => {
     isSoundOnRef.current = isSoundOn;
@@ -1389,6 +1400,7 @@ function SoundButton({ audioSrc }: SoundButtonProps) {
 
     const audio = new Audio(audioSrc);
     audio.loop = true;
+    audio.volume = isDuckedRef.current ? backgroundMusicDuckedVolume : backgroundMusicFullVolume;
     audioRef.current = audio;
     audioSrcRef.current = audioSrc;
 
@@ -1408,9 +1420,28 @@ function SoundButton({ audioSrc }: SoundButtonProps) {
     };
   }, [audioSrc]);
 
+  useEffect(() => {
+    const handleMusicDuck = (event: Event) => {
+      const isDucked =
+        event instanceof CustomEvent &&
+        typeof event.detail === "object" &&
+        event.detail !== null &&
+        "isDucked" in event.detail &&
+        event.detail.isDucked === true;
+      isDuckedRef.current = isDucked;
+      if (audioRef.current) {
+        audioRef.current.volume = isDucked ? backgroundMusicDuckedVolume : backgroundMusicFullVolume;
+      }
+    };
+
+    window.addEventListener(backgroundMusicDuckEvent, handleMusicDuck);
+    return () => window.removeEventListener(backgroundMusicDuckEvent, handleMusicDuck);
+  }, []);
+
   const toggleSound = () => {
     const audio = audioRef.current ?? new Audio(audioSrc);
     audio.loop = true;
+    audio.volume = isDuckedRef.current ? backgroundMusicDuckedVolume : backgroundMusicFullVolume;
     audioRef.current = audio;
     audioSrcRef.current = audioSrc;
 
