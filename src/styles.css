@@ -267,7 +267,8 @@ button {
 .hotspot[data-hotspot-id="archive-door"],
 .hotspot[data-hotspot-id="atrium-poster"],
 .hotspot[data-hotspot-id="club-rules"],
-.hotspot[data-hotspot-id="b-wall-image"] {
+.hotspot[data-hotspot-id="b-wall-image"],
+.hotspot[data-hotspot-id="d-wall-image"] {
   background: rgba(218, 165, 32, 0.06);
   border: 2px solid #ffd875;
   box-shadow: none;
@@ -325,6 +326,8 @@ button {
 .hotspot[data-hotspot-id="club-rules"]:focus-visible,
 .hotspot[data-hotspot-id="b-wall-image"]:hover,
 .hotspot[data-hotspot-id="b-wall-image"]:focus-visible,
+.hotspot[data-hotspot-id="d-wall-image"]:hover,
+.hotspot[data-hotspot-id="d-wall-image"]:focus-visible,
 .hotspot[data-hotspot-id^="lineup-"]:hover,
 .hotspot[data-hotspot-id^="lineup-"]:focus-visible {
   background: rgba(218, 165, 32, 0.08);
@@ -341,13 +344,17 @@ button {
 .hotspot[data-hotspot-id="atrium-poster"] span,
 .hotspot[data-hotspot-id="club-rules"] span,
 .hotspot[data-hotspot-id="b-wall-image"] span,
+.hotspot[data-hotspot-id="d-wall-image"] span,
 .hotspot[data-hotspot-id^="lineup-"] > span:not(.lineup-poster-counter) {
   opacity: 0;
 }
 
 .hotspot[data-hotspot-id="b-host-profile"],
 .hotspot[data-hotspot-id="b-host-profile"]:hover,
-.hotspot[data-hotspot-id="b-host-profile"]:focus-visible {
+.hotspot[data-hotspot-id="b-host-profile"]:focus-visible,
+.hotspot[data-hotspot-id="d-host-profile"],
+.hotspot[data-hotspot-id="d-host-profile"]:hover,
+.hotspot[data-hotspot-id="d-host-profile"]:focus-visible {
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -355,7 +362,8 @@ button {
   transform: none;
 }
 
-.hotspot[data-hotspot-id="b-host-profile"] span {
+.hotspot[data-hotspot-id="b-host-profile"] span,
+.hotspot[data-hotspot-id="d-host-profile"] span {
   opacity: 0;
 }
 

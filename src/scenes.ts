@@ -7,7 +7,9 @@ export type SceneId =
   | "B-room"
   | "B-desk"
   | "B-sofa"
-  | "D-room";
+  | "D-room"
+  | "D-desk"
+  | "D-sofa";
 
 export type Language = "en" | "th";
 
@@ -540,6 +542,132 @@ export const scenes: Record<SceneId, Scene> = {
     posterSrc: "/assets/d_room_1.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-d-room",
+    overlays: [
+      {
+        id: "d-item-1",
+        label: "D item 1",
+        src: "/assets/d_item_1.png",
+        x: 36.1,
+        y: 63.1,
+        width: 13.8,
+        action: {
+          type: "scene",
+          target: "D-desk",
+          audioSrc: "/assets/whoosp.mp3",
+        },
+      },
+      {
+        id: "d-item-2",
+        label: "D item 2",
+        src: "/assets/d_item_2.png",
+        x: 52.1,
+        y: 67.2,
+        width: 9.2,
+        action: {
+          type: "audio-sequence",
+          audioSrcs: ["/assets/bell-ring.mp3", "/assets/michael_sound.mp3"],
+          subtitleText: "อดทนไว้ก่อนนะ เด็กดี… ผมรู้ว่าเธอกำลังโหยหาแค่ไหน\nแต่เธอจะต้องรอ จนกว่าผมจะเอ่ยปากอนุญาต",
+        },
+      },
+      {
+        id: "d-item-3",
+        label: "D item 3",
+        src: "/assets/d_item_3.png",
+        x: 44.4,
+        y: 58.6,
+        width: 12.2,
+        action: {
+          type: "scene",
+          target: "D-sofa",
+          audioSrc: "/assets/whoosp.mp3",
+        },
+      },
+      {
+        id: "d-item-4",
+        label: "D item 4",
+        src: "/assets/d_item_4.png",
+        x: 19.2,
+        y: 83.3,
+        width: 11.6,
+        action: {
+          type: "image",
+          imageSrc: "/assets/lyrics_d.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+    hotspots: [
+      {
+        id: "d-wall-image",
+        label: "Wall image",
+        x: 32.4,
+        y: 11.6,
+        width: 36.5,
+        height: 35.2,
+        action: {
+          type: "image",
+          imageSrc: "/assets/d_wall.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+  },
+  "D-desk": {
+    id: "D-desk",
+    name: "",
+    videoSrc: "/assets/d room profile.mp4",
+    posterSrc: "/assets/d-desk.PNG",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-d-room",
+    hotspots: [
+      {
+        id: "d-host-profile",
+        label: "Host Profile",
+        x: 15.8,
+        y: 5.2,
+        width: 40.2,
+        height: 89.6,
+        action: {
+          type: "image",
+          imageSrc: "/assets/d_profile.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
+  },
+  "D-sofa": {
+    id: "D-sofa",
+    name: "",
+    videoSrc: "/assets/d room sofa.mp4",
+    posterSrc: "/assets/d-sofa.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-d-room",
+    overlays: [
+      {
+        id: "d-photo",
+        label: "Photo",
+        src: "/assets/photo2.png",
+        x: 22.8,
+        y: 22.4,
+        width: 67.6,
+        action: {
+          type: "gallery",
+          imageSrcs: [
+            "/assets/d1.png",
+            "/assets/d2.png",
+            "/assets/d3.png",
+            "/assets/d4.png",
+            "/assets/d5.png",
+            "/assets/d6.png",
+            "/assets/d7.png",
+            "/assets/d8.png",
+            "/assets/d9.png",
+            "/assets/d10.png",
+          ],
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+    ],
     hotspots: [],
   },
 };

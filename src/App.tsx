@@ -34,6 +34,10 @@ type ClickCounts = {
   bHostProfile: number;
   bPhotos: number;
   bRingBell: number;
+  dPicture: number;
+  dHostProfile: number;
+  dPhotos: number;
+  dRingBell: number;
   bWing: number;
   dWing: number;
   sWing: number;
@@ -59,6 +63,10 @@ type EventName =
   | "b_host_profile_clicked"
   | "b_photos_clicked"
   | "b_ring_bell_clicked"
+  | "d_picture_clicked"
+  | "d_host_profile_clicked"
+  | "d_photos_clicked"
+  | "d_ring_bell_clicked"
   | "b_wing_clicked"
   | "d_wing_clicked"
   | "s_wing_clicked"
@@ -106,6 +114,10 @@ const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => 
   bHostProfile: counts?.b_host_profile_clicked ?? 0,
   bPhotos: counts?.b_photos_clicked ?? 0,
   bRingBell: counts?.b_ring_bell_clicked ?? 0,
+  dPicture: counts?.d_picture_clicked ?? 0,
+  dHostProfile: counts?.d_host_profile_clicked ?? 0,
+  dPhotos: counts?.d_photos_clicked ?? 0,
+  dRingBell: counts?.d_ring_bell_clicked ?? 0,
   bWing: counts?.b_wing_clicked ?? 0,
   dWing: counts?.d_wing_clicked ?? 0,
   sWing: counts?.s_wing_clicked ?? 0,
@@ -121,6 +133,8 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   "B-desk": "B-room",
   "B-sofa": "B-room",
   "D-room": "inside",
+  "D-desk": "D-room",
+  "D-sofa": "D-room",
 };
 
 const scenePathBySceneId: Partial<Record<SceneId, string>> = {
@@ -128,6 +142,8 @@ const scenePathBySceneId: Partial<Record<SceneId, string>> = {
   "B-desk": "/B-room",
   "B-sofa": "/B-room",
   "D-room": "/D-room",
+  "D-desk": "/D-room",
+  "D-sofa": "/D-room",
 };
 
 const getInitialSceneId = (): SceneId => {
@@ -216,6 +232,10 @@ function App() {
     bHostProfile: 0,
     bPhotos: 0,
     bRingBell: 0,
+    dPicture: 0,
+    dHostProfile: 0,
+    dPhotos: 0,
+    dRingBell: 0,
     bWing: 0,
     dWing: 0,
     sWing: 0,
@@ -323,6 +343,18 @@ function App() {
       if (eventName === "b_ring_bell_clicked") {
         return { ...current, bRingBell: current.bRingBell + 1 };
       }
+      if (eventName === "d_picture_clicked") {
+        return { ...current, dPicture: current.dPicture + 1 };
+      }
+      if (eventName === "d_host_profile_clicked") {
+        return { ...current, dHostProfile: current.dHostProfile + 1 };
+      }
+      if (eventName === "d_photos_clicked") {
+        return { ...current, dPhotos: current.dPhotos + 1 };
+      }
+      if (eventName === "d_ring_bell_clicked") {
+        return { ...current, dRingBell: current.dRingBell + 1 };
+      }
       if (eventName === "b_wing_clicked") {
         return { ...current, bWing: current.bWing + 1 };
       }
@@ -399,6 +431,9 @@ function App() {
       }
       if (hotspotId === "b-wall-image") {
         void trackEvent("b_picture_clicked");
+      }
+      if (hotspotId === "d-wall-image") {
+        void trackEvent("d_picture_clicked");
       }
       if (action.audioSrc) {
         void new Audio(action.audioSrc).play();
@@ -588,6 +623,15 @@ function App() {
     if (overlay.id === "b-item-4") {
       void trackEvent("b_photos_clicked");
     }
+    if (overlay.id === "d-item-1") {
+      void trackEvent("d_host_profile_clicked");
+    }
+    if (overlay.id === "d-item-2") {
+      void trackEvent("d_ring_bell_clicked");
+    }
+    if (overlay.id === "d-item-3") {
+      void trackEvent("d_photos_clicked");
+    }
 
     if ("audioSrc" in overlay.action && overlay.action.audioSrc) {
       void new Audio(overlay.action.audioSrc).play();
@@ -656,6 +700,22 @@ function App() {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("B-sofa");
       setTransitionVideoSrc("/assets/transition5.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (displayedScene.id === "D-room" && overlay.action.target === "D-desk") {
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("D-desk");
+      setTransitionVideoSrc("/assets/transition7.mp4");
+      setTransitionPhase("playing");
+      return;
+    }
+
+    if (displayedScene.id === "D-room" && overlay.action.target === "D-sofa") {
+      setScenePan({ x: 0, y: 0 });
+      setTransitionTargetSceneId("D-sofa");
+      setTransitionVideoSrc("/assets/transition8.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1041,6 +1101,17 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
     );
   }
 
+  if (sceneId === "D-room" || sceneId === "D-desk" || sceneId === "D-sofa") {
+    return (
+      <div className="click-counter lobby-counter" aria-live="polite">
+        <span>Picture Clicked: {counts.dPicture}</span>
+        <span>Host Profile Clicked: {counts.dHostProfile}</span>
+        <span>Photos Clicked: {counts.dPhotos}</span>
+        <span>Ring Bell: {counts.dRingBell}</span>
+      </div>
+    );
+  }
+
   if (sceneId !== "atrium") {
     return <span className="top-bar-spacer" aria-hidden="true" />;
   }
@@ -1121,7 +1192,7 @@ type SoundButtonProps = {
 const getSceneAudioSrc = (sceneId: SceneId) =>
   sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa"
     ? "/assets/Rosen B.mp3"
-    : sceneId === "D-room"
+    : sceneId === "D-room" || sceneId === "D-desk" || sceneId === "D-sofa"
       ? "/assets/Michael D.mp3"
       : "/assets/sound.mp3";
 
