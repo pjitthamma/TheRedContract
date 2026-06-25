@@ -12,6 +12,7 @@ type BotClickTestProps = {
 type BotClickTestConfig = {
   backgroundSrc: string;
   hitboxClassName: string;
+  moanSrc?: string;
   musicSrc: string;
   sideVideoSrc: string;
   videoSrcByState: Record<BotAnimationState, string>;
@@ -21,6 +22,7 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   b: {
     backgroundSrc: "/assets/splank_b.jpg",
     hitboxClassName: "bot-test-hitbox-b",
+    moanSrc: "/assets/moan_b.mp3",
     musicSrc: "/assets/Rosen B.mp3",
     sideVideoSrc: "/assets/b-twerk.webm",
     videoSrcByState: {
@@ -31,6 +33,7 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   d: {
     backgroundSrc: "/assets/splank_d.png",
     hitboxClassName: "bot-test-hitbox-d",
+    moanSrc: "/assets/moan_d.mp3",
     musicSrc: "/assets/Michael D.mp3",
     sideVideoSrc: "/assets/d-twerk.webm",
     videoSrcByState: {
@@ -41,6 +44,7 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   m: {
     backgroundSrc: "/assets/splank_m.jpg",
     hitboxClassName: "bot-test-hitbox-m",
+    moanSrc: "/assets/moan_m.mp3",
     musicSrc: "/assets/Noel M.mp3",
     sideVideoSrc: "/assets/m-twerk.webm",
     videoSrcByState: {
@@ -51,6 +55,7 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   s: {
     backgroundSrc: "/assets/splank_s.jpg",
     hitboxClassName: "bot-test-hitbox-s",
+    moanSrc: "/assets/moan_s.mp3",
     musicSrc: "/assets/Ryusei S.mp3",
     sideVideoSrc: "/assets/s-twerk.webm",
     videoSrcByState: {
@@ -72,6 +77,8 @@ function BotClickTest({ variant }: BotClickTestProps) {
   const [animationState, setAnimationState] = useState<BotAnimationState>("start");
   const [isMusicOn, setIsMusicOn] = useState(true);
   const endVideoRef = useRef<HTMLVideoElement | null>(null);
+  const moanAudioRef = useRef<HTMLAudioElement | null>(null);
+  const moanAudioSrcRef = useRef<string | null>(null);
   const slapAudioRef = useRef<HTMLAudioElement | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -101,6 +108,17 @@ function BotClickTest({ variant }: BotClickTestProps) {
     slapAudioRef.current = slapAudio;
     slapAudio.currentTime = 0;
     void slapAudio.play();
+
+    if (config.moanSrc) {
+      const moanAudio =
+        moanAudioRef.current && moanAudioSrcRef.current === config.moanSrc
+          ? moanAudioRef.current
+          : new Audio(config.moanSrc);
+      moanAudioRef.current = moanAudio;
+      moanAudioSrcRef.current = config.moanSrc;
+      moanAudio.currentTime = 0;
+      void moanAudio.play();
+    }
 
     window.setTimeout(() => {
       const video = endVideoRef.current;
