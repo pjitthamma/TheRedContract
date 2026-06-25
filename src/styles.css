@@ -809,9 +809,7 @@ button {
   min-height: 100%;
   overflow: hidden;
   color: #f8fafc;
-  background:
-    radial-gradient(circle at 50% 18%, rgba(185, 28, 28, 0.22), transparent 30rem),
-    linear-gradient(180deg, #08070b 0%, #14080a 58%, #050305 100%);
+  background: #050305 url("/assets/splank_d.png") center / cover no-repeat;
 }
 
 .bot-test-stage {
@@ -834,6 +832,15 @@ button {
   object-fit: contain;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.bot-test-video-end {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bot-test-video-active {
+  opacity: 1;
 }
 
 .bot-test-hitbox {

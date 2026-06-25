@@ -1,25 +1,24 @@
 import { ArrowLeft } from "lucide-react";
 import { useRef, useState } from "react";
 
-type BotAnimationState = "start" | "hit" | "end";
+type BotAnimationState = "start" | "end";
 
 const videoSrcByState: Record<BotAnimationState, string> = {
-  start: "/assets/b-bot-start.mp4",
-  hit: "/assets/b-bot-hit.mp4",
-  end: "/assets/b-bot-end.mp4",
+  start: "/assets/d-top-start.mp4",
+  end: "/assets/d-top-end.mp4",
 };
 
 function BotClickTest() {
   const [clickCount, setClickCount] = useState(0);
   const [animationState, setAnimationState] = useState<BotAnimationState>("start");
-  const hitVideoRef = useRef<HTMLVideoElement | null>(null);
+  const endVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const handleCharacterHit = () => {
     setClickCount((current) => current + 1);
-    setAnimationState("hit");
+    setAnimationState("end");
 
     window.setTimeout(() => {
-      const video = hitVideoRef.current;
+      const video = endVideoRef.current;
       if (!video) {
         return;
       }
@@ -41,42 +40,25 @@ function BotClickTest() {
       </div>
 
       <section className="bot-test-stage" aria-label="Character hit test">
-        {animationState === "start" ? (
-          <video
-            className="bot-test-video"
-            src={videoSrcByState.start}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-          />
-        ) : null}
+        <video
+          className="bot-test-video"
+          src={videoSrcByState.start}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+        />
 
-        {animationState === "hit" ? (
-          <video
-            ref={hitVideoRef}
-            className="bot-test-video"
-            src={videoSrcByState.hit}
-            autoPlay
-            muted
-            playsInline
-            preload="auto"
-            onEnded={() => setAnimationState("end")}
-          />
-        ) : null}
-
-        {animationState === "end" ? (
-          <video
-            className="bot-test-video"
-            src={videoSrcByState.end}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-          />
-        ) : null}
+        <video
+          ref={endVideoRef}
+          className={`bot-test-video bot-test-video-end${animationState === "end" ? " bot-test-video-active" : ""}`}
+          src={videoSrcByState.end}
+          muted
+          playsInline
+          preload="auto"
+          onEnded={() => setAnimationState("start")}
+        />
 
         <button
           className="bot-test-hitbox"
