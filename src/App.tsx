@@ -1477,7 +1477,7 @@ function LanguageButton({ selectedLanguage }: LanguageButtonProps) {
 
   const switchLanguage = () => {
     window.localStorage.setItem(LANGUAGE_KEY, nextLanguage);
-    window.location.reload();
+    window.location.href = "/";
   };
 
   return (
