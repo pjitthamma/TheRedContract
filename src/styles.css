@@ -554,6 +554,7 @@ button {
   border-radius: 8px;
   backdrop-filter: blur(12px);
   pointer-events: none;
+  overflow-wrap: anywhere;
 }
 
 .top-bar p {
@@ -858,6 +859,23 @@ button {
   .click-counter {
     gap: 0.2rem 0.7rem;
     font-size: 0.78rem;
+  }
+
+  .scene-subtitle {
+    right: max(0.65rem, env(safe-area-inset-right));
+    bottom: max(0.85rem, env(safe-area-inset-bottom));
+    left: max(0.65rem, env(safe-area-inset-left));
+    max-height: min(24vh, 10.5rem);
+    padding: 0.55rem 0.7rem;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.32;
+    text-align: center;
+    scrollbar-width: none;
+  }
+
+  .scene-subtitle::-webkit-scrollbar {
+    display: none;
   }
 
   .club-counter {
