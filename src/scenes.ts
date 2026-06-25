@@ -600,8 +600,8 @@ export const scenes: Record<SceneId, Scene> = {
         id: "d-item-4",
         label: "D item 4",
         src: "/assets/d_item_4.png",
-        x: 19.2,
-        y: 83.3,
+        x: 21.2,
+        y: 79.3,
         width: 11.6,
         action: {
           type: "image",
