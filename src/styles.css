@@ -852,10 +852,6 @@ button {
 
 .bot-test-hitbox {
   position: absolute;
-  left: 42%;
-  bottom: 1%;
-  width: 29%;
-  height: 34%;
   padding: 0;
   cursor: url("/assets/palm.png") 24 24, pointer;
   background: transparent;
@@ -874,6 +870,22 @@ button {
   border-color: transparent;
   opacity: 1;
   outline: 0;
+}
+
+.bot-test-hitbox-b,
+.bot-test-hitbox-m,
+.bot-test-hitbox-s {
+  left: 34%;
+  bottom: 0;
+  width: 29%;
+  height: 26%;
+}
+
+.bot-test-hitbox-d {
+  left: 28%;
+  bottom: 82px;
+  width: 33%;
+  height: 46%;
 }
 
 .bot-test-player-panel {
@@ -1134,11 +1146,20 @@ button {
     max-height: 42vh;
   }
 
-  .bot-test-hitbox {
-    left: 42%;
-    bottom: 1%;
+  .bot-test-hitbox-b,
+  .bot-test-hitbox-m,
+  .bot-test-hitbox-s {
+    left: 34%;
+    bottom: 0;
     width: 29%;
-    height: 34%;
+    height: 26%;
+  }
+
+  .bot-test-hitbox-d {
+    left: 28%;
+    bottom: 82px;
+    width: 33%;
+    height: 46%;
   }
 
   .bot-test-leaderboard {

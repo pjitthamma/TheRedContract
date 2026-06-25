@@ -246,6 +246,14 @@ function App() {
     return <BotClickTest variant="b" />;
   }
 
+  if (window.location.pathname === "/m-mini-game") {
+    return <BotClickTest variant="m" />;
+  }
+
+  if (window.location.pathname === "/s-mini-game") {
+    return <BotClickTest variant="s" />;
+  }
+
   if (window.location.pathname === "/d-mini-game" || window.location.pathname === "/bot-test") {
     return <BotClickTest variant="d" />;
   }

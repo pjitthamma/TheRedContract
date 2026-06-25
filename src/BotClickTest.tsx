@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 type BotAnimationState = "start" | "end";
 
-type BotClickTestVariant = "b" | "d";
+type BotClickTestVariant = "b" | "d" | "m" | "s";
 
 type BotClickTestProps = {
   variant: BotClickTestVariant;
@@ -11,6 +11,7 @@ type BotClickTestProps = {
 
 type BotClickTestConfig = {
   backgroundSrc: string;
+  hitboxClassName: string;
   musicSrc: string;
   sideVideoSrc: string;
   videoSrcByState: Record<BotAnimationState, string>;
@@ -19,6 +20,7 @@ type BotClickTestConfig = {
 const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   b: {
     backgroundSrc: "/assets/splank_b.jpg",
+    hitboxClassName: "bot-test-hitbox-b",
     musicSrc: "/assets/Rosen B.mp3",
     sideVideoSrc: "/assets/b-twerk.webm",
     videoSrcByState: {
@@ -28,11 +30,32 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   },
   d: {
     backgroundSrc: "/assets/splank_d.png",
+    hitboxClassName: "bot-test-hitbox-d",
     musicSrc: "/assets/Michael D.mp3",
     sideVideoSrc: "/assets/d-twerk.webm",
     videoSrcByState: {
       start: "/assets/d-top-start.mp4",
       end: "/assets/d-top-end.mp4",
+    },
+  },
+  m: {
+    backgroundSrc: "/assets/splank_m.jpg",
+    hitboxClassName: "bot-test-hitbox-m",
+    musicSrc: "/assets/Noel M.mp3",
+    sideVideoSrc: "/assets/m-twerk.webm",
+    videoSrcByState: {
+      start: "/assets/m-bot-start.mp4",
+      end: "/assets/m-bot-end.mp4",
+    },
+  },
+  s: {
+    backgroundSrc: "/assets/splank_s.jpg",
+    hitboxClassName: "bot-test-hitbox-s",
+    musicSrc: "/assets/Ryusei S.mp3",
+    sideVideoSrc: "/assets/s-twerk.webm",
+    videoSrcByState: {
+      start: "/assets/s-top-start.mp4",
+      end: "/assets/s-top-end.mp4",
     },
   },
 };
@@ -184,7 +207,7 @@ function BotClickTest({ variant }: BotClickTestProps) {
         />
 
         <button
-          className="bot-test-hitbox"
+          className={`bot-test-hitbox ${config.hitboxClassName}`}
           type="button"
           aria-label="Hit character"
           onClick={handleCharacterHit}
