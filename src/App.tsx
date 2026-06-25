@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import BotClickTest from "./BotClickTest";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
 type PopupContent = {
@@ -241,6 +242,10 @@ const getWingEventName = (hotspotId: string): EventName | null => {
 };
 
 function App() {
+  if (window.location.pathname === "/bot-test") {
+    return <BotClickTest />;
+  }
+
   const initialLanguage = getStoredLanguage();
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
