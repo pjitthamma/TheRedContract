@@ -3,9 +3,38 @@ import { useEffect, useRef, useState } from "react";
 
 type BotAnimationState = "start" | "end";
 
-const videoSrcByState: Record<BotAnimationState, string> = {
-  start: "/assets/d-top-start.mp4",
-  end: "/assets/d-top-end.mp4",
+type BotClickTestVariant = "b" | "d";
+
+type BotClickTestProps = {
+  variant: BotClickTestVariant;
+};
+
+type BotClickTestConfig = {
+  backgroundSrc: string;
+  musicSrc: string;
+  sideVideoSrc: string;
+  videoSrcByState: Record<BotAnimationState, string>;
+};
+
+const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
+  b: {
+    backgroundSrc: "/assets/splank_b.jpg",
+    musicSrc: "/assets/Rosen B.mp3",
+    sideVideoSrc: "/assets/b-twerk.webm",
+    videoSrcByState: {
+      start: "/assets/b-bot-start.mp4",
+      end: "/assets/b-bot-end.mp4",
+    },
+  },
+  d: {
+    backgroundSrc: "/assets/splank_d.png",
+    musicSrc: "/assets/Michael D.mp3",
+    sideVideoSrc: "/assets/d-twerk.webm",
+    videoSrcByState: {
+      start: "/assets/d-top-start.mp4",
+      end: "/assets/d-top-end.mp4",
+    },
+  },
 };
 
 const leaderboardEntries = [
@@ -14,7 +43,8 @@ const leaderboardEntries = [
   { name: "Visitor", score: 16 },
 ];
 
-function BotClickTest() {
+function BotClickTest({ variant }: BotClickTestProps) {
+  const config = botClickTestConfigs[variant];
   const [clickCount, setClickCount] = useState(0);
   const [animationState, setAnimationState] = useState<BotAnimationState>("start");
   const [isMusicOn, setIsMusicOn] = useState(true);
@@ -23,7 +53,7 @@ function BotClickTest() {
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const audio = new Audio("/assets/Michael D.mp3");
+    const audio = new Audio(config.musicSrc);
     audio.loop = true;
     audio.volume = 0.72;
     musicAudioRef.current = audio;
@@ -38,7 +68,7 @@ function BotClickTest() {
         musicAudioRef.current = null;
       }
     };
-  }, []);
+  }, [config.musicSrc]);
 
   const handleCharacterHit = () => {
     setClickCount((current) => current + 1);
@@ -61,7 +91,7 @@ function BotClickTest() {
   };
 
   const toggleMusic = () => {
-    const audio = musicAudioRef.current ?? new Audio("/assets/Michael D.mp3");
+    const audio = musicAudioRef.current ?? new Audio(config.musicSrc);
     audio.loop = true;
     audio.volume = 0.72;
     musicAudioRef.current = audio;
@@ -77,6 +107,12 @@ function BotClickTest() {
 
   return (
     <main className="bot-test-shell">
+      <div
+        className="bot-test-background"
+        style={{ backgroundImage: `url("${config.backgroundSrc}")` }}
+        aria-hidden="true"
+      />
+
       <a className="bot-test-back" href="/" aria-label="Back to main experience" title="Back to main experience">
         <ArrowLeft size={20} aria-hidden="true" />
       </a>
@@ -105,7 +141,7 @@ function BotClickTest() {
 
       <video
         className="bot-test-side-video"
-        src="/assets/d-twerk.webm"
+        src={config.sideVideoSrc}
         autoPlay
         muted
         loop
@@ -129,7 +165,7 @@ function BotClickTest() {
       <section className="bot-test-stage" aria-label="Character hit test">
         <video
           className="bot-test-video"
-          src={videoSrcByState.start}
+          src={config.videoSrcByState.start}
           autoPlay
           muted
           loop
@@ -140,7 +176,7 @@ function BotClickTest() {
         <video
           ref={endVideoRef}
           className={`bot-test-video bot-test-video-end${animationState === "end" ? " bot-test-video-active" : ""}`}
-          src={videoSrcByState.end}
+          src={config.videoSrcByState.end}
           muted
           playsInline
           preload="auto"

@@ -242,8 +242,12 @@ const getWingEventName = (hotspotId: string): EventName | null => {
 };
 
 function App() {
+  if (window.location.pathname === "/b-mini-game") {
+    return <BotClickTest variant="b" />;
+  }
+
   if (window.location.pathname === "/d-mini-game" || window.location.pathname === "/bot-test") {
-    return <BotClickTest />;
+    return <BotClickTest variant="d" />;
   }
 
   const initialLanguage = getStoredLanguage();

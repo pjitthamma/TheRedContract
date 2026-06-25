@@ -813,11 +813,12 @@ button {
   cursor: url("/assets/palm.png") 24 24, pointer;
 }
 
-.bot-test-shell::before {
+.bot-test-background {
   position: absolute;
   inset: -1.25rem;
-  content: "";
-  background: url("/assets/splank_d.png") center / cover no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   filter: blur(8px);
   transform: scale(1.02);
 }
@@ -851,10 +852,10 @@ button {
 
 .bot-test-hitbox {
   position: absolute;
-  left: 5%;
-  bottom: 19%;
-  width: 59%;
-  height: 36%;
+  left: 42%;
+  bottom: 1%;
+  width: 29%;
+  height: 34%;
   padding: 0;
   cursor: url("/assets/palm.png") 24 24, pointer;
   background: transparent;
@@ -1134,10 +1135,10 @@ button {
   }
 
   .bot-test-hitbox {
-    left: 5%;
-    bottom: 19%;
-    width: 59%;
-    height: 36%;
+    left: 42%;
+    bottom: 1%;
+    width: 29%;
+    height: 34%;
   }
 
   .bot-test-leaderboard {
