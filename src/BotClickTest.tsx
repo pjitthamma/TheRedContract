@@ -233,6 +233,13 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
     void audio.play().then(() => setIsMusicOn(true));
   };
 
+  const displayedLeaderboardEntries = leaderboardEntries.length
+    ? leaderboardEntries
+    : clickCount > 0
+      ? [{ name: guestName, score: clickCount }]
+      : [];
+  const highestLeaderboardScore = Math.max(1, ...displayedLeaderboardEntries.map((entry) => entry.score));
+
   return (
     <main className="bot-test-shell">
       <div
@@ -281,16 +288,26 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
       <aside className="bot-test-leaderboard" aria-label="Leaderboard">
         <h1>Leaderboard</h1>
         <ol>
-          {leaderboardEntries.map((entry) => (
+          {displayedLeaderboardEntries.map((entry) => (
             <li key={`${entry.name}-${entry.score}`}>
-              <span>{entry.name}</span>
-              <strong>{entry.score}</strong>
+              <div className="bot-test-leaderboard-row-head">
+                <span>{entry.name}</span>
+              </div>
+              <div
+                className="bot-test-score-bar"
+                role="meter"
+                aria-label={`${entry.score} hits`}
+                aria-valuemin={0}
+                aria-valuemax={highestLeaderboardScore}
+                aria-valuenow={entry.score}
+              >
+                <div style={{ width: `${Math.max(4, Math.round((entry.score / highestLeaderboardScore) * 100))}%` }} />
+              </div>
             </li>
           ))}
-          {!leaderboardEntries.length ? (
-            <li>
-              <span>{guestName}</span>
-              <strong>{clickCount}</strong>
+          {!displayedLeaderboardEntries.length ? (
+            <li className="bot-test-leaderboard-empty">
+              <span>No scores yet</span>
             </li>
           ) : null}
         </ol>

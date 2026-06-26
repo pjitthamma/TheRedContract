@@ -31,7 +31,7 @@ export const handler = async (event: { queryStringParameters?: { guestName?: str
   }
 
   const response = await fetch(
-    `${supabaseUrl}/rest/v1/mini_game_scores?select=guest_name,click_count&room_key=eq.${roomKey}&order=click_count.desc,updated_at.asc&limit=10`,
+    `${supabaseUrl}/rest/v1/mini_game_scores?select=guest_name,click_count&room_key=eq.${roomKey}&order=click_count.desc,updated_at.asc`,
     {
       headers: {
         apikey: serviceRoleKey,
