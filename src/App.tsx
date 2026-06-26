@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import BotClickTest from "./BotClickTest";
 import InvitationFlow from "./InvitationFlow";
 import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitationData";
+import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
 type PopupContent = {
@@ -36,6 +37,12 @@ type LocalInvitationResult = {
   guestName: string;
   winningRoom: HostKey;
   invitationCode: string;
+};
+
+type LoadingState = {
+  isComplete: boolean;
+  loadedCount: number;
+  totalCount: number;
 };
 
 type ClickCounts = {
@@ -392,7 +399,36 @@ const counterCopy = {
 } satisfies Record<Language, Record<string, string>>;
 
 function App() {
+  const [loadingState, setLoadingState] = useState<LoadingState>({
+    isComplete: false,
+    loadedCount: 0,
+    totalCount: 1,
+  });
   const [isUnlocked, setIsUnlocked] = useState(hasAdminAccess);
+
+  useEffect(() => {
+    let isMounted = true;
+    const minimumLoadingTimer = new Promise((resolve) => window.setTimeout(resolve, 900));
+    const preloadTimer = preloadSiteAssets((loadedCount, totalCount) => {
+      if (isMounted) {
+        setLoadingState({ isComplete: false, loadedCount, totalCount });
+      }
+    });
+
+    void Promise.all([minimumLoadingTimer, preloadTimer]).then(() => {
+      if (isMounted) {
+        setLoadingState((current) => ({ ...current, isComplete: true }));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (!loadingState.isComplete) {
+    return <InitialLoadingScreen loadedCount={loadingState.loadedCount} totalCount={loadingState.totalCount} />;
+  }
 
   if (!isUnlocked) {
     return (
@@ -406,6 +442,28 @@ function App() {
   }
 
   return <AppContent />;
+}
+
+type InitialLoadingScreenProps = {
+  loadedCount: number;
+  totalCount: number;
+};
+
+function InitialLoadingScreen({ loadedCount, totalCount }: InitialLoadingScreenProps) {
+  const progress = Math.min(100, Math.round((loadedCount / Math.max(1, totalCount)) * 100));
+
+  return (
+    <main className="initial-loading-shell" aria-live="polite">
+      <div className="initial-loading-panel">
+        <img src="/assets/icon.png" alt="" aria-hidden="true" draggable={false} />
+        <span>The Red Contract</span>
+        <div className="initial-loading-bar" aria-hidden="true">
+          <div style={{ width: `${progress}%` }} />
+        </div>
+        <strong>{progress}%</strong>
+      </div>
+    </main>
+  );
 }
 
 function AppContent() {

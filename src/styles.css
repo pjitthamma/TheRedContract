@@ -33,6 +33,65 @@ button {
   background: #05070b;
 }
 
+.initial-loading-shell {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 1.5rem;
+  color: #fff8cc;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(122, 31, 31, 0.26), transparent 30rem),
+    #050305;
+}
+
+.initial-loading-panel {
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  width: min(24rem, 100%);
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.54);
+  border: 1px solid rgba(255, 216, 117, 0.28);
+  border-radius: 8px;
+  box-shadow: 0 1.4rem 4rem rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+}
+
+.initial-loading-panel img {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0.55rem 1rem rgba(0, 0, 0, 0.55));
+}
+
+.initial-loading-panel span {
+  color: #d6a94a;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.initial-loading-panel strong {
+  color: #fff8cc;
+  font-size: 0.95rem;
+}
+
+.initial-loading-bar {
+  width: 100%;
+  height: 0.45rem;
+  overflow: hidden;
+  background: rgba(255, 248, 204, 0.12);
+  border-radius: 999px;
+}
+
+.initial-loading-bar div {
+  height: 100%;
+  background: linear-gradient(90deg, #8b1f24, #d6a94a);
+  border-radius: inherit;
+  transition: width 180ms ease;
+}
+
 .admin-gate-shell {
   display: grid;
   place-items: center;
