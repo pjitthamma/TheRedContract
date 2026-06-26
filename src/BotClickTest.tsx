@@ -18,6 +18,14 @@ type BotClickTestConfig = {
   videoSrcByState: Record<BotAnimationState, string>;
 };
 
+type LeaderboardEntry = {
+  name: string;
+  score: number;
+};
+
+const GUEST_NAME_KEY = "red-contract-guest-name";
+const SESSION_KEY = "red-contract-session-id";
+
 const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   b: {
     backgroundSrc: "/assets/splank_b.jpg",
@@ -65,15 +73,24 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   },
 };
 
-const leaderboardEntries = [
-  { name: "You", score: 39 },
-  { name: "Guest", score: 28 },
-  { name: "Visitor", score: 16 },
-];
+const getStoredGuestName = () => window.localStorage.getItem(GUEST_NAME_KEY)?.trim().slice(0, 20) || "Guest";
+
+const getSessionId = () => {
+  const existingSessionId = window.localStorage.getItem(SESSION_KEY);
+  if (existingSessionId) {
+    return existingSessionId;
+  }
+
+  const nextSessionId = crypto.randomUUID();
+  window.localStorage.setItem(SESSION_KEY, nextSessionId);
+  return nextSessionId;
+};
 
 function BotClickTest({ variant }: BotClickTestProps) {
   const config = botClickTestConfigs[variant];
+  const [guestName] = useState(getStoredGuestName);
   const [clickCount, setClickCount] = useState(0);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [animationState, setAnimationState] = useState<BotAnimationState>("start");
   const [isMusicOn, setIsMusicOn] = useState(true);
   const endVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -99,6 +116,51 @@ function BotClickTest({ variant }: BotClickTestProps) {
       }
     };
   }, [config.musicSrc]);
+
+  const fetchLeaderboard = async () => {
+    try {
+      const response = await fetch(`/.netlify/functions/get-mini-game-leaderboard?roomKey=${variant}`);
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as { leaderboard?: LeaderboardEntry[] };
+      setLeaderboardEntries(data.leaderboard ?? []);
+    } catch {
+      // Local Vite development can keep the current in-memory score visible.
+    }
+  };
+
+  useEffect(() => {
+    void fetchLeaderboard();
+  }, [variant]);
+
+  useEffect(() => {
+    if (clickCount <= 0) {
+      return;
+    }
+
+    const submitTimer = window.setTimeout(() => {
+      void fetch("/.netlify/functions/submit-mini-game-score", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          roomKey: variant,
+          guestName,
+          clickCount,
+          sessionId: getSessionId(),
+        }),
+      })
+        .then(() => fetchLeaderboard())
+        .catch(() => {
+          // Keep clicks playable when the database is unavailable.
+        });
+    }, 350);
+
+    return () => window.clearTimeout(submitTimer);
+  }, [clickCount, guestName, variant]);
 
   const handleCharacterHit = () => {
     setClickCount((current) => current + 1);
@@ -161,7 +223,7 @@ function BotClickTest({ variant }: BotClickTestProps) {
       <div className="bot-test-player-panel">
         <div className="bot-test-guest-card">
           <span>Guest Name:</span>
-          <strong>Loading...</strong>
+          <strong>{guestName}</strong>
         </div>
 
         <div className="bot-test-score" aria-live="polite">
@@ -195,11 +257,17 @@ function BotClickTest({ variant }: BotClickTestProps) {
         <h1>Leaderboard</h1>
         <ol>
           {leaderboardEntries.map((entry) => (
-            <li key={entry.name}>
+            <li key={`${entry.name}-${entry.score}`}>
               <span>{entry.name}</span>
               <strong>{entry.score}</strong>
             </li>
           ))}
+          {!leaderboardEntries.length ? (
+            <li>
+              <span>{guestName}</span>
+              <strong>{clickCount}</strong>
+            </li>
+          ) : null}
         </ol>
       </aside>
 

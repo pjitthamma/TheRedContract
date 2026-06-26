@@ -734,6 +734,15 @@ button {
   max-height: 90vh;
 }
 
+.mini-game-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: #000;
+  animation: mini-game-loading-fade 760ms ease both;
+  pointer-events: none;
+}
+
 .gallery-backdrop {
   grid-template-columns: minmax(2.75rem, 1fr) auto minmax(2.75rem, 1fr);
   gap: clamp(0.6rem, 2vw, 1.2rem);
@@ -823,6 +832,19 @@ button {
   gap: 0.85rem;
 }
 
+.code-dialog-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.code-dialog-form label span {
+  color: #d6a94a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
 .code-dialog-form input {
   width: 100%;
   min-height: 2.8rem;
@@ -835,6 +857,14 @@ button {
   border: 1px solid rgba(255, 216, 117, 0.28);
   border-radius: 8px;
   outline: 0;
+}
+
+.code-dialog-name-input {
+  text-transform: none !important;
+}
+
+.code-dialog-code-input {
+  text-transform: uppercase;
 }
 
 .code-dialog-form input:focus {
@@ -1313,6 +1343,7 @@ button {
   color: #f8fafc;
   background: #050305;
   cursor: url("/assets/palm.png") 24 24, pointer;
+  animation: bot-test-room-reveal 420ms ease 120ms both;
 }
 
 .bot-test-background {
@@ -1576,6 +1607,26 @@ button {
 }
 
 @keyframes fade-to-black {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mini-game-loading-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bot-test-room-reveal {
   from {
     opacity: 0;
   }

@@ -27,6 +27,17 @@ type CodePromptState = {
   roomKey: HostKey;
 };
 
+type ValidateInvitationCodeResponse = {
+  error?: string;
+  guestName?: string;
+};
+
+type LocalInvitationResult = {
+  guestName: string;
+  winningRoom: HostKey;
+  invitationCode: string;
+};
+
 type ClickCounts = {
   door: number;
   poster: number;
@@ -102,6 +113,8 @@ type EventName =
 
 const SESSION_ID_KEY = "red-contract-session-id";
 const LANGUAGE_KEY = "red-contract-language";
+const GUEST_NAME_KEY = "red-contract-guest-name";
+const LOCAL_INVITATION_RESULTS_KEY = "red-contract-local-invitation-results";
 
 const getStoredLanguage = (): Language | null => {
   const storedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
@@ -259,21 +272,45 @@ const hostKeyByRoom: Partial<Record<SceneId, HostKey>> = {
   "M-room": "m",
 };
 
-const isValidInvitationCode = (roomKey: HostKey, code: string) =>
-  fallbackInvitationCodes[roomKey].some((validCode) => validCode.toLowerCase() === code.trim().toLowerCase());
+const getLocalInvitationMatch = (roomKey: HostKey, guestName: string, invitationCode: string) => {
+  try {
+    const localResults = JSON.parse(window.localStorage.getItem(LOCAL_INVITATION_RESULTS_KEY) ?? "[]") as LocalInvitationResult[];
+    const normalizedGuestName = guestName.trim().toLocaleLowerCase();
+    const normalizedCode = invitationCode.trim().toLocaleLowerCase();
+    return localResults.find(
+      (result) =>
+        result.winningRoom === roomKey &&
+        result.guestName.trim().toLocaleLowerCase() === normalizedGuestName &&
+        result.invitationCode.trim().toLocaleLowerCase() === normalizedCode,
+    );
+  } catch {
+    return undefined;
+  }
+};
+
+const isFallbackInvitationCode = (roomKey: HostKey, invitationCode: string) =>
+  fallbackInvitationCodes[roomKey].some((code) => code.toLocaleLowerCase() === invitationCode.trim().toLocaleLowerCase());
+
+const isLocalBrowserHost = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
 const appHudCopy = {
   en: {
     invalidInvitationCode: "Invalid invitation code for this wing.",
+    invitationCodeNameLabel: "Guest Name",
+    invitationCodeNamePlaceholder: "Enter your guest name",
     invitationCodeTitle: "Invitation Code",
     invitationCodeDescription: "Enter the code for this wing.",
+    invitationCodeChecking: "Checking...",
     enter: "Enter",
     closePopup: "Close popup",
   },
   th: {
     invalidInvitationCode: "รหัสเชิญไม่ถูกต้องสำหรับวิงนี้",
+    invitationCodeNameLabel: "ชื่อแขก",
+    invitationCodeNamePlaceholder: "กรอกชื่อแขก",
     invitationCodeTitle: "รหัสเชิญ",
     invitationCodeDescription: "กรอกรหัสสำหรับวิงนี้",
+    invitationCodeChecking: "กำลังตรวจสอบ...",
     enter: "เข้า",
     closePopup: "ปิดหน้าต่าง",
   },
@@ -338,9 +375,12 @@ function App() {
   const [invitationFlowStep, setInvitationFlowStep] = useState<InvitationFlowInitialStep | null>(null);
   const [insideDoorAccess, setInsideDoorAccess] = useState<InsideDoorAccess>(null);
   const [codePrompt, setCodePrompt] = useState<CodePromptState | null>(null);
+  const [codeGuestNameInput, setCodeGuestNameInput] = useState("");
   const [invitationCodeInput, setInvitationCodeInput] = useState("");
   const [invitationCodeError, setInvitationCodeError] = useState<string | null>(null);
+  const [isInvitationCodeSubmitting, setIsInvitationCodeSubmitting] = useState(false);
   const [selectedLanguage] = useState<Language>(initialLanguage ?? "en");
+  const [miniGameLoading, setMiniGameLoading] = useState(false);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
   const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
@@ -454,6 +494,7 @@ function App() {
     setImageOverlaySrc(null);
     setGalleryOverlay(null);
     setCodePrompt(null);
+    setCodeGuestNameInput("");
     setInvitationCodeInput("");
     setInvitationCodeError(null);
     setSceneId("atrium");
@@ -473,6 +514,7 @@ function App() {
     }
 
     setCodePrompt({ target, roomKey });
+    setCodeGuestNameInput(window.localStorage.getItem(GUEST_NAME_KEY)?.trim().slice(0, 20) ?? "");
     setInvitationCodeInput("");
     setInvitationCodeError(null);
   };
@@ -498,23 +540,80 @@ function App() {
     return true;
   };
 
-  const submitInvitationCode = () => {
+  const submitInvitationCode = async () => {
     if (!codePrompt) {
       return;
     }
 
-    if (!isValidInvitationCode(codePrompt.roomKey, invitationCodeInput)) {
-      setInvitationCodeError(hudCopy.invalidInvitationCode);
-      void new Audio("/assets/chain.mp3").play();
+    const guestName = codeGuestNameInput.trim().slice(0, 20);
+    const invitationCode = invitationCodeInput.trim();
+    if (!guestName || !invitationCode || isInvitationCodeSubmitting) {
       return;
     }
 
-    const target = codePrompt.target;
-    setCodePrompt(null);
-    setInvitationCodeInput("");
+    setIsInvitationCodeSubmitting(true);
     setInvitationCodeError(null);
-    void new Audio("/assets/door-open.mp3").play();
-    transitionToScene(target);
+
+    const acceptInvitationCode = (verifiedGuestName: string) => {
+      const target = codePrompt.target;
+      window.localStorage.setItem(GUEST_NAME_KEY, verifiedGuestName.slice(0, 20));
+      setCodePrompt(null);
+      setCodeGuestNameInput("");
+      setInvitationCodeInput("");
+      setInvitationCodeError(null);
+      void new Audio("/assets/door-open.mp3").play();
+      transitionToScene(target);
+    };
+
+    try {
+      const response = await fetch("/.netlify/functions/validate-invitation-code", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          roomKey: codePrompt.roomKey,
+          guestName,
+          invitationCode,
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as ValidateInvitationCodeResponse;
+
+      if (!response.ok || !data.guestName) {
+        const localMatch = getLocalInvitationMatch(codePrompt.roomKey, guestName, invitationCode);
+        if (localMatch) {
+          acceptInvitationCode(localMatch.guestName);
+          return;
+        }
+
+        if (isLocalBrowserHost() && isFallbackInvitationCode(codePrompt.roomKey, invitationCode)) {
+          acceptInvitationCode(guestName);
+          return;
+        }
+
+        setInvitationCodeError(data.error ?? hudCopy.invalidInvitationCode);
+        void new Audio("/assets/chain.mp3").play();
+        return;
+      }
+
+      acceptInvitationCode(data.guestName);
+    } catch {
+      const localMatch = getLocalInvitationMatch(codePrompt.roomKey, guestName, invitationCode);
+      if (localMatch) {
+        acceptInvitationCode(localMatch.guestName);
+        return;
+      }
+
+      if (isLocalBrowserHost() && isFallbackInvitationCode(codePrompt.roomKey, invitationCode)) {
+        acceptInvitationCode(guestName);
+        return;
+      }
+
+      setInvitationCodeError("Could not validate invitation code. Please try again.");
+      void new Audio("/assets/chain.mp3").play();
+    } finally {
+      setIsInvitationCodeSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -911,6 +1010,19 @@ function App() {
     }
     if (overlay.id === "m-item-3") {
       void trackEvent("m_photos_clicked");
+    }
+
+    if (overlay.action.type === "path") {
+      if (overlay.action.audioSrc) {
+        void new Audio(overlay.action.audioSrc).play();
+      }
+
+      const targetPath = overlay.action.path;
+      setMiniGameLoading(true);
+      window.setTimeout(() => {
+        window.location.href = targetPath;
+      }, 760);
+      return;
     }
 
     if ("audioSrc" in overlay.action && overlay.action.audioSrc) {
@@ -1324,38 +1436,75 @@ function App() {
         </div>
       ) : null}
 
+      {miniGameLoading ? <div className="mini-game-loading" aria-hidden="true" /> : null}
+
       {codePrompt ? (
-        <div className="dialog-backdrop" role="presentation" onClick={() => setCodePrompt(null)}>
+        <div
+          className="dialog-backdrop"
+          role="presentation"
+          onClick={() => {
+            setCodePrompt(null);
+            setIsInvitationCodeSubmitting(false);
+          }}
+        >
           <dialog
             className="dialog-card code-dialog-card"
             aria-labelledby="code-dialog-title"
             open
             onClick={(event) => event.stopPropagation()}
           >
-            <button className="close-button" type="button" aria-label={hudCopy.closePopup} onClick={() => setCodePrompt(null)}>
+            <button
+              className="close-button"
+              type="button"
+              aria-label={hudCopy.closePopup}
+              onClick={() => {
+                setCodePrompt(null);
+                setIsInvitationCodeSubmitting(false);
+              }}
+            >
               <X size={18} aria-hidden="true" />
             </button>
             <form
               className="code-dialog-form"
               onSubmit={(event) => {
                 event.preventDefault();
-                submitInvitationCode();
+                void submitInvitationCode();
               }}
             >
               <h1 id="code-dialog-title">{hudCopy.invitationCodeTitle}</h1>
               <p>{hudCopy.invitationCodeDescription}</p>
-              <input
-                value={invitationCodeInput}
-                onChange={(event) => {
-                  setInvitationCodeInput(event.target.value);
-                  setInvitationCodeError(null);
-                }}
-                autoFocus
-                placeholder={`${codePrompt.roomKey.toUpperCase()}-TRC-XXXX-XXXX`}
-              />
+              <label>
+                <span>{hudCopy.invitationCodeNameLabel}</span>
+                <input
+                  className="code-dialog-name-input"
+                  value={codeGuestNameInput}
+                  onChange={(event) => {
+                    setCodeGuestNameInput(event.target.value.slice(0, 20));
+                    setInvitationCodeError(null);
+                  }}
+                  maxLength={20}
+                  autoFocus
+                  placeholder={hudCopy.invitationCodeNamePlaceholder}
+                />
+              </label>
+              <label>
+                <span>{hudCopy.invitationCodeTitle}</span>
+                <input
+                  className="code-dialog-code-input"
+                  value={invitationCodeInput}
+                  onChange={(event) => {
+                    setInvitationCodeInput(event.target.value);
+                    setInvitationCodeError(null);
+                  }}
+                  placeholder={`${codePrompt.roomKey.toUpperCase()}-TRC-XXXX-XXXX`}
+                />
+              </label>
               {invitationCodeError ? <p className="code-dialog-error">{invitationCodeError}</p> : null}
-              <button type="submit" disabled={!invitationCodeInput.trim()}>
-                {hudCopy.enter}
+              <button
+                type="submit"
+                disabled={!codeGuestNameInput.trim() || !invitationCodeInput.trim() || isInvitationCodeSubmitting}
+              >
+                {isInvitationCodeSubmitting ? hudCopy.invitationCodeChecking : hudCopy.enter}
               </button>
             </form>
           </dialog>

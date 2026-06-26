@@ -66,6 +66,27 @@ type WindowWithSavePicker = Window & {
 };
 
 const emptyScores = (): HostScoreMap => ({ b: 0, d: 0, s: 0, m: 0 });
+const LOCAL_INVITATION_RESULTS_KEY = "red-contract-local-invitation-results";
+
+const rememberInvitationResult = (result: InvitationResult) => {
+  try {
+    const existingResults = JSON.parse(window.localStorage.getItem(LOCAL_INVITATION_RESULTS_KEY) ?? "[]") as InvitationResult[];
+    const nextResults = [
+      result,
+      ...existingResults.filter(
+        (item) =>
+          !(
+            item.guestName.trim().toLocaleLowerCase() === result.guestName.trim().toLocaleLowerCase() &&
+            item.winningRoom === result.winningRoom &&
+            item.invitationCode.trim().toLocaleLowerCase() === result.invitationCode.trim().toLocaleLowerCase()
+          ),
+      ),
+    ].slice(0, 40);
+    window.localStorage.setItem(LOCAL_INVITATION_RESULTS_KEY, JSON.stringify(nextResults));
+  } catch {
+    // Local recovery is only for browser testing; Supabase remains the source of truth.
+  }
+};
 
 const shuffleQuestions = (questions: QuestionnaireQuestion[]) => {
   const shuffled = [...questions];
@@ -93,6 +114,8 @@ const getBangkokDate = () => {
 const playPenSound = () => {
   void new Audio("/assets/pen.mp3").play();
 };
+
+const GUEST_NAME_KEY = "red-contract-guest-name";
 
 const invitationCopy = {
   en: {
@@ -326,6 +349,7 @@ function InvitationFlow({
     }
 
     setErrorMessage(null);
+    window.localStorage.setItem(GUEST_NAME_KEY, guestName.trim());
     setAnswersByQuestionId({});
     setQuestions(shuffleQuestions(fallbackQuestionnaire));
     setStep("quiz");
@@ -377,11 +401,14 @@ function InvitationFlow({
 
       if (response.ok) {
         const savedResult = (await response.json()) as InvitationResult;
+        rememberInvitationResult(savedResult);
         setResult(savedResult);
       } else {
+        rememberInvitationResult(fallbackResult);
         setResult(fallbackResult);
       }
     } catch {
+      rememberInvitationResult(fallbackResult);
       setResult(fallbackResult);
     } finally {
       setIsSubmitting(false);

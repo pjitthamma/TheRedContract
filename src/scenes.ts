@@ -92,6 +92,10 @@ export type SceneOverlay = {
     type: "audio-sequence";
     audioSrcs: string[];
     subtitleText?: string;
+  } | {
+    type: "path";
+    path: string;
+    audioSrc?: string;
   };
 };
 
@@ -424,9 +428,9 @@ export const scenes: Record<SceneId, Scene> = {
           height: 36,
         },
         action: {
-          type: "audio-sequence",
-          audioSrcs: ["/assets/bell-ring.mp3", "/assets/rosen_voice.mp3"],
-          subtitleText: "โอเค ๆ! ขอเวลาผมแป๊บนึงนะ ที่รัก! ผมไม่ได้จะไปไหนหรอก เดี๋ยวก็ได้เจอกันแล้ว!",
+          type: "path",
+          path: "/b-mini-game",
+          audioSrc: "/assets/bell-ring.mp3",
         },
       },
       {
@@ -578,9 +582,9 @@ export const scenes: Record<SceneId, Scene> = {
         y: 67.2,
         width: 9.2,
         action: {
-          type: "audio-sequence",
-          audioSrcs: ["/assets/bell-ring.mp3", "/assets/michael_sound.mp3"],
-          subtitleText: "อดทนไว้ก่อนนะ เด็กดี… ผมรู้ว่าเธอกำลังโหยหาแค่ไหน\nแต่เธอจะต้องรอ จนกว่าผมจะเอ่ยปากอนุญาต",
+          type: "path",
+          path: "/d-mini-game",
+          audioSrc: "/assets/bell-ring.mp3",
         },
       },
       {
@@ -713,9 +717,9 @@ export const scenes: Record<SceneId, Scene> = {
         y: 65.8,
         width: 8.1,
         action: {
-          type: "audio-sequence",
-          audioSrcs: ["/assets/bell-ring.mp3", "/assets/ryusei_sound.mp3"],
-          subtitleText: "เริ่มอยู่ไม่สุขแล้วสินะ? ไม่เอาน่า… ผมรู้ว่าคุณยังอดทนได้อีกหน่อย",
+          type: "path",
+          path: "/s-mini-game",
+          audioSrc: "/assets/bell-ring.mp3",
         },
       },
       {
@@ -848,9 +852,9 @@ export const scenes: Record<SceneId, Scene> = {
         y: 70.4,
         width: 8.1,
         action: {
-          type: "audio-sequence",
-          audioSrcs: ["/assets/bell-ring.mp3", "/assets/noel_sound.mp3"],
-          subtitleText: "ชู่วว… ผมยังเตรียมตัวอยู่เลยนะ มาสเตอร์..\nเคาะต่อไปสิ แล้วตั้งใจฟังให้ดีด้วยหล่ะ… อืมม",
+          type: "path",
+          path: "/m-mini-game",
+          audioSrc: "/assets/bell-ring.mp3",
         },
       },
       {
