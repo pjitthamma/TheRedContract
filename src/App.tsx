@@ -333,6 +333,7 @@ function App() {
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
+  const [eventOverlayVisible, setEventOverlayVisible] = useState(() => getInitialSceneId() === "atrium");
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
   const [invitationFlowStep, setInvitationFlowStep] = useState<InvitationFlowInitialStep | null>(null);
   const [insideDoorAccess, setInsideDoorAccess] = useState<InsideDoorAccess>(null);
@@ -394,7 +395,7 @@ function App() {
   });
   const displayedScene = transitionPhase !== "idle" ? scenes[transitionTargetSceneId] : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
-  const hudCopy = appHudCopy[selectedLanguage];
+  const hudCopy = appHudCopy.en;
 
   const canGoBack = displayedScene.id !== "atrium";
   const sceneStyle = {
@@ -458,6 +459,11 @@ function App() {
     setSceneId("atrium");
     setScenePlaybackKey((current) => current + 1);
     updateScenePath("atrium");
+  };
+
+  const closeEventOverlay = () => {
+    void new Audio("/assets/flip.mp3").play();
+    setEventOverlayVisible(false);
   };
 
   const openCodePrompt = (target: SceneId) => {
@@ -845,7 +851,7 @@ function App() {
         >
           {hotspot.id.startsWith("lineup-") ? (
             <span className="lineup-poster-counter">
-              {counterCopy[selectedLanguage].posterClicked}: {getPosterClickCount(hotspot.id)}
+              {counterCopy.en.posterClicked}: {getPosterClickCount(hotspot.id)}
             </span>
           ) : null}
           {hotspot.id === "lobby-up-button" ? <ArrowUp size={24} aria-hidden="true" /> : null}
@@ -853,7 +859,7 @@ function App() {
           <span>{hotspot.label}</span>
         </button>
       )),
-    [clickCounts, displayedScene.hotspots, insideDoorAccess, isHotspotAudioPlaying, isTransitioning, sceneId, selectedLanguage],
+    [clickCounts, displayedScene.hotspots, insideDoorAccess, isHotspotAudioPlaying, isTransitioning, sceneId],
   );
 
   const handleSceneOverlay = (overlay: SceneOverlay) => {
@@ -1268,7 +1274,7 @@ function App() {
           ) : (
             <span className="top-bar-spacer" />
           )}
-          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} language={selectedLanguage} />
+          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} />
           <div className="top-controls">
             <SoundButton audioSrc={getSceneAudioSrc(sceneId)} />
             <LanguageButton selectedLanguage={selectedLanguage} />
@@ -1288,7 +1294,7 @@ function App() {
 
         {displayedScene.id === "atrium" ? (
           <div className="club-counter">
-            {counterCopy[selectedLanguage].clubVisited}: {clickCounts.clubVisited}
+            {counterCopy.en.clubVisited}: {clickCounts.clubVisited}
           </div>
         ) : null}
 
@@ -1303,6 +1309,18 @@ function App() {
             <h1 id="dialog-title">{popup.title}</h1>
             <p>{popup.body}</p>
           </dialog>
+        </div>
+      ) : null}
+
+      {eventOverlayVisible ? (
+        <div className="image-backdrop event-backdrop" role="presentation" onClick={closeEventOverlay}>
+          <img
+            className="image-overlay event-overlay-image"
+            src="/assets/event.png"
+            alt=""
+            onClick={(event) => event.stopPropagation()}
+            draggable={false}
+          />
         </div>
       ) : null}
 
@@ -1423,11 +1441,10 @@ function App() {
 type ClickCounterProps = {
   sceneId: SceneId;
   counts: ClickCounts;
-  language: Language;
 };
 
-function ClickCounter({ sceneId, counts, language }: ClickCounterProps) {
-  const copy = counterCopy[language];
+function ClickCounter({ sceneId, counts }: ClickCounterProps) {
+  const copy = counterCopy.en;
 
   if (sceneId === "door") {
     return (

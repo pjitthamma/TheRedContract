@@ -40,10 +40,10 @@ export const hostRoomByKey: Record<HostKey, string> = {
 };
 
 export const hostResultImageByKey: Record<HostKey, string> = {
-  b: "/assets/b_result.png",
-  d: "/assets/d_result.png",
-  s: "/assets/s_result.png",
-  m: "/assets/m_result.png",
+  b: "/assets/b-result.png",
+  d: "/assets/d-result.png",
+  s: "/assets/s-result.png",
+  m: "/assets/m-result.png",
 };
 
 export const fallbackQuestionnaire: QuestionnaireQuestion[] = [
@@ -410,10 +410,15 @@ export const fallbackQuestionnaire: QuestionnaireQuestion[] = [
           "th": "ความสมยอม? ไม่มีอะไรที่เงินและอำนาจซื้อไม่ได้หรอก"
         },
         "scores": {
-          "b": -100,
-          "d": -100,
-          "s": -100,
-          "m": -100
+          "b": 0,
+          "d": 0,
+          "s": 0,
+          "m": 0
+        },
+        "specialAction": "too_young",
+        "feedback": {
+          "en": "Is that truly what you believe? Then I am afraid our club may not be the place for you, sweetheart.",
+          "th": "นั่นคือสิ่งที่คุณเชื่อจริง ๆ หรือ? ถ้าอย่างนั้นฉันเกรงว่าคลับของเราอาจไม่ใช่สถานที่สำหรับคุณนะที่รัก"
         }
       }
     ]
@@ -492,6 +497,11 @@ export const fallbackQuestionnaire: QuestionnaireQuestion[] = [
           "d": 0,
           "s": 0,
           "m": 0
+        },
+        "specialAction": "too_young",
+        "feedback": {
+          "en": "Though it is rather adorable, that is not what you should do. Pleasure belongs to both of us. Try reviewing the rules again, sweetheart.",
+          "th": "แม้ว่าจะน่าเอ็นดู แต่นั่นไม่ใช่สิ่งที่คุณควรทำ ความพึงพอใจเป็นของพวกเราทั้งสองฝ่าย ลองกลับไปทบทวนกฏใหม่ก่อนนะที่รัก"
         }
       },
       {
@@ -506,6 +516,11 @@ export const fallbackQuestionnaire: QuestionnaireQuestion[] = [
           "d": 0,
           "s": 0,
           "m": 0
+        },
+        "specialAction": "too_young",
+        "feedback": {
+          "en": "Sweetheart, that is exactly why we use safe words and safe gestures. Take a moment to calm yourself, then read the rules again.",
+          "th": "ที่รัก เรามีการใช้ safe word และ safe gesture เพื่อการนี้ ลองสงบสติอารมณ์แล้วกลับไปอ่านกฏดูอีกครั้ง"
         }
       },
       {
@@ -545,6 +560,11 @@ export const fallbackQuestionnaire: QuestionnaireQuestion[] = [
           "d": 0,
           "s": 0,
           "m": 0
+        },
+        "specialAction": "too_young",
+        "feedback": {
+          "en": "Money is something you need to enter the club, but it is not the most important thing when it comes to ranking up. Think carefully, sweetheart. Did you forget something in our rules?",
+          "th": "เงินเป็นสิ่งที่คุณจำเป็นต้องมีในการเข้าคลับ แต่นั่นไม่ใช่สิ่งที่สำคัญที่สุดในการเลื่อนขั้น นึกดูดี ๆ ที่รัก คุณลืมอะไรไปในกฏกติกาของเราหรือเปล่า"
         }
       },
       {
@@ -559,6 +579,11 @@ export const fallbackQuestionnaire: QuestionnaireQuestion[] = [
           "d": 0,
           "s": 0,
           "m": 0
+        },
+        "specialAction": "too_young",
+        "feedback": {
+          "en": "Power is not something you can use to rank up here. If you still do not understand that, try reviewing the rules again, sweetheart.",
+          "th": "อำนาจไม่ใช่สิ่งที่คุณจะใช้สำหรับการเลื่อนขั้นที่นี่ได้ ถ้าคุณยังไม่เข้าใจตรงนี้ ลองกลับไปทบทวนกฏดูอีกครั้งนะที่รัก"
         }
       },
       {
@@ -633,8 +658,8 @@ export const fallbackQuestionnaire: QuestionnaireQuestion[] = [
         },
         "specialAction": "too_young",
         "feedback": {
-          "en": "you are too young",
-          "th": "อายุไม่ถึง"
+          "en": "Sweetheart… aren’t you a little too young to be here?",
+          "th": "ที่รัก คุณเด็กเกินไปที่จะมาที่นี่รึเปล่านะ?"
         }
       },
       {
