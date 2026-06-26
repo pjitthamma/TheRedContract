@@ -640,18 +640,7 @@ function AppContent() {
       return false;
     }
 
-    if (insideDoorAccess === "code") {
-      openCodePrompt(target);
-      return true;
-    }
-
-    if (insideDoorAccess && insideDoorAccess !== target) {
-      void new Audio("/assets/chain.mp3").play();
-      return true;
-    }
-
-    void new Audio("/assets/door-open.mp3").play();
-    transitionToScene(target);
+    openCodePrompt(target);
     return true;
   };
 

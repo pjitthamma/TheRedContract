@@ -24,6 +24,11 @@ type LeaderboardEntry = {
   score: number;
 };
 
+type LeaderboardResponse = {
+  guestScore?: number | null;
+  leaderboard?: LeaderboardEntry[];
+};
+
 const GUEST_NAME_KEY = "red-contract-guest-name";
 const SESSION_KEY = "red-contract-session-id";
 
@@ -99,6 +104,7 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
   const moanAudioSrcRef = useRef<string | null>(null);
   const slapAudioRef = useRef<HTMLAudioElement | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hasLoadedSavedScoreRef = useRef(false);
 
   useEffect(() => {
     const audio = new Audio(config.musicSrc);
@@ -120,24 +126,42 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await fetch(`/.netlify/functions/get-mini-game-leaderboard?roomKey=${variant}`);
+      const query = new URLSearchParams({
+        guestName,
+        roomKey: variant,
+      });
+      const response = await fetch(`/.netlify/functions/get-mini-game-leaderboard?${query.toString()}`);
       if (!response.ok) {
         return;
       }
 
-      const data = (await response.json()) as { leaderboard?: LeaderboardEntry[] };
-      setLeaderboardEntries(data.leaderboard ?? []);
+      const data = (await response.json()) as LeaderboardResponse;
+      const nextLeaderboardEntries = data.leaderboard ?? [];
+      setLeaderboardEntries(nextLeaderboardEntries);
+
+      const savedGuestScore =
+        typeof data.guestScore === "number"
+          ? data.guestScore
+          : nextLeaderboardEntries.find((entry) => entry.name.trim().toLocaleLowerCase() === guestName.toLocaleLowerCase())
+              ?.score;
+
+      if (typeof savedGuestScore === "number") {
+        setClickCount((current) => Math.max(current, savedGuestScore));
+      }
     } catch {
       // Local Vite development can keep the current in-memory score visible.
+    } finally {
+      hasLoadedSavedScoreRef.current = true;
     }
   };
 
   useEffect(() => {
+    hasLoadedSavedScoreRef.current = false;
     void fetchLeaderboard();
-  }, [variant]);
+  }, [guestName, variant]);
 
   useEffect(() => {
-    if (clickCount <= 0) {
+    if (!hasLoadedSavedScoreRef.current || clickCount <= 0) {
       return;
     }
 

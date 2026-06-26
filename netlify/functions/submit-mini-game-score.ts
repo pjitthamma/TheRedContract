@@ -8,6 +8,7 @@ type SubmitPayload = {
 };
 
 type ExistingScoreRow = {
+  guest_name: string;
   id: number;
   click_count: number;
 };
@@ -60,7 +61,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   };
 
   const existingResponse = await fetch(
-    `${supabaseUrl}/rest/v1/mini_game_scores?select=id,click_count&room_key=eq.${roomKey}&guest_name=eq.${encodeURIComponent(guestName)}&limit=1`,
+    `${supabaseUrl}/rest/v1/mini_game_scores?select=id,guest_name,click_count&room_key=eq.${roomKey}`,
     { headers },
   );
 
@@ -69,7 +70,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   }
 
   const existingRows = (await existingResponse.json()) as ExistingScoreRow[];
-  const existing = existingRows[0];
+  const existing = existingRows.find((row) => row.guest_name?.trim().toLocaleLowerCase() === guestName.toLocaleLowerCase());
   const storedClickCount = Math.max(clickCount, existing?.click_count ?? 0);
 
   if (existing) {
