@@ -122,8 +122,6 @@ const SESSION_ID_KEY = "red-contract-session-id";
 const LANGUAGE_KEY = "red-contract-language";
 const GUEST_NAME_KEY = "red-contract-guest-name";
 const LOCAL_INVITATION_RESULTS_KEY = "red-contract-local-invitation-results";
-const ADMIN_PASSWORD = "LumpiniPark";
-const ADMIN_UNLOCK_KEY = "red-contract-admin-unlocked";
 const MINI_GAME_RETURN_ROOM_KEY = "red-contract-mini-game-return-room";
 
 const roomSceneIdByPath: Partial<Record<string, SceneId>> = {
@@ -143,8 +141,6 @@ const miniGameRouteByPath = {
 
 const getSceneAccessKey = (sceneId: SceneId) => `red-contract-scene-access:${sceneId}`;
 const getMiniGameAccessKey = (path: string) => `red-contract-mini-game-access:${path}`;
-const hasAdminAccess = () => window.sessionStorage.getItem(ADMIN_UNLOCK_KEY) === "true";
-const grantAdminAccess = () => window.sessionStorage.setItem(ADMIN_UNLOCK_KEY, "true");
 const hasSceneAccess = (sceneId: SceneId) => window.sessionStorage.getItem(getSceneAccessKey(sceneId)) === "true";
 const grantSceneAccess = (sceneId: SceneId) => window.sessionStorage.setItem(getSceneAccessKey(sceneId), "true");
 const hasMiniGameAccess = (path: string) => window.sessionStorage.getItem(getMiniGameAccessKey(path)) === "true";
@@ -404,7 +400,6 @@ function App() {
     loadedCount: 0,
     totalCount: 1,
   });
-  const [isUnlocked, setIsUnlocked] = useState(hasAdminAccess);
 
   useEffect(() => {
     let isMounted = true;
@@ -428,17 +423,6 @@ function App() {
 
   if (!loadingState.isComplete) {
     return <InitialLoadingScreen loadedCount={loadingState.loadedCount} totalCount={loadingState.totalCount} />;
-  }
-
-  if (!isUnlocked) {
-    return (
-      <AdminPasswordGate
-        onUnlock={() => {
-          grantAdminAccess();
-          setIsUnlocked(true);
-        }}
-      />
-    );
   }
 
   return <AppContent />;
@@ -480,7 +464,6 @@ function AppContent() {
 
   const initialLanguage = getStoredLanguage();
   const directRoomSceneId = roomSceneIdByPath[window.location.pathname];
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState(hasAdminAccess);
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
@@ -1449,16 +1432,8 @@ function AppContent() {
     });
   };
 
-  if (directRoomSceneId && !hasSceneAccess(directRoomSceneId) && !isAdminUnlocked) {
-    return (
-      <AdminPasswordGate
-        onUnlock={() => {
-          grantAdminAccess();
-          grantSceneAccess(directRoomSceneId);
-          setIsAdminUnlocked(true);
-        }}
-      />
-    );
+  if (directRoomSceneId && !hasSceneAccess(directRoomSceneId)) {
+    return <DirectAccessRedirect />;
   }
 
   return (
@@ -1715,71 +1690,23 @@ type ProtectedMiniGameProps = {
 
 function ProtectedMiniGame({ path, returnPath, variant }: ProtectedMiniGameProps) {
   const storedReturnPath = window.sessionStorage.getItem(MINI_GAME_RETURN_ROOM_KEY) || returnPath;
-  const [isUnlocked, setIsUnlocked] = useState(() => hasMiniGameAccess(path) || hasAdminAccess());
-
-  if (!isUnlocked) {
-    return (
-      <AdminPasswordGate
-        onUnlock={() => {
-          grantAdminAccess();
-          grantMiniGameAccess(path);
-          window.sessionStorage.setItem(MINI_GAME_RETURN_ROOM_KEY, returnPath);
-          setIsUnlocked(true);
-        }}
-      />
-    );
+  if (!hasMiniGameAccess(path)) {
+    return <DirectAccessRedirect />;
   }
 
   return <BotClickTest returnPath={storedReturnPath} variant={variant} />;
 }
 
-type AdminPasswordGateProps = {
-  onUnlock: () => void;
-};
-
-function AdminPasswordGate({ onUnlock }: AdminPasswordGateProps) {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+function DirectAccessRedirect() {
+  useEffect(() => {
+    window.location.replace("/");
+  }, []);
 
   return (
-    <main className="game-shell admin-gate-shell">
-      <div className="dialog-backdrop admin-gate-backdrop">
-        <dialog className="dialog-card code-dialog-card admin-gate-card" aria-labelledby="admin-gate-title" open>
-          <form
-            className="code-dialog-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (password === ADMIN_PASSWORD) {
-                setError(null);
-                onUnlock();
-                return;
-              }
-
-              setError("Incorrect admin password.");
-              void new Audio("/assets/chain.mp3").play();
-            }}
-          >
-            <h1 id="admin-gate-title">Admin Access</h1>
-            <p>This page is locked for direct entry.</p>
-            <label>
-              <span>Password</span>
-              <input
-                className="code-dialog-name-input"
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  setError(null);
-                }}
-                autoFocus
-                type="password"
-              />
-            </label>
-            {error ? <p className="code-dialog-error">{error}</p> : null}
-            <button type="submit" disabled={!password.trim()}>
-              Enter
-            </button>
-          </form>
-        </dialog>
+    <main className="initial-loading-shell" aria-live="polite">
+      <div className="initial-loading-panel">
+        <span>The Red Contract</span>
+        <strong>Returning to entrance...</strong>
       </div>
     </main>
   );
