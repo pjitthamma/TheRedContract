@@ -792,6 +792,65 @@ button {
   line-height: 1.55;
 }
 
+.code-dialog-card {
+  color: #fff8cc;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid rgba(255, 216, 117, 0.32);
+  backdrop-filter: blur(14px);
+}
+
+.code-dialog-card h1 {
+  color: #fff8cc;
+}
+
+.code-dialog-card p {
+  color: rgba(255, 248, 204, 0.82);
+}
+
+.code-dialog-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.code-dialog-form input {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0.65rem 0.8rem;
+  color: #fff8cc;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.46);
+  border: 1px solid rgba(255, 216, 117, 0.28);
+  border-radius: 8px;
+  outline: 0;
+}
+
+.code-dialog-form input:focus {
+  border-color: rgba(255, 216, 117, 0.82);
+  box-shadow: 0 0 0 2px rgba(255, 216, 117, 0.12);
+}
+
+.code-dialog-form button {
+  min-height: 2.75rem;
+  color: #1a1208;
+  font-weight: 900;
+  cursor: pointer;
+  background: #d6a94a;
+  border: 0;
+  border-radius: 8px;
+}
+
+.code-dialog-form button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.code-dialog-error {
+  color: #fecaca !important;
+  font-size: 0.9rem !important;
+}
+
 .close-button {
   position: absolute;
   top: 0.75rem;
@@ -821,10 +880,22 @@ button {
   padding: clamp(1.1rem, 2vw, 1.5rem);
   overflow: auto;
   color: #fff8cc;
-  background: rgba(2, 6, 23, 0.78);
+  background: rgba(0, 0, 0, 0.72);
   border: 1px solid rgba(255, 216, 117, 0.32);
   border-radius: 8px;
   box-shadow: 0 1.8rem 5rem rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(14px);
+}
+
+.invitation-panel-contract-bare {
+  width: min(96vw, 40rem);
+  max-height: 96vh;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .invitation-panel h1 {
@@ -859,7 +930,7 @@ button {
 }
 
 .invitation-actions button,
-.contract-form button,
+.contract-sign-button,
 .questionnaire-footer button {
   display: inline-flex;
   align-items: center;
@@ -876,7 +947,7 @@ button {
 }
 
 .invitation-actions button:disabled,
-.contract-form button:disabled,
+.contract-sign-button:disabled,
 .questionnaire-footer button:disabled {
   cursor: default;
   opacity: 0.55;
@@ -884,26 +955,79 @@ button {
 
 .contract-form {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.7rem;
+  justify-items: center;
 }
 
-.contract-form label {
-  display: grid;
-  gap: 0.35rem;
-  color: #d6a94a;
-  font-size: 0.82rem;
-  font-weight: 800;
-  text-transform: uppercase;
+.contract-document {
+  position: relative;
+  width: min(96vw, 34rem);
+  max-height: calc(96vh - 4rem);
 }
 
-.contract-form input {
+.contract-document img {
   width: 100%;
-  min-height: 2.8rem;
-  padding: 0.65rem 0.8rem;
-  color: #f8fafc;
-  background: rgba(15, 23, 42, 0.82);
-  border: 1px solid rgba(255, 216, 117, 0.28);
-  border-radius: 8px;
+  max-height: calc(96vh - 4rem);
+  height: auto;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+}
+
+.contract-field {
+  position: absolute;
+  width: 19.6%;
+  height: 4.15%;
+}
+
+.contract-field-name {
+  left: 21.4%;
+  top: 80.75%;
+}
+
+.contract-field-date {
+  left: 60.1%;
+  top: 80.75%;
+}
+
+.contract-field input {
+  width: 100%;
+  height: 100%;
+  padding: 0 0.35rem;
+  color: #34140f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(0.52rem, 1.8vw, 0.82rem);
+  font-weight: 700;
+  text-align: center;
+  background: rgba(255, 248, 229, 0.52);
+  border: 1px solid rgba(113, 25, 22, 0.48);
+  border-radius: 2px;
+  outline: none;
+}
+
+.contract-field input:focus {
+  background: rgba(255, 248, 229, 0.76);
+  border-color: rgba(133, 24, 22, 0.88);
+  box-shadow: 0 0 0 2px rgba(133, 24, 22, 0.14);
+}
+
+.contract-error {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 75.4%;
+  padding: 0.25rem 0.45rem;
+  color: #fff8cc;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(86, 13, 13, 0.82);
+  border-radius: 4px;
+}
+
+.contract-sign-button {
+  min-height: 2.25rem;
+  min-width: 11rem;
+  box-shadow: 0 0.85rem 2rem rgba(0, 0, 0, 0.36);
 }
 
 .invitation-error {
@@ -957,7 +1081,7 @@ button {
   color: #f8fafc;
   text-align: left;
   cursor: pointer;
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(0, 0, 0, 0.42);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
 }
@@ -998,9 +1122,8 @@ button {
 
 .invitation-result-card {
   display: grid;
-  grid-template-columns: minmax(10rem, 0.8fr) minmax(0, 1fr);
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.85rem;
+  padding: 0.85rem;
   color: #fff8cc;
   background:
     radial-gradient(circle at 50% 12%, rgba(214, 169, 74, 0.24), transparent 18rem),
@@ -1009,24 +1132,25 @@ button {
   border-radius: 8px;
 }
 
-.invitation-result-card img {
+.invitation-result-image {
   width: 100%;
-  height: 100%;
-  min-height: 18rem;
-  object-fit: cover;
+  height: auto;
+  max-height: 44vh;
+  object-fit: contain;
   border-radius: 8px;
 }
 
 .invitation-result-content {
   display: grid;
-  align-content: center;
   justify-items: center;
   gap: 0.45rem;
   text-align: center;
 }
 
 .invitation-result-content > span,
-.invitation-result-content p {
+.invitation-result-content p,
+.invitation-code-block p,
+.invitation-graph-card p {
   margin: 0;
   color: #d6a94a;
   font-size: 0.78rem;
@@ -1036,9 +1160,36 @@ button {
 
 .invitation-result-content h1 {
   margin: 0;
+  font-size: clamp(1.45rem, 4vw, 2.25rem);
 }
 
-.invitation-result-content > strong {
+.invitation-result-graphs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.invitation-graph-card {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.7rem;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(255, 216, 117, 0.22);
+  border-radius: 8px;
+}
+
+.invitation-code-block {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+}
+
+.invitation-code-block > strong {
   padding: 0.55rem 0.8rem;
   color: #050305;
   font-size: clamp(1.1rem, 3vw, 1.55rem);
@@ -1047,7 +1198,7 @@ button {
 }
 
 .invitation-radar {
-  width: min(15rem, 100%);
+  width: min(11rem, 100%);
   color: #d6a94a;
 }
 
@@ -1414,13 +1565,12 @@ button {
     flex-direction: column;
   }
 
-  .invitation-result-card {
-    grid-template-columns: 1fr;
+  .invitation-result-image {
+    max-height: 36vh;
   }
 
-  .invitation-result-card img {
-    min-height: 14rem;
-    max-height: 36vh;
+  .invitation-result-graphs {
+    grid-template-columns: 1fr;
   }
 
   .bot-test-player-panel {

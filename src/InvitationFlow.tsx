@@ -37,6 +37,7 @@ type InvitationResult = {
   answeredDate: string;
   answers: SubmittedAnswer[];
   scores: HostScoreMap;
+  comparisonPercentages: HostScoreMap;
   winningRoom: HostKey;
   invitationCode: string;
 };
@@ -66,6 +67,76 @@ const getBangkokDate = () => {
   return `${year}-${month}-${day}`;
 };
 
+const playPenSound = () => {
+  void new Audio("/assets/pen.mp3").play();
+};
+
+const invitationCopy = {
+  en: {
+    invitationQuestion: "Do you has an invitation code?",
+    yes: "Yes",
+    no: "No",
+    nameRequired: "Please enter your name before signing the contract.",
+    signContract: "Sign Contract",
+    question: "Question",
+    answered: "answered",
+    sealing: "Sealing...",
+    revealResult: "Reveal Result",
+    wing: "Wing",
+    host: "Host",
+    yourScore: "Your Score",
+    comparison: "Compared With This Host's Guests",
+    invitationCode: "Invitation Code",
+    copyCode: "Copy Code",
+    saveResult: "Save Result",
+    enter: "Enter",
+    tooYoung: "you are too young",
+    contractAlt: "The Red Contract",
+    close: "Close",
+    scoreRadarLabel: "BDSM host score radar",
+    comparisonRadarLabel: "Host comparison percentage radar",
+  },
+  th: {
+    invitationQuestion: "คุณมีรหัสเชิญหรือไม่?",
+    yes: "มี",
+    no: "ไม่มี",
+    nameRequired: "กรุณากรอกชื่อก่อนลงนามในสัญญา",
+    signContract: "ลงนามในสัญญา",
+    question: "คำถาม",
+    answered: "ตอบแล้ว",
+    sealing: "กำลังประทับตรา...",
+    revealResult: "ดูผลลัพธ์",
+    wing: "วิง",
+    host: "โฮสต์",
+    yourScore: "คะแนนของคุณ",
+    comparison: "เทียบกับผู้เล่นคนอื่นที่ได้โฮสต์นี้",
+    invitationCode: "รหัสเชิญ",
+    copyCode: "คัดลอกรหัส",
+    saveResult: "บันทึกผลลัพธ์",
+    enter: "เข้า",
+    tooYoung: "คุณยังเด็กเกินไป",
+    contractAlt: "เดอะ เรด คอนแทรกต์",
+    close: "ปิด",
+    scoreRadarLabel: "กราฟคะแนนโฮสต์ BDSM",
+    comparisonRadarLabel: "กราฟเปอร์เซ็นต์เปรียบเทียบกับผู้เล่นอื่น",
+  },
+} satisfies Record<InvitationLanguage, Record<string, string>>;
+
+const hostWingLabels: Record<InvitationLanguage, Record<HostKey, string>> = {
+  en: {
+    b: "B Wing: The Restraint Room",
+    d: "D Wing: The Obedience Suite",
+    s: "S Wing: The Red Hunt",
+    m: "M Wing: The White Room",
+  },
+  th: {
+    b: "B Wing: ห้องพันธนาการ",
+    d: "D Wing: ห้องสวีทแห่งการเชื่อฟัง",
+    s: "S Wing: การล่าแดง",
+    m: "M Wing: ห้องสีขาว",
+  },
+};
+
 const calculateResult = (
   questions: QuestionnaireQuestion[],
   answersByQuestionId: Record<string, string>,
@@ -89,17 +160,19 @@ const calculateResult = (
   }
 
   const winningRoom = hostOrder.reduce((best, host) => (scores[host] > scores[best] ? host : best), hostOrder[0]);
+  const codePool = fallbackInvitationCodes[winningRoom];
   return {
     guestName,
     answeredDate,
     answers,
     scores,
+    comparisonPercentages: { b: 100, d: 100, s: 100, m: 100 },
     winningRoom,
-    invitationCode: fallbackInvitationCodes[winningRoom][0],
+    invitationCode: codePool[Math.floor(Math.random() * codePool.length)] ?? codePool[0],
   };
 };
 
-function ScoreRadar({ scores }: { scores: HostScoreMap }) {
+function ScoreRadar({ scores, label }: { scores: HostScoreMap; label: string }) {
   const maxAbsScore = Math.max(1, ...hostOrder.map((host) => Math.abs(scores[host])));
   const center = 82;
   const maxRadius = 62;
@@ -118,7 +191,7 @@ function ScoreRadar({ scores }: { scores: HostScoreMap }) {
   const polygonPoints = points.map((point) => `${point.x},${point.y}`).join(" ");
 
   return (
-    <svg className="invitation-radar" viewBox="0 0 164 164" role="img" aria-label="BDSM host score radar">
+    <svg className="invitation-radar" viewBox="0 0 164 164" role="img" aria-label={label}>
       {[0.35, 0.68, 1].map((scale) => (
         <circle key={scale} cx={center} cy={center} r={maxRadius * scale} />
       ))}
@@ -129,6 +202,41 @@ function ScoreRadar({ scores }: { scores: HostScoreMap }) {
       {points.map((point) => (
         <text key={point.host} x={point.labelX} y={point.labelY}>
           {point.host.toUpperCase()}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+function PercentRadar({ percentages, label }: { percentages: HostScoreMap; label: string }) {
+  const center = 82;
+  const maxRadius = 62;
+  const points = hostOrder.map((host, index) => {
+    const angle = -Math.PI / 2 + index * (Math.PI / 2);
+    const radius = Math.max(0.08, Math.min(1, percentages[host] / 100)) * maxRadius;
+    return {
+      host,
+      value: percentages[host],
+      x: center + Math.cos(angle) * radius,
+      y: center + Math.sin(angle) * radius,
+      labelX: center + Math.cos(angle) * (maxRadius + 18),
+      labelY: center + Math.sin(angle) * (maxRadius + 18),
+    };
+  });
+  const polygonPoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+
+  return (
+    <svg className="invitation-radar" viewBox="0 0 164 164" role="img" aria-label={label}>
+      {[0.25, 0.5, 0.75, 1].map((scale) => (
+        <circle key={scale} cx={center} cy={center} r={maxRadius * scale} />
+      ))}
+      {points.map((point) => (
+        <line key={point.host} x1={center} y1={center} x2={point.labelX} y2={point.labelY} />
+      ))}
+      <polygon points={polygonPoints} />
+      {points.map((point) => (
+        <text key={point.host} x={point.labelX} y={point.labelY}>
+          {point.host.toUpperCase()}-wing
         </text>
       ))}
     </svg>
@@ -155,6 +263,7 @@ function InvitationFlow({
   const [exitMessage, setExitMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const resultCardRef = useRef<HTMLDivElement | null>(null);
+  const copy = invitationCopy[language];
 
   const currentQuestionIndex = Math.min(
     questions.findIndex((question) => !answersByQuestionId[question.id]),
@@ -194,8 +303,8 @@ function InvitationFlow({
   };
 
   const startQuiz = () => {
-    if (!guestName.trim()) {
-      setErrorMessage("Please enter your name before signing the contract.");
+    if (!guestName.trim() || !answeredDate.trim()) {
+      setErrorMessage(copy.nameRequired);
       return;
     }
 
@@ -212,10 +321,11 @@ function InvitationFlow({
     }
 
     if (choice.specialAction === "too_young") {
-      setExitMessage(choice.feedback?.[language] || "you are too young");
+      setExitMessage(`${choice.feedback?.[language] || copy.tooYoung}!`);
       window.setTimeout(() => {
+        void new Audio("/assets/door-open.mp3").play();
         onTooYoung();
-      }, 1400);
+      }, 3200);
       return;
     }
 
@@ -284,21 +394,33 @@ function InvitationFlow({
 
   return (
     <div className="invitation-backdrop" role="presentation">
-      <section className={`invitation-panel invitation-panel-${step}`} aria-live="polite">
+      <section
+        className={`invitation-panel invitation-panel-${step}${step === "contract" ? " invitation-panel-contract-bare" : ""}`}
+        aria-live="polite"
+        onClickCapture={(event) => {
+          if (step === "result") {
+            return;
+          }
+          const target = event.target as HTMLElement;
+          if (target.closest("button, input")) {
+            playPenSound();
+          }
+        }}
+      >
         {exitMessage ? <div className="invitation-exit-message">{exitMessage}</div> : null}
 
         {step === "code-prompt" ? (
           <>
-            <button className="invitation-close" type="button" aria-label="Close" onClick={onCancel}>
+            <button className="invitation-close" type="button" aria-label={copy.close} onClick={onCancel}>
               <X size={18} aria-hidden="true" />
             </button>
-            <h1>Do you has an invitation code?</h1>
+            <h1>{copy.invitationQuestion}</h1>
             <div className="invitation-actions">
               <button type="button" onClick={onExistingCode}>
-                Yes
+                {copy.yes}
               </button>
               <button type="button" onClick={startNewUserFlow}>
-                No
+                {copy.no}
               </button>
             </div>
           </>
@@ -312,24 +434,30 @@ function InvitationFlow({
               startQuiz();
             }}
           >
-            <h1>The Red Contract</h1>
-            <label>
-              <span>Name</span>
-              <input value={guestName} onChange={(event) => setGuestName(event.target.value)} autoFocus />
-            </label>
-            <label>
-              <span>Date</span>
-              <input value={answeredDate} readOnly />
-            </label>
-            {errorMessage ? <p className="invitation-error">{errorMessage}</p> : null}
-            <button type="submit">Sign Contract</button>
+            <div className="contract-document">
+              <img
+                src={language === "th" ? "/assets/contract_form_th.png" : "/assets/contract_form_en.png"}
+                alt={copy.contractAlt}
+                draggable={false}
+              />
+              <label className="contract-field contract-field-name" aria-label="Name">
+                <input value={guestName} onChange={(event) => setGuestName(event.target.value)} autoFocus />
+              </label>
+              <label className="contract-field contract-field-date" aria-label="Date">
+                <input value={answeredDate} readOnly />
+              </label>
+              {errorMessage ? <p className="invitation-error contract-error">{errorMessage}</p> : null}
+            </div>
+            <button className="contract-sign-button" type="submit" disabled={!guestName.trim() || !answeredDate.trim()}>
+              {copy.signContract}
+            </button>
           </form>
         ) : null}
 
         {step === "quiz" && activeQuestion ? (
           <div className="questionnaire-panel">
             <div className="questionnaire-progress">
-              Question {activeQuestionIndex + 1} / {questions.length}
+              {copy.question} {activeQuestionIndex + 1} / {questions.length}
             </div>
             <h1>{activeQuestion.text[language]}</h1>
             <div className="questionnaire-choices">
@@ -347,10 +475,10 @@ function InvitationFlow({
             </div>
             <div className="questionnaire-footer">
               <span>
-                {answeredCount} / {questions.length} answered
+                {answeredCount} / {questions.length} {copy.answered}
               </span>
               <button type="button" disabled={!isQuizComplete || isSubmitting} onClick={submitQuiz}>
-                {isSubmitting ? "Sealing..." : "Reveal Result"}
+                {isSubmitting ? copy.sealing : copy.revealResult}
               </button>
             </div>
           </div>
@@ -359,25 +487,39 @@ function InvitationFlow({
         {step === "result" && result ? (
           <div className="invitation-result-shell">
             <div className="invitation-result-card" ref={resultCardRef}>
-              <img src={hostResultImageByKey[result.winningRoom]} alt="" />
+              <img className="invitation-result-image" src={hostResultImageByKey[result.winningRoom]} alt="" />
               <div className="invitation-result-content">
-                <span>Your Host</span>
-                <h1>{hostLabels[result.winningRoom]}</h1>
-                <ScoreRadar scores={result.scores} />
-                <p>Invitation Code</p>
-                <strong>{result.invitationCode}</strong>
+                <p>{copy.wing}</p>
+                <h1>{hostWingLabels[language][result.winningRoom]}</h1>
+                <span>
+                  {copy.host} {hostLabels[result.winningRoom]}
+                </span>
+                <div className="invitation-result-graphs">
+                  <div className="invitation-graph-card">
+                    <p>{copy.yourScore}</p>
+                    <ScoreRadar scores={result.scores} label={copy.scoreRadarLabel} />
+                  </div>
+                  <div className="invitation-graph-card">
+                    <p>{copy.comparison}</p>
+                    <PercentRadar percentages={result.comparisonPercentages} label={copy.comparisonRadarLabel} />
+                  </div>
+                </div>
+                <div className="invitation-code-block">
+                  <p>{copy.invitationCode}</p>
+                  <strong>{result.invitationCode}</strong>
+                </div>
               </div>
             </div>
             <div className="invitation-actions">
               <button type="button" onClick={copyCode}>
-                Copy Code
+                {copy.copyCode}
               </button>
               <button type="button" onClick={saveResultImage}>
                 <Download size={16} aria-hidden="true" />
-                Save Image
+                {copy.saveResult}
               </button>
               <button type="button" onClick={() => onResultClosed(result.winningRoom)}>
-                Enter
+                {copy.enter}
               </button>
             </div>
           </div>

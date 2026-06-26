@@ -25,6 +25,10 @@ type CodeRow = {
   code: string;
 };
 
+type ResultRow = {
+  scores: Partial<Record<HostKey, number>> | null;
+};
+
 const hostOrder: HostKey[] = ["b", "d", "s", "m"];
 
 const json = (statusCode: number, body: unknown) => ({
@@ -38,6 +42,28 @@ const json = (statusCode: number, body: unknown) => ({
 
 const getWinner = (scores: Record<HostKey, number>) =>
   hostOrder.reduce((best, host) => (scores[host] > scores[best] ? host : best), hostOrder[0]);
+
+const getComparisonPercentages = (scores: Record<HostKey, number>, peerResults: ResultRow[]) => {
+  const percentages: Record<HostKey, number> = { b: 100, d: 100, s: 100, m: 100 };
+  if (!peerResults.length) {
+    return percentages;
+  }
+
+  for (const host of hostOrder) {
+    const peersWithScore = peerResults
+      .map((result) => Number(result.scores?.[host]))
+      .filter((score) => Number.isFinite(score));
+
+    if (!peersWithScore.length) {
+      continue;
+    }
+
+    const lowerOrEqualCount = peersWithScore.filter((score) => score <= scores[host]).length;
+    percentages[host] = Math.round((lowerOrEqualCount / peersWithScore.length) * 100);
+  }
+
+  return percentages;
+};
 
 export const handler = async (event: { httpMethod: string; body: string | null }) => {
   if (event.httpMethod !== "POST") {
@@ -106,7 +132,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
 
   const winningRoom = getWinner(scores);
   const codeResponse = await fetch(
-    `${supabaseUrl}/rest/v1/invitation_codes?select=code&room_key=eq.${winningRoom}&active=eq.true&order=id.asc&limit=1`,
+    `${supabaseUrl}/rest/v1/invitation_codes?select=code&room_key=eq.${winningRoom}&active=eq.true&order=id.asc`,
     { headers },
   );
 
@@ -115,10 +141,19 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   }
 
   const codes = (await codeResponse.json()) as CodeRow[];
-  const invitationCode = codes[0]?.code;
+  const invitationCode = codes[Math.floor(Math.random() * codes.length)]?.code;
   if (!invitationCode) {
     return json(500, { error: "No invitation code is available for this room" });
   }
+
+  const peerResultsResponse = await fetch(
+    `${supabaseUrl}/rest/v1/invitation_results?select=scores&winning_room=eq.${winningRoom}`,
+    { headers },
+  );
+
+  const comparisonPercentages = peerResultsResponse.ok
+    ? getComparisonPercentages(scores, ((await peerResultsResponse.json()) as ResultRow[]) ?? [])
+    : { b: 100, d: 100, s: 100, m: 100 };
 
   const insertResponse = await fetch(`${supabaseUrl}/rest/v1/invitation_results`, {
     method: "POST",
@@ -146,6 +181,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
     answeredDate,
     answers,
     scores,
+    comparisonPercentages,
     winningRoom,
     invitationCode,
   });

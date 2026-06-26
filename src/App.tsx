@@ -3,7 +3,7 @@ import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import BotClickTest from "./BotClickTest";
 import InvitationFlow from "./InvitationFlow";
-import { type HostKey, hostRoomByKey } from "./invitationData";
+import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitationData";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
 type PopupContent = {
@@ -20,7 +20,12 @@ type TransitionPhase = "idle" | "playing" | "revealing";
 
 type InvitationFlowInitialStep = "code-prompt" | "contract";
 
-type InsideDoorAccess = "all" | SceneId | null;
+type InsideDoorAccess = "code" | SceneId | null;
+
+type CodePromptState = {
+  target: SceneId;
+  roomKey: HostKey;
+};
 
 type ClickCounts = {
   door: number;
@@ -247,6 +252,66 @@ const getWingEventName = (hotspotId: string): EventName | null => {
   return null;
 };
 
+const hostKeyByRoom: Partial<Record<SceneId, HostKey>> = {
+  "B-room": "b",
+  "D-room": "d",
+  "S-room": "s",
+  "M-room": "m",
+};
+
+const isValidInvitationCode = (roomKey: HostKey, code: string) =>
+  fallbackInvitationCodes[roomKey].some((validCode) => validCode.toLowerCase() === code.trim().toLowerCase());
+
+const appHudCopy = {
+  en: {
+    invalidInvitationCode: "Invalid invitation code for this wing.",
+    invitationCodeTitle: "Invitation Code",
+    invitationCodeDescription: "Enter the code for this wing.",
+    enter: "Enter",
+    closePopup: "Close popup",
+  },
+  th: {
+    invalidInvitationCode: "รหัสเชิญไม่ถูกต้องสำหรับวิงนี้",
+    invitationCodeTitle: "รหัสเชิญ",
+    invitationCodeDescription: "กรอกรหัสสำหรับวิงนี้",
+    enter: "เข้า",
+    closePopup: "ปิดหน้าต่าง",
+  },
+} satisfies Record<Language, Record<string, string>>;
+
+const counterCopy = {
+  en: {
+    doorKnocked: "Door Knocked",
+    posterLineupClicked: "Poster Lineup Clicked",
+    brochureClicked: "Brochure Clicked",
+    clubRulesClicked: "Club Rules Clicked",
+    memberCardClicked: "Member Card Clicked",
+    breachSuccessful: "Breach Successful",
+    pictureClicked: "Picture Clicked",
+    hostProfileClicked: "Host Profile Clicked",
+    photosClicked: "Photos Clicked",
+    ringBell: "Ring Bell",
+    doorClicked: "Door Clicked",
+    posterClicked: "Poster Clicked",
+    clubVisited: "Club Visited",
+  },
+  th: {
+    doorKnocked: "เคาะประตู",
+    posterLineupClicked: "กดโปสเตอร์รายชื่อ",
+    brochureClicked: "กดโบรชัวร์",
+    clubRulesClicked: "กดกฎของคลับ",
+    memberCardClicked: "กดบัตรสมาชิก",
+    breachSuccessful: "พยายามฝ่าเข้า",
+    pictureClicked: "กดรูปภาพ",
+    hostProfileClicked: "กดโปรไฟล์โฮสต์",
+    photosClicked: "กดรูปถ่าย",
+    ringBell: "กดกระดิ่ง",
+    doorClicked: "กดประตู",
+    posterClicked: "กดโปสเตอร์",
+    clubVisited: "เข้าชมคลับ",
+  },
+} satisfies Record<Language, Record<string, string>>;
+
 function App() {
   if (window.location.pathname === "/b-mini-game") {
     return <BotClickTest variant="b" />;
@@ -271,6 +336,9 @@ function App() {
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
   const [invitationFlowStep, setInvitationFlowStep] = useState<InvitationFlowInitialStep | null>(null);
   const [insideDoorAccess, setInsideDoorAccess] = useState<InsideDoorAccess>(null);
+  const [codePrompt, setCodePrompt] = useState<CodePromptState | null>(null);
+  const [invitationCodeInput, setInvitationCodeInput] = useState("");
+  const [invitationCodeError, setInvitationCodeError] = useState<string | null>(null);
   const [selectedLanguage] = useState<Language>(initialLanguage ?? "en");
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
@@ -326,6 +394,7 @@ function App() {
   });
   const displayedScene = transitionPhase !== "idle" ? scenes[transitionTargetSceneId] : scenes[sceneId];
   const isTransitioning = transitionPhase !== "idle";
+  const hudCopy = appHudCopy[selectedLanguage];
 
   const canGoBack = displayedScene.id !== "atrium";
   const sceneStyle = {
@@ -363,6 +432,12 @@ function App() {
     transitionToScene("inside", "/assets/transition3.mp4");
   };
 
+  const enterMatchedRoom = (roomId: SceneId) => {
+    setInsideDoorAccess("code");
+    void new Audio("/assets/door-open.mp3").play();
+    transitionToScene(roomId);
+  };
+
   const enterLobbyForNewGuest = () => {
     setInsideDoorAccess(null);
     void new Audio("/assets/door-open.mp3").play();
@@ -377,9 +452,63 @@ function App() {
     setPopup(null);
     setImageOverlaySrc(null);
     setGalleryOverlay(null);
+    setCodePrompt(null);
+    setInvitationCodeInput("");
+    setInvitationCodeError(null);
     setSceneId("atrium");
     setScenePlaybackKey((current) => current + 1);
     updateScenePath("atrium");
+  };
+
+  const openCodePrompt = (target: SceneId) => {
+    const roomKey = hostKeyByRoom[target];
+    if (!roomKey) {
+      return;
+    }
+
+    setCodePrompt({ target, roomKey });
+    setInvitationCodeInput("");
+    setInvitationCodeError(null);
+  };
+
+  const openInsideDoor = (target: SceneId) => {
+    const roomKey = hostKeyByRoom[target];
+    if (!roomKey) {
+      return false;
+    }
+
+    if (insideDoorAccess === "code") {
+      openCodePrompt(target);
+      return true;
+    }
+
+    if (insideDoorAccess && insideDoorAccess !== target) {
+      void new Audio("/assets/chain.mp3").play();
+      return true;
+    }
+
+    void new Audio("/assets/door-open.mp3").play();
+    transitionToScene(target);
+    return true;
+  };
+
+  const submitInvitationCode = () => {
+    if (!codePrompt) {
+      return;
+    }
+
+    if (!isValidInvitationCode(codePrompt.roomKey, invitationCodeInput)) {
+      setInvitationCodeError(hudCopy.invalidInvitationCode);
+      void new Audio("/assets/chain.mp3").play();
+      return;
+    }
+
+    const target = codePrompt.target;
+    setCodePrompt(null);
+    setInvitationCodeInput("");
+    setInvitationCodeError(null);
+    void new Audio("/assets/door-open.mp3").play();
+    transitionToScene(target);
   };
 
   useEffect(() => {
@@ -540,12 +669,9 @@ function App() {
 
   const handleHotspot = (hotspotId: string, action: HotspotAction) => {
     const wingEventName = getWingEventName(hotspotId);
-    const gatedInsideDoorTarget =
-      sceneId === "inside" && action.type === "scene" && insideDoorAccess && insideDoorAccess !== "all"
-        ? action.target
-        : null;
+    const gatedInsideDoorTarget = sceneId === "inside" && action.type === "scene" && insideDoorAccess ? action.target : null;
     const isDeniedInsideDoor =
-      gatedInsideDoorTarget !== null && gatedInsideDoorTarget !== insideDoorAccess;
+      gatedInsideDoorTarget !== null && insideDoorAccess !== "code" && gatedInsideDoorTarget !== insideDoorAccess;
 
     if (wingEventName && !isDeniedInsideDoor) {
       void trackEvent(wingEventName);
@@ -664,43 +790,7 @@ function App() {
       return;
     }
 
-    if (sceneId === "inside" && action.target === "B-room") {
-      if (insideDoorAccess && insideDoorAccess !== "all" && insideDoorAccess !== "B-room") {
-        void new Audio("/assets/chain.mp3").play();
-        return;
-      }
-      void new Audio("/assets/door-open.mp3").play();
-      transitionToScene("B-room");
-      return;
-    }
-
-    if (sceneId === "inside" && action.target === "D-room") {
-      if (insideDoorAccess && insideDoorAccess !== "all" && insideDoorAccess !== "D-room") {
-        void new Audio("/assets/chain.mp3").play();
-        return;
-      }
-      void new Audio("/assets/door-open.mp3").play();
-      transitionToScene("D-room");
-      return;
-    }
-
-    if (sceneId === "inside" && action.target === "S-room") {
-      if (insideDoorAccess && insideDoorAccess !== "all" && insideDoorAccess !== "S-room") {
-        void new Audio("/assets/chain.mp3").play();
-        return;
-      }
-      void new Audio("/assets/door-open.mp3").play();
-      transitionToScene("S-room");
-      return;
-    }
-
-    if (sceneId === "inside" && action.target === "M-room") {
-      if (insideDoorAccess && insideDoorAccess !== "all" && insideDoorAccess !== "M-room") {
-        void new Audio("/assets/chain.mp3").play();
-        return;
-      }
-      void new Audio("/assets/door-open.mp3").play();
-      transitionToScene("M-room");
+    if (sceneId === "inside" && openInsideDoor(action.target)) {
       return;
     }
 
@@ -754,14 +844,16 @@ function App() {
           }}
         >
           {hotspot.id.startsWith("lineup-") ? (
-            <span className="lineup-poster-counter">Poster Clicked: {getPosterClickCount(hotspot.id)}</span>
+            <span className="lineup-poster-counter">
+              {counterCopy[selectedLanguage].posterClicked}: {getPosterClickCount(hotspot.id)}
+            </span>
           ) : null}
           {hotspot.id === "lobby-up-button" ? <ArrowUp size={24} aria-hidden="true" /> : null}
           {hotspot.imageSrc ? <img src={hotspot.imageSrc} alt="" aria-hidden="true" draggable={false} /> : null}
           <span>{hotspot.label}</span>
         </button>
       )),
-    [clickCounts, displayedScene.hotspots, isHotspotAudioPlaying, isTransitioning, sceneId, selectedLanguage],
+    [clickCounts, displayedScene.hotspots, insideDoorAccess, isHotspotAudioPlaying, isTransitioning, sceneId, selectedLanguage],
   );
 
   const handleSceneOverlay = (overlay: SceneOverlay) => {
@@ -1176,7 +1268,7 @@ function App() {
           ) : (
             <span className="top-bar-spacer" />
           )}
-          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} />
+          <ClickCounter sceneId={displayedScene.id} counts={clickCounts} language={selectedLanguage} />
           <div className="top-controls">
             <SoundButton audioSrc={getSceneAudioSrc(sceneId)} />
             <LanguageButton selectedLanguage={selectedLanguage} />
@@ -1195,7 +1287,9 @@ function App() {
         ) : null}
 
         {displayedScene.id === "atrium" ? (
-          <div className="club-counter">Club Visited: {clickCounts.clubVisited}</div>
+          <div className="club-counter">
+            {counterCopy[selectedLanguage].clubVisited}: {clickCounts.clubVisited}
+          </div>
         ) : null}
 
       </section>
@@ -1203,11 +1297,49 @@ function App() {
       {popup ? (
         <div className="dialog-backdrop" role="presentation" onClick={() => setPopup(null)}>
           <dialog className="dialog-card" aria-labelledby="dialog-title" open onClick={(event) => event.stopPropagation()}>
-            <button className="close-button" type="button" aria-label="Close popup" onClick={() => setPopup(null)}>
+            <button className="close-button" type="button" aria-label={hudCopy.closePopup} onClick={() => setPopup(null)}>
               <X size={18} aria-hidden="true" />
             </button>
             <h1 id="dialog-title">{popup.title}</h1>
             <p>{popup.body}</p>
+          </dialog>
+        </div>
+      ) : null}
+
+      {codePrompt ? (
+        <div className="dialog-backdrop" role="presentation" onClick={() => setCodePrompt(null)}>
+          <dialog
+            className="dialog-card code-dialog-card"
+            aria-labelledby="code-dialog-title"
+            open
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button className="close-button" type="button" aria-label={hudCopy.closePopup} onClick={() => setCodePrompt(null)}>
+              <X size={18} aria-hidden="true" />
+            </button>
+            <form
+              className="code-dialog-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitInvitationCode();
+              }}
+            >
+              <h1 id="code-dialog-title">{hudCopy.invitationCodeTitle}</h1>
+              <p>{hudCopy.invitationCodeDescription}</p>
+              <input
+                value={invitationCodeInput}
+                onChange={(event) => {
+                  setInvitationCodeInput(event.target.value);
+                  setInvitationCodeError(null);
+                }}
+                autoFocus
+                placeholder={`${codePrompt.roomKey.toUpperCase()}-TRC-XXXX-XXXX`}
+              />
+              {invitationCodeError ? <p className="code-dialog-error">{invitationCodeError}</p> : null}
+              <button type="submit" disabled={!invitationCodeInput.trim()}>
+                {hudCopy.enter}
+              </button>
+            </form>
           </dialog>
         </div>
       ) : null}
@@ -1274,12 +1406,12 @@ function App() {
           onCancel={() => setInvitationFlowStep(null)}
           onExistingCode={() => {
             setInvitationFlowStep(null);
-            enterInside("all");
+            enterInside("code");
           }}
           onNewUserStarted={enterLobbyForNewGuest}
           onResultClosed={(winningRoom: HostKey) => {
             setInvitationFlowStep(null);
-            enterInside(hostRoomByKey[winningRoom] as SceneId);
+            enterMatchedRoom(hostRoomByKey[winningRoom] as SceneId);
           }}
           onTooYoung={returnOutsideFromInvitation}
         />
@@ -1291,13 +1423,18 @@ function App() {
 type ClickCounterProps = {
   sceneId: SceneId;
   counts: ClickCounts;
+  language: Language;
 };
 
-function ClickCounter({ sceneId, counts }: ClickCounterProps) {
+function ClickCounter({ sceneId, counts, language }: ClickCounterProps) {
+  const copy = counterCopy[language];
+
   if (sceneId === "door") {
     return (
       <div className="click-counter" aria-live="polite">
-        <span>Door Knocked: {counts.knock}</span>
+        <span>
+          {copy.doorKnocked}: {counts.knock}
+        </span>
       </div>
     );
   }
@@ -1305,10 +1442,18 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   if (sceneId === "archive") {
     return (
       <div className="click-counter lobby-counter" aria-live="polite">
-        <span>Poster Lineup Clicked: {counts.posterLineup}</span>
-        <span>Brochure Clicked: {counts.brochure}</span>
-        <span>Club Rules Clicked: {counts.clubRules}</span>
-        <span>Member Card Clicked: {counts.memberCard}</span>
+        <span>
+          {copy.posterLineupClicked}: {counts.posterLineup}
+        </span>
+        <span>
+          {copy.brochureClicked}: {counts.brochure}
+        </span>
+        <span>
+          {copy.clubRulesClicked}: {counts.clubRules}
+        </span>
+        <span>
+          {copy.memberCardClicked}: {counts.memberCard}
+        </span>
       </div>
     );
   }
@@ -1316,7 +1461,9 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   if (sceneId === "inside") {
     return (
       <div className="click-counter lobby-counter" aria-live="polite">
-        <span>Breach Successful: {counts.breachedAttempt}</span>
+        <span>
+          {copy.breachSuccessful}: {counts.breachedAttempt}
+        </span>
         <span>B Wing: {counts.bWing}</span>
         <span>D Wing: {counts.dWing}</span>
         <span>S Wing: {counts.sWing}</span>
@@ -1328,10 +1475,18 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   if (sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa") {
     return (
       <div className="click-counter lobby-counter" aria-live="polite">
-        <span>Picture Clicked: {counts.bPicture}</span>
-        <span>Host Profile Clicked: {counts.bHostProfile}</span>
-        <span>Photos Clicked: {counts.bPhotos}</span>
-        <span>Ring Bell: {counts.bRingBell}</span>
+        <span>
+          {copy.pictureClicked}: {counts.bPicture}
+        </span>
+        <span>
+          {copy.hostProfileClicked}: {counts.bHostProfile}
+        </span>
+        <span>
+          {copy.photosClicked}: {counts.bPhotos}
+        </span>
+        <span>
+          {copy.ringBell}: {counts.bRingBell}
+        </span>
       </div>
     );
   }
@@ -1339,10 +1494,18 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   if (sceneId === "D-room" || sceneId === "D-desk" || sceneId === "D-sofa") {
     return (
       <div className="click-counter lobby-counter" aria-live="polite">
-        <span>Picture Clicked: {counts.dPicture}</span>
-        <span>Host Profile Clicked: {counts.dHostProfile}</span>
-        <span>Photos Clicked: {counts.dPhotos}</span>
-        <span>Ring Bell: {counts.dRingBell}</span>
+        <span>
+          {copy.pictureClicked}: {counts.dPicture}
+        </span>
+        <span>
+          {copy.hostProfileClicked}: {counts.dHostProfile}
+        </span>
+        <span>
+          {copy.photosClicked}: {counts.dPhotos}
+        </span>
+        <span>
+          {copy.ringBell}: {counts.dRingBell}
+        </span>
       </div>
     );
   }
@@ -1350,10 +1513,18 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   if (sceneId === "S-room" || sceneId === "S-desk" || sceneId === "S-sofa") {
     return (
       <div className="click-counter lobby-counter" aria-live="polite">
-        <span>Picture Clicked: {counts.sPicture}</span>
-        <span>Host Profile Clicked: {counts.sHostProfile}</span>
-        <span>Photos Clicked: {counts.sPhotos}</span>
-        <span>Ring Bell: {counts.sRingBell}</span>
+        <span>
+          {copy.pictureClicked}: {counts.sPicture}
+        </span>
+        <span>
+          {copy.hostProfileClicked}: {counts.sHostProfile}
+        </span>
+        <span>
+          {copy.photosClicked}: {counts.sPhotos}
+        </span>
+        <span>
+          {copy.ringBell}: {counts.sRingBell}
+        </span>
       </div>
     );
   }
@@ -1361,10 +1532,18 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   if (sceneId === "M-room" || sceneId === "M-desk" || sceneId === "M-sofa") {
     return (
       <div className="click-counter lobby-counter" aria-live="polite">
-        <span>Picture Clicked: {counts.mPicture}</span>
-        <span>Host Profile Clicked: {counts.mHostProfile}</span>
-        <span>Photos Clicked: {counts.mPhotos}</span>
-        <span>Ring Bell: {counts.mRingBell}</span>
+        <span>
+          {copy.pictureClicked}: {counts.mPicture}
+        </span>
+        <span>
+          {copy.hostProfileClicked}: {counts.mHostProfile}
+        </span>
+        <span>
+          {copy.photosClicked}: {counts.mPhotos}
+        </span>
+        <span>
+          {copy.ringBell}: {counts.mRingBell}
+        </span>
       </div>
     );
   }
@@ -1375,8 +1554,12 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
 
   return (
     <div className="click-counter" aria-live="polite">
-      <span>Door Clicked: {counts.door}</span>
-      <span>Poster Clicked: {counts.poster}</span>
+      <span>
+        {copy.doorClicked}: {counts.door}
+      </span>
+      <span>
+        {copy.posterClicked}: {counts.poster}
+      </span>
     </div>
   );
 }
