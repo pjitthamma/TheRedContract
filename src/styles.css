@@ -33,6 +33,21 @@ button {
   background: #05070b;
 }
 
+.admin-gate-shell {
+  display: grid;
+  place-items: center;
+}
+
+.admin-gate-backdrop {
+  background:
+    radial-gradient(circle at 50% 38%, rgba(122, 31, 31, 0.22), transparent 32rem),
+    rgba(0, 0, 0, 0.86);
+}
+
+.admin-gate-card {
+  width: min(28rem, 100%);
+}
+
 .scene-stage {
   position: relative;
   width: 100vw;

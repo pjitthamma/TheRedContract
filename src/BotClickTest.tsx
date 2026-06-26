@@ -6,6 +6,7 @@ type BotAnimationState = "start" | "end";
 type BotClickTestVariant = "b" | "d" | "m" | "s";
 
 type BotClickTestProps = {
+  returnPath?: string;
   variant: BotClickTestVariant;
 };
 
@@ -86,7 +87,7 @@ const getSessionId = () => {
   return nextSessionId;
 };
 
-function BotClickTest({ variant }: BotClickTestProps) {
+function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
   const config = botClickTestConfigs[variant];
   const [guestName] = useState(getStoredGuestName);
   const [clickCount, setClickCount] = useState(0);
@@ -216,7 +217,7 @@ function BotClickTest({ variant }: BotClickTestProps) {
         aria-hidden="true"
       />
 
-      <a className="bot-test-back" href="/" aria-label="Back to main experience" title="Back to main experience">
+      <a className="bot-test-back" href={returnPath} aria-label="Back to host room" title="Back to host room">
         <ArrowLeft size={20} aria-hidden="true" />
       </a>
 

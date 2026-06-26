@@ -115,6 +115,33 @@ const SESSION_ID_KEY = "red-contract-session-id";
 const LANGUAGE_KEY = "red-contract-language";
 const GUEST_NAME_KEY = "red-contract-guest-name";
 const LOCAL_INVITATION_RESULTS_KEY = "red-contract-local-invitation-results";
+const ADMIN_PASSWORD = "LumpiniPark";
+const ADMIN_UNLOCK_KEY = "red-contract-admin-unlocked";
+const MINI_GAME_RETURN_ROOM_KEY = "red-contract-mini-game-return-room";
+
+const roomSceneIdByPath: Partial<Record<string, SceneId>> = {
+  "/B-room": "B-room",
+  "/D-room": "D-room",
+  "/S-room": "S-room",
+  "/M-room": "M-room",
+};
+
+const miniGameRouteByPath = {
+  "/b-mini-game": { variant: "b", roomPath: "/B-room" },
+  "/d-mini-game": { variant: "d", roomPath: "/D-room" },
+  "/bot-test": { variant: "d", roomPath: "/D-room" },
+  "/s-mini-game": { variant: "s", roomPath: "/S-room" },
+  "/m-mini-game": { variant: "m", roomPath: "/M-room" },
+} satisfies Record<string, { variant: "b" | "d" | "m" | "s"; roomPath: string }>;
+
+const getSceneAccessKey = (sceneId: SceneId) => `red-contract-scene-access:${sceneId}`;
+const getMiniGameAccessKey = (path: string) => `red-contract-mini-game-access:${path}`;
+const hasAdminAccess = () => window.sessionStorage.getItem(ADMIN_UNLOCK_KEY) === "true";
+const grantAdminAccess = () => window.sessionStorage.setItem(ADMIN_UNLOCK_KEY, "true");
+const hasSceneAccess = (sceneId: SceneId) => window.sessionStorage.getItem(getSceneAccessKey(sceneId)) === "true";
+const grantSceneAccess = (sceneId: SceneId) => window.sessionStorage.setItem(getSceneAccessKey(sceneId), "true");
+const hasMiniGameAccess = (path: string) => window.sessionStorage.getItem(getMiniGameAccessKey(path)) === "true";
+const grantMiniGameAccess = (path: string) => window.sessionStorage.setItem(getMiniGameAccessKey(path), "true");
 
 const getStoredLanguage = (): Language | null => {
   const storedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
@@ -193,6 +220,21 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
 };
 
 const scenePathBySceneId: Partial<Record<SceneId, string>> = {
+  "B-room": "/B-room",
+  "B-desk": "/B-room",
+  "B-sofa": "/B-room",
+  "D-room": "/D-room",
+  "D-desk": "/D-room",
+  "D-sofa": "/D-room",
+  "S-room": "/S-room",
+  "S-desk": "/S-room",
+  "S-sofa": "/S-room",
+  "M-room": "/M-room",
+  "M-desk": "/M-room",
+  "M-sofa": "/M-room",
+};
+
+const hostRoomPathBySceneId: Partial<Record<SceneId, string>> = {
   "B-room": "/B-room",
   "B-desk": "/B-room",
   "B-sofa": "/B-room",
@@ -350,23 +392,37 @@ const counterCopy = {
 } satisfies Record<Language, Record<string, string>>;
 
 function App() {
-  if (window.location.pathname === "/b-mini-game") {
-    return <BotClickTest variant="b" />;
+  const [isUnlocked, setIsUnlocked] = useState(hasAdminAccess);
+
+  if (!isUnlocked) {
+    return (
+      <AdminPasswordGate
+        onUnlock={() => {
+          grantAdminAccess();
+          setIsUnlocked(true);
+        }}
+      />
+    );
   }
 
-  if (window.location.pathname === "/m-mini-game") {
-    return <BotClickTest variant="m" />;
-  }
+  return <AppContent />;
+}
 
-  if (window.location.pathname === "/s-mini-game") {
-    return <BotClickTest variant="s" />;
-  }
-
-  if (window.location.pathname === "/d-mini-game" || window.location.pathname === "/bot-test") {
-    return <BotClickTest variant="d" />;
+function AppContent() {
+  const miniGameRoute = miniGameRouteByPath[window.location.pathname as keyof typeof miniGameRouteByPath];
+  if (miniGameRoute) {
+    return (
+      <ProtectedMiniGame
+        path={window.location.pathname}
+        returnPath={miniGameRoute.roomPath}
+        variant={miniGameRoute.variant}
+      />
+    );
   }
 
   const initialLanguage = getStoredLanguage();
+  const directRoomSceneId = roomSceneIdByPath[window.location.pathname];
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(hasAdminAccess);
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
@@ -461,6 +517,7 @@ function App() {
   const canDragScene = () => window.matchMedia("(max-width: 720px)").matches;
 
   const transitionToScene = (targetSceneId: SceneId, transitionSrc = "") => {
+    grantSceneAccess(targetSceneId);
     setScenePan({ x: 0, y: 0 });
     setTransitionTargetSceneId(targetSceneId);
     setTransitionVideoSrc(transitionSrc);
@@ -900,6 +957,7 @@ function App() {
     }
 
     setSceneId(action.target);
+    grantSceneAccess(action.target);
     updateScenePath(action.target);
   };
 
@@ -1018,6 +1076,8 @@ function App() {
       }
 
       const targetPath = overlay.action.path;
+      grantMiniGameAccess(targetPath);
+      window.sessionStorage.setItem(MINI_GAME_RETURN_ROOM_KEY, hostRoomPathBySceneId[displayedScene.id] ?? "/");
       setMiniGameLoading(true);
       window.setTimeout(() => {
         window.location.href = targetPath;
@@ -1295,6 +1355,7 @@ function App() {
     setTransitionPhase("idle");
     setScenePan({ x: 0, y: 0 });
     setSceneId(previousSceneId);
+    grantSceneAccess(previousSceneId);
     setScenePlaybackKey((current) => current + 1);
     setTransitionTargetSceneId("archive");
     updateScenePath(previousSceneId);
@@ -1340,6 +1401,18 @@ function App() {
       return next;
     });
   };
+
+  if (directRoomSceneId && !hasSceneAccess(directRoomSceneId) && !isAdminUnlocked) {
+    return (
+      <AdminPasswordGate
+        onUnlock={() => {
+          grantAdminAccess();
+          grantSceneAccess(directRoomSceneId);
+          setIsAdminUnlocked(true);
+        }}
+      />
+    );
+  }
 
   return (
     <main className="game-shell">
@@ -1583,6 +1656,84 @@ function App() {
           onTooYoung={returnOutsideFromInvitation}
         />
       ) : null}
+    </main>
+  );
+}
+
+type ProtectedMiniGameProps = {
+  path: string;
+  returnPath: string;
+  variant: "b" | "d" | "m" | "s";
+};
+
+function ProtectedMiniGame({ path, returnPath, variant }: ProtectedMiniGameProps) {
+  const storedReturnPath = window.sessionStorage.getItem(MINI_GAME_RETURN_ROOM_KEY) || returnPath;
+  const [isUnlocked, setIsUnlocked] = useState(() => hasMiniGameAccess(path) || hasAdminAccess());
+
+  if (!isUnlocked) {
+    return (
+      <AdminPasswordGate
+        onUnlock={() => {
+          grantAdminAccess();
+          grantMiniGameAccess(path);
+          window.sessionStorage.setItem(MINI_GAME_RETURN_ROOM_KEY, returnPath);
+          setIsUnlocked(true);
+        }}
+      />
+    );
+  }
+
+  return <BotClickTest returnPath={storedReturnPath} variant={variant} />;
+}
+
+type AdminPasswordGateProps = {
+  onUnlock: () => void;
+};
+
+function AdminPasswordGate({ onUnlock }: AdminPasswordGateProps) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <main className="game-shell admin-gate-shell">
+      <div className="dialog-backdrop admin-gate-backdrop">
+        <dialog className="dialog-card code-dialog-card admin-gate-card" aria-labelledby="admin-gate-title" open>
+          <form
+            className="code-dialog-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (password === ADMIN_PASSWORD) {
+                setError(null);
+                onUnlock();
+                return;
+              }
+
+              setError("Incorrect admin password.");
+              void new Audio("/assets/chain.mp3").play();
+            }}
+          >
+            <h1 id="admin-gate-title">Admin Access</h1>
+            <p>This page is locked for direct entry.</p>
+            <label>
+              <span>Password</span>
+              <input
+                className="code-dialog-name-input"
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setError(null);
+                }}
+                autoFocus
+                type="password"
+              />
+            </label>
+            {error ? <p className="code-dialog-error">{error}</p> : null}
+            <button type="submit" disabled={!password.trim()}>
+              Enter
+            </button>
+          </form>
+        </dialog>
+      </div>
     </main>
   );
 }
