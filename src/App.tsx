@@ -2,6 +2,8 @@ import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } fr
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import BotClickTest from "./BotClickTest";
+import InvitationFlow from "./InvitationFlow";
+import { type HostKey, hostRoomByKey } from "./invitationData";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
 type PopupContent = {
@@ -15,6 +17,10 @@ type GalleryOverlay = {
 };
 
 type TransitionPhase = "idle" | "playing" | "revealing";
+
+type InvitationFlowInitialStep = "code-prompt" | "contract";
+
+type InsideDoorAccess = "all" | SceneId | null;
 
 type ClickCounts = {
   door: number;
@@ -151,7 +157,7 @@ const mapCounts = (counts?: Partial<Record<EventName, number>>): ClickCounts => 
 
 const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   door: "atrium",
-  archive: "door",
+  archive: "atrium",
   lineup: "archive",
   inside: "archive",
   "B-room": "inside",
@@ -263,6 +269,8 @@ function App() {
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
+  const [invitationFlowStep, setInvitationFlowStep] = useState<InvitationFlowInitialStep | null>(null);
+  const [insideDoorAccess, setInsideDoorAccess] = useState<InsideDoorAccess>(null);
   const [selectedLanguage] = useState<Language>(initialLanguage ?? "en");
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
@@ -341,6 +349,38 @@ function App() {
   };
 
   const canDragScene = () => window.matchMedia("(max-width: 720px)").matches;
+
+  const transitionToScene = (targetSceneId: SceneId, transitionSrc = "") => {
+    setScenePan({ x: 0, y: 0 });
+    setTransitionTargetSceneId(targetSceneId);
+    setTransitionVideoSrc(transitionSrc);
+    setTransitionPhase("playing");
+  };
+
+  const enterInside = (access: InsideDoorAccess) => {
+    setInsideDoorAccess(access);
+    void new Audio("/assets/whoosp.mp3").play();
+    transitionToScene("inside", "/assets/transition3.mp4");
+  };
+
+  const enterLobbyForNewGuest = () => {
+    setInsideDoorAccess(null);
+    void new Audio("/assets/door-open.mp3").play();
+    transitionToScene("archive", "/assets/transition2.mp4");
+  };
+
+  const returnOutsideFromInvitation = () => {
+    setInvitationFlowStep(null);
+    setInsideDoorAccess(null);
+    setTransitionPhase("idle");
+    setScenePan({ x: 0, y: 0 });
+    setPopup(null);
+    setImageOverlaySrc(null);
+    setGalleryOverlay(null);
+    setSceneId("atrium");
+    setScenePlaybackKey((current) => current + 1);
+    updateScenePath("atrium");
+  };
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 720px)");
@@ -500,7 +540,14 @@ function App() {
 
   const handleHotspot = (hotspotId: string, action: HotspotAction) => {
     const wingEventName = getWingEventName(hotspotId);
-    if (wingEventName) {
+    const gatedInsideDoorTarget =
+      sceneId === "inside" && action.type === "scene" && insideDoorAccess && insideDoorAccess !== "all"
+        ? action.target
+        : null;
+    const isDeniedInsideDoor =
+      gatedInsideDoorTarget !== null && gatedInsideDoorTarget !== insideDoorAccess;
+
+    if (wingEventName && !isDeniedInsideDoor) {
       void trackEvent(wingEventName);
     }
 
@@ -601,65 +648,59 @@ function App() {
 
     if (sceneId === "atrium" && action.target === "door") {
       void trackEvent("door_clicked");
-      void new Audio("/assets/whoosp.mp3").play();
-      setScenePan({ x: 0, y: 0 });
-      setTransitionTargetSceneId("door");
-      setTransitionVideoSrc("/assets/transition1.mp4");
-      setTransitionPhase("playing");
+      setInvitationFlowStep("code-prompt");
       return;
     }
 
     if (sceneId === "door" && action.target === "archive") {
       void new Audio("/assets/door-open.mp3").play();
-      setScenePan({ x: 0, y: 0 });
-      setTransitionTargetSceneId("archive");
-      setTransitionVideoSrc("/assets/transition2.mp4");
-      setTransitionPhase("playing");
+      transitionToScene("archive", "/assets/transition2.mp4");
       return;
     }
 
     if (sceneId === "archive" && action.target === "inside") {
       void new Audio("/assets/whoosp.mp3").play();
-      setScenePan({ x: 0, y: 0 });
-      setTransitionTargetSceneId("inside");
-      setTransitionVideoSrc("/assets/transition3.mp4");
-      setTransitionPhase("playing");
+      transitionToScene("inside", "/assets/transition3.mp4");
       return;
     }
 
     if (sceneId === "inside" && action.target === "B-room") {
+      if (insideDoorAccess && insideDoorAccess !== "all" && insideDoorAccess !== "B-room") {
+        void new Audio("/assets/chain.mp3").play();
+        return;
+      }
       void new Audio("/assets/door-open.mp3").play();
-      setScenePan({ x: 0, y: 0 });
-      setTransitionTargetSceneId("B-room");
-      setTransitionVideoSrc("");
-      setTransitionPhase("playing");
+      transitionToScene("B-room");
       return;
     }
 
     if (sceneId === "inside" && action.target === "D-room") {
+      if (insideDoorAccess && insideDoorAccess !== "all" && insideDoorAccess !== "D-room") {
+        void new Audio("/assets/chain.mp3").play();
+        return;
+      }
       void new Audio("/assets/door-open.mp3").play();
-      setScenePan({ x: 0, y: 0 });
-      setTransitionTargetSceneId("D-room");
-      setTransitionVideoSrc("");
-      setTransitionPhase("playing");
+      transitionToScene("D-room");
       return;
     }
 
     if (sceneId === "inside" && action.target === "S-room") {
+      if (insideDoorAccess && insideDoorAccess !== "all" && insideDoorAccess !== "S-room") {
+        void new Audio("/assets/chain.mp3").play();
+        return;
+      }
       void new Audio("/assets/door-open.mp3").play();
-      setScenePan({ x: 0, y: 0 });
-      setTransitionTargetSceneId("S-room");
-      setTransitionVideoSrc("");
-      setTransitionPhase("playing");
+      transitionToScene("S-room");
       return;
     }
 
     if (sceneId === "inside" && action.target === "M-room") {
+      if (insideDoorAccess && insideDoorAccess !== "all" && insideDoorAccess !== "M-room") {
+        void new Audio("/assets/chain.mp3").play();
+        return;
+      }
       void new Audio("/assets/door-open.mp3").play();
-      setScenePan({ x: 0, y: 0 });
-      setTransitionTargetSceneId("M-room");
-      setTransitionVideoSrc("");
-      setTransitionPhase("playing");
+      transitionToScene("M-room");
       return;
     }
 
@@ -1223,6 +1264,25 @@ function App() {
             <ChevronRight size={28} aria-hidden="true" />
           </button>
         </div>
+      ) : null}
+
+      {invitationFlowStep ? (
+        <InvitationFlow
+          initialStep={invitationFlowStep}
+          language={selectedLanguage}
+          sessionId={getSessionId()}
+          onCancel={() => setInvitationFlowStep(null)}
+          onExistingCode={() => {
+            setInvitationFlowStep(null);
+            enterInside("all");
+          }}
+          onNewUserStarted={enterLobbyForNewGuest}
+          onResultClosed={(winningRoom: HostKey) => {
+            setInvitationFlowStep(null);
+            enterInside(hostRoomByKey[winningRoom] as SceneId);
+          }}
+          onTooYoung={returnOutsideFromInvitation}
+        />
       ) : null}
     </main>
   );
