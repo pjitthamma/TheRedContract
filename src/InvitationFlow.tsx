@@ -89,7 +89,19 @@ const rememberInvitationResult = (result: InvitationResult) => {
 };
 
 const shuffleQuestions = (questions: QuestionnaireQuestion[]) => {
-  const shuffled = [...questions];
+  const shuffled = questions.map((question) => ({
+    ...question,
+    choices: shuffleChoices(question.choices),
+  }));
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+};
+
+const shuffleChoices = (choices: QuestionnaireChoice[]) => {
+  const shuffled = [...choices];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
