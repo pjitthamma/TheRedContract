@@ -508,8 +508,8 @@ export const fallbackQuestionnaire: QuestionnaireQuestion[] = [
         "id": "q09_b",
         "label": "B",
         "text": {
-          "en": "Strongly refused.",
-          "th": "ปฏิเสธอย่างรุนแรง กล้าดียังไง"
+          "en": "How Dare You!",
+          "th": "กล้าดียังไง!"
         },
         "scores": {
           "b": 0,

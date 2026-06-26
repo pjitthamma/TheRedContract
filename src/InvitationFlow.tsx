@@ -1,5 +1,5 @@
 import { Download, X } from "lucide-react";
-import { toPng } from "html-to-image";
+import { toBlob } from "html-to-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type HostKey,
@@ -40,6 +40,29 @@ type InvitationResult = {
   comparisonPercentages: HostScoreMap;
   winningRoom: HostKey;
   invitationCode: string;
+};
+
+type SaveFilePicker = {
+  suggestedName?: string;
+  types?: Array<{
+    description: string;
+    accept: Record<string, string[]>;
+  }>;
+};
+
+type WritableFileHandle = {
+  createWritable: () => Promise<{
+    write: (blob: Blob) => Promise<void>;
+    close: () => Promise<void>;
+  }>;
+};
+
+type NavigatorWithShareFiles = Navigator & {
+  canShare?: (data: ShareData) => boolean;
+};
+
+type WindowWithSavePicker = Window & {
+  showSaveFilePicker?: (options: SaveFilePicker) => Promise<WritableFileHandle>;
 };
 
 const emptyScores = (): HostScoreMap => ({ b: 0, d: 0, s: 0, m: 0 });
@@ -185,14 +208,14 @@ function ScoreRadar({ scores, label }: { scores: HostScoreMap; label: string }) 
   return (
     <svg className="invitation-radar" viewBox="0 0 164 164" role="img" aria-label={label}>
       {[0.35, 0.68, 1].map((scale) => (
-        <circle key={scale} cx={center} cy={center} r={maxRadius * scale} />
+        <circle key={scale} cx={center} cy={center} r={maxRadius * scale} fill="none" stroke="rgba(255,216,117,0.28)" strokeWidth="1" />
       ))}
       {points.map((point) => (
-        <line key={point.host} x1={center} y1={center} x2={point.labelX} y2={point.labelY} />
+        <line key={point.host} x1={center} y1={center} x2={point.labelX} y2={point.labelY} stroke="rgba(255,216,117,0.28)" strokeWidth="1" />
       ))}
-      <polygon points={polygonPoints} />
+      <polygon points={polygonPoints} fill="rgba(214,169,74,0.34)" stroke="#d6a94a" strokeWidth="2" />
       {points.map((point) => (
-        <text key={point.host} x={point.labelX} y={point.labelY}>
+        <text key={point.host} x={point.labelX} y={point.labelY} fill="#fff8cc" fontSize="11.5" fontWeight="800" textAnchor="middle" dominantBaseline="middle">
           {point.host.toUpperCase()}
         </text>
       ))}
@@ -220,14 +243,14 @@ function PercentRadar({ percentages, label }: { percentages: HostScoreMap; label
   return (
     <svg className="invitation-radar" viewBox="0 0 164 164" role="img" aria-label={label}>
       {[0.25, 0.5, 0.75, 1].map((scale) => (
-        <circle key={scale} cx={center} cy={center} r={maxRadius * scale} />
+        <circle key={scale} cx={center} cy={center} r={maxRadius * scale} fill="none" stroke="rgba(255,216,117,0.28)" strokeWidth="1" />
       ))}
       {points.map((point) => (
-        <line key={point.host} x1={center} y1={center} x2={point.labelX} y2={point.labelY} />
+        <line key={point.host} x1={center} y1={center} x2={point.labelX} y2={point.labelY} stroke="rgba(255,216,117,0.28)" strokeWidth="1" />
       ))}
-      <polygon points={polygonPoints} />
+      <polygon points={polygonPoints} fill="rgba(214,169,74,0.34)" stroke="#d6a94a" strokeWidth="2" />
       {points.map((point) => (
-        <text key={point.host} x={point.labelX} y={point.labelY}>
+        <text key={point.host} x={point.labelX} y={point.labelY} fill="#fff8cc" fontSize="11.5" fontWeight="800" textAnchor="middle" dominantBaseline="middle">
           {point.host.toUpperCase()}-wing
         </text>
       ))}
@@ -253,6 +276,7 @@ function InvitationFlow({
   const [result, setResult] = useState<InvitationResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [exitMessage, setExitMessage] = useState<string | null>(null);
+  const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const resultCardRef = useRef<HTMLDivElement | null>(null);
   const hudCopy = invitationCopy.en;
@@ -371,6 +395,8 @@ function InvitationFlow({
     }
 
     await navigator.clipboard.writeText(result.invitationCode);
+    setCopyTooltipVisible(true);
+    window.setTimeout(() => setCopyTooltipVisible(false), 1400);
   };
 
   const saveResultImage = async () => {
@@ -378,11 +404,49 @@ function InvitationFlow({
       return;
     }
 
-    const dataUrl = await toPng(resultCardRef.current, { cacheBust: true, pixelRatio: 2 });
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = `red-contract-${result?.invitationCode ?? "result"}.png`;
-    link.click();
+    try {
+      const fileName = `red-contract-${result?.invitationCode ?? "result"}.png`;
+      const blob = await toBlob(resultCardRef.current, { cacheBust: true, pixelRatio: 2 });
+      if (!blob) {
+        return;
+      }
+
+      const savePicker = (window as WindowWithSavePicker).showSaveFilePicker;
+      if (savePicker) {
+        const handle = await savePicker({
+          suggestedName: fileName,
+          types: [
+            {
+              description: "PNG image",
+              accept: { "image/png": [".png"] },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      }
+
+      const file = new File([blob], fileName, { type: "image/png" });
+      const shareNavigator = navigator as NavigatorWithShareFiles;
+      if (navigator.share && shareNavigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "The Red Contract Result" });
+        return;
+      }
+
+      const dataUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = fileName;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      throw error;
+    }
   };
 
   const closeExitMessage = () => {
@@ -516,9 +580,12 @@ function InvitationFlow({
               </div>
             </div>
             <div className="invitation-actions">
-              <button type="button" onClick={copyCode}>
-                {formCopy.copyCode}
-              </button>
+              <div className="invitation-copy-action">
+                <button type="button" onClick={copyCode}>
+                  {formCopy.copyCode}
+                </button>
+                {copyTooltipVisible ? <span className="invitation-copy-tooltip">Code copied!</span> : null}
+              </div>
               <button type="button" onClick={saveResultImage}>
                 <Download size={16} aria-hidden="true" />
                 {formCopy.saveResult}

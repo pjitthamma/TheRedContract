@@ -951,6 +951,28 @@ button {
   gap: 0.75rem;
 }
 
+.invitation-copy-action {
+  position: relative;
+  display: inline-flex;
+}
+
+.invitation-copy-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.45rem);
+  z-index: 2;
+  padding: 0.35rem 0.55rem;
+  color: #fff8cc;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.82);
+  border: 1px solid rgba(255, 216, 117, 0.38);
+  border-radius: 6px;
+  transform: translateX(-50%);
+  box-shadow: 0 0.7rem 1.4rem rgba(0, 0, 0, 0.28);
+}
+
 .invitation-actions button,
 .contract-sign-button,
 .questionnaire-footer button {
