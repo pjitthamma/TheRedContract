@@ -127,6 +127,10 @@ const playPenSound = () => {
   void new Audio("/assets/pen.mp3").play();
 };
 
+const playWelcomeSound = () => {
+  void new Audio("/assets/Welcome.mp3").play();
+};
+
 const GUEST_NAME_KEY = "red-contract-guest-name";
 
 const invitationCopy = {
@@ -134,6 +138,8 @@ const invitationCopy = {
     invitationQuestion: "Do you has an invitation code?",
     yes: "Yes",
     no: "No",
+    checkingName: "Checking name...",
+    duplicateName: "This name has already been used.",
     nameRequired: "Please enter your name before signing the contract.",
     signContract: "Sign Contract",
     question: "Question",
@@ -158,6 +164,8 @@ const invitationCopy = {
     invitationQuestion: "คุณมีรหัสเชิญหรือไม่?",
     yes: "มี",
     no: "ไม่มี",
+    checkingName: "กำลังตรวจสอบชื่อ...",
+    duplicateName: "ชื่อนี้ถูกลงทะเบียนแล้ว กรุณาใช้ชื่ออื่น",
     nameRequired: "กรุณากรอกชื่อก่อนลงนามในสัญญา",
     signContract: "ลงนามในสัญญา",
     question: "คำถาม",
@@ -312,6 +320,7 @@ function InvitationFlow({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [exitMessage, setExitMessage] = useState<string | null>(null);
   const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
+  const [isCheckingGuestName, setIsCheckingGuestName] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const resultCardRef = useRef<HTMLDivElement | null>(null);
   const hudCopy = invitationCopy.en;
@@ -354,17 +363,43 @@ function InvitationFlow({
     setStep("contract");
   };
 
-  const startQuiz = () => {
+  const startQuiz = async () => {
     if (!guestName.trim() || !answeredDate.trim()) {
       setErrorMessage(hudCopy.nameRequired);
       return;
     }
 
+    const normalizedGuestName = guestName.trim().slice(0, 20);
+    setIsCheckingGuestName(true);
     setErrorMessage(null);
-    window.localStorage.setItem(GUEST_NAME_KEY, guestName.trim());
-    setAnswersByQuestionId({});
-    setQuestions(shuffleQuestions(fallbackQuestionnaire));
-    setStep("quiz");
+
+    try {
+      const response = await fetch("/.netlify/functions/check-guest-name", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ guestName: normalizedGuestName }),
+      });
+
+      if (response.status === 409) {
+        setErrorMessage(formCopy.duplicateName);
+        return;
+      }
+
+      if (!response.ok) {
+        setErrorMessage("Could not check this guest name. Please try again.");
+        return;
+      }
+
+      setAnswersByQuestionId({});
+      setQuestions(shuffleQuestions(fallbackQuestionnaire));
+      setStep("quiz");
+    } catch {
+      setErrorMessage("Could not check this guest name. Please try again.");
+    } finally {
+      setIsCheckingGuestName(false);
+    }
   };
 
   const handleChoiceSelect = (question: QuestionnaireQuestion, choice: QuestionnaireChoice) => {
@@ -388,25 +423,35 @@ function InvitationFlow({
     }));
   };
 
-  const submitQuiz = async () => {
+  const submitQuiz = () => {
     if (!isQuizComplete || isSubmitting) {
       return;
     }
 
     const fallbackResult = calculateResult(questions, answersByQuestionId, guestName.trim(), answeredDate);
-    setIsSubmitting(true);
     setErrorMessage(null);
+    setResult(fallbackResult);
+    setStep("result");
+  };
+
+  const saveResultAndEnter = async () => {
+    if (!result || isSubmitting) {
+      return;
+    }
 
     try {
+      setIsSubmitting(true);
+      setErrorMessage(null);
       const response = await fetch("/.netlify/functions/submit-questionnaire-result", {
         method: "POST",
         headers: {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          guestName: guestName.trim(),
-          answeredDate,
-          answers: fallbackResult.answers,
+          guestName: result.guestName,
+          answeredDate: result.answeredDate,
+          answers: result.answers,
+          invitationCode: result.invitationCode,
           sessionId,
         }),
       });
@@ -415,16 +460,19 @@ function InvitationFlow({
         const savedResult = (await response.json()) as InvitationResult;
         rememberInvitationResult(savedResult);
         setResult(savedResult);
+        window.localStorage.setItem(GUEST_NAME_KEY, savedResult.guestName.trim().slice(0, 20));
+        onResultClosed(savedResult.winningRoom);
+      } else if (response.status === 409) {
+        setErrorMessage(formCopy.duplicateName);
+        setStep("contract");
+        return;
       } else {
-        rememberInvitationResult(fallbackResult);
-        setResult(fallbackResult);
+        setErrorMessage("Could not save your result. Please try again.");
       }
     } catch {
-      rememberInvitationResult(fallbackResult);
-      setResult(fallbackResult);
+      setErrorMessage("Could not save your result. Please try again.");
     } finally {
       setIsSubmitting(false);
-      setStep("result");
     }
   };
 
@@ -521,10 +569,22 @@ function InvitationFlow({
             </button>
             <h1>{formCopy.invitationQuestion}</h1>
             <div className="invitation-actions">
-              <button type="button" onClick={onExistingCode}>
+              <button
+                type="button"
+                onClick={() => {
+                  playWelcomeSound();
+                  onExistingCode();
+                }}
+              >
                 {formCopy.yes}
               </button>
-              <button type="button" onClick={startNewUserFlow}>
+              <button
+                type="button"
+                onClick={() => {
+                  playWelcomeSound();
+                  startNewUserFlow();
+                }}
+              >
                 {formCopy.no}
               </button>
             </div>
@@ -536,7 +596,7 @@ function InvitationFlow({
             className="contract-form"
             onSubmit={(event) => {
               event.preventDefault();
-              startQuiz();
+              void startQuiz();
             }}
           >
             <div className="contract-document">
@@ -558,8 +618,12 @@ function InvitationFlow({
               </label>
               {errorMessage ? <p className="invitation-error contract-error">{errorMessage}</p> : null}
             </div>
-            <button className="contract-sign-button" type="submit" disabled={!guestName.trim() || !answeredDate.trim()}>
-              {formCopy.signContract}
+            <button
+              className="contract-sign-button"
+              type="submit"
+              disabled={!guestName.trim() || !answeredDate.trim() || isCheckingGuestName}
+            >
+              {isCheckingGuestName ? formCopy.checkingName : formCopy.signContract}
             </button>
           </form>
         ) : null}
@@ -619,6 +683,7 @@ function InvitationFlow({
               </div>
             </div>
             <div className="invitation-actions">
+              {errorMessage ? <p className="invitation-error">{errorMessage}</p> : null}
               <div className="invitation-copy-action">
                 <button type="button" onClick={copyCode}>
                   {formCopy.copyCode}
@@ -629,8 +694,8 @@ function InvitationFlow({
                 <Download size={16} aria-hidden="true" />
                 {formCopy.saveResult}
               </button>
-              <button type="button" onClick={() => onResultClosed(result.winningRoom)}>
-                {formCopy.enter}
+              <button type="button" disabled={isSubmitting} onClick={saveResultAndEnter}>
+                {isSubmitting ? formCopy.sealing : formCopy.enter}
               </button>
             </div>
           </div>

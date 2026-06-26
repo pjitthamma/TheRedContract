@@ -1585,14 +1585,6 @@ button {
   -webkit-user-select: none;
 }
 
-.bot-test-side-fallback {
-  width: min(18rem, 20vw);
-  max-height: 50vh;
-  border-radius: 8px;
-  opacity: 0.92;
-  filter: drop-shadow(0 1rem 2rem rgba(0, 0, 0, 0.48));
-}
-
 .bot-test-leaderboard {
   position: absolute;
   top: 5.9rem;
@@ -1800,11 +1792,6 @@ button {
     right: -0.5rem;
     width: min(34vw, 10rem);
     max-height: 42vh;
-  }
-
-  .bot-test-side-fallback {
-    width: min(32vw, 9rem);
-    max-height: 34vh;
   }
 
   .bot-test-hitbox-b,

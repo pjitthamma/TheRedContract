@@ -9,6 +9,7 @@ type SubmitPayload = {
   guestName?: string;
   answeredDate?: string;
   answers?: SubmittedAnswer[];
+  invitationCode?: string;
   sessionId?: string;
 };
 
@@ -26,6 +27,7 @@ type CodeRow = {
 };
 
 type ResultRow = {
+  guest_name?: string;
   scores: Partial<Record<HostKey, number>> | null;
 };
 
@@ -87,6 +89,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   const guestName = payload.guestName?.trim();
   const answeredDate = payload.answeredDate?.trim();
   const answers = payload.answers ?? [];
+  const requestedInvitationCode = payload.invitationCode?.trim();
 
   if (!guestName) {
     return json(400, { error: "Guest name is required" });
@@ -103,6 +106,21 @@ export const handler = async (event: { httpMethod: string; body: string | null }
     authorization: `Bearer ${serviceRoleKey}`,
     "content-type": "application/json",
   };
+
+  const existingGuestResponse = await fetch(`${supabaseUrl}/rest/v1/invitation_results?select=guest_name`, { headers });
+  if (!existingGuestResponse.ok) {
+    return json(500, { error: "Could not check guest name" });
+  }
+
+  const existingGuestRows = (await existingGuestResponse.json()) as ResultRow[];
+  const normalizedGuestName = guestName.toLocaleLowerCase();
+  const guestNameExists = existingGuestRows.some(
+    (row) => row.guest_name?.trim().toLocaleLowerCase() === normalizedGuestName,
+  );
+
+  if (guestNameExists) {
+    return json(409, { error: "This guest name is already registered." });
+  }
 
   const selectedChoiceIds = [...new Set(answers.map((answer) => answer.choiceId).filter(Boolean))];
   const choicesResponse = await fetch(
@@ -141,7 +159,9 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   }
 
   const codes = (await codeResponse.json()) as CodeRow[];
-  const invitationCode = codes[Math.floor(Math.random() * codes.length)]?.code;
+  const invitationCode = requestedInvitationCode
+    ? codes.find((codeRow) => codeRow.code.toLocaleLowerCase() === requestedInvitationCode.toLocaleLowerCase())?.code
+    : codes[Math.floor(Math.random() * codes.length)]?.code;
   if (!invitationCode) {
     return json(500, { error: "No invitation code is available for this room" });
   }
