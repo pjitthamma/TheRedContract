@@ -238,7 +238,6 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
     : clickCount > 0
       ? [{ name: guestName, score: clickCount }]
       : [];
-  const highestLeaderboardScore = Math.max(1, ...displayedLeaderboardEntries.map((entry) => entry.score));
 
   return (
     <main className="bot-test-shell">
@@ -290,19 +289,8 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
         <ol>
           {displayedLeaderboardEntries.map((entry) => (
             <li key={`${entry.name}-${entry.score}`}>
-              <div className="bot-test-leaderboard-row-head">
-                <span>{entry.name}</span>
-              </div>
-              <div
-                className="bot-test-score-bar"
-                role="meter"
-                aria-label={`${entry.score} hits`}
-                aria-valuemin={0}
-                aria-valuemax={highestLeaderboardScore}
-                aria-valuenow={entry.score}
-              >
-                <div style={{ width: `${Math.max(4, Math.round((entry.score / highestLeaderboardScore) * 100))}%` }} />
-              </div>
+              <span>{entry.name}</span>
+              <strong>{entry.score}</strong>
             </li>
           ))}
           {!displayedLeaderboardEntries.length ? (
