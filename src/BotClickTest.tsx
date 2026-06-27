@@ -1,5 +1,5 @@
-import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, RefreshCw, Volume2, VolumeX } from "lucide-react";
+import { type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type BotAnimationState = "start" | "end";
 
@@ -25,12 +25,16 @@ type LeaderboardEntry = {
 };
 
 type LeaderboardResponse = {
-  guestScore?: number | null;
   leaderboard?: LeaderboardEntry[];
+};
+
+type GuestScoreResponse = {
+  guestScore?: number | null;
 };
 
 const GUEST_NAME_KEY = "red-contract-guest-name";
 const SESSION_KEY = "red-contract-session-id";
+const SCORE_SAVE_INTERVAL_MS = 15000;
 
 const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   b: {
@@ -105,6 +109,9 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
   const slapAudioRef = useRef<HTMLAudioElement | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
   const hasLoadedSavedScoreRef = useRef(false);
+  const clickCountRef = useRef(0);
+  const lastSubmittedScoreRef = useRef(0);
+  const isSubmittingScoreRef = useRef(false);
 
   useEffect(() => {
     const audio = new Audio(config.musicSrc);
@@ -124,10 +131,13 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
     };
   }, [config.musicSrc]);
 
-  const fetchLeaderboard = async () => {
+  useEffect(() => {
+    clickCountRef.current = clickCount;
+  }, [clickCount]);
+
+  const fetchLeaderboard = useCallback(async () => {
     try {
       const query = new URLSearchParams({
-        guestName,
         roomKey: variant,
       });
       const response = await fetch(`/.netlify/functions/get-mini-game-leaderboard?${query.toString()}`);
@@ -138,54 +148,102 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
       const data = (await response.json()) as LeaderboardResponse;
       const nextLeaderboardEntries = data.leaderboard ?? [];
       setLeaderboardEntries(nextLeaderboardEntries);
+    } catch {
+      // Local Vite development can keep the current in-memory score visible.
+    }
+  }, [variant]);
 
-      const savedGuestScore =
-        typeof data.guestScore === "number"
-          ? data.guestScore
-          : nextLeaderboardEntries.find((entry) => entry.name.trim().toLocaleLowerCase() === guestName.toLocaleLowerCase())
-              ?.score;
-
-      if (typeof savedGuestScore === "number") {
-        setClickCount((current) => Math.max(current, savedGuestScore));
+  const fetchGuestScore = useCallback(async () => {
+    try {
+      const query = new URLSearchParams({
+        guestName,
+        roomKey: variant,
+      });
+      const response = await fetch(`/.netlify/functions/get-mini-game-score?${query.toString()}`);
+      if (!response.ok) {
+        return;
       }
+
+      const data = (await response.json()) as GuestScoreResponse;
+      const savedGuestScore = typeof data.guestScore === "number" ? data.guestScore : 0;
+      lastSubmittedScoreRef.current = savedGuestScore;
+      setClickCount((current) => Math.max(current, savedGuestScore));
     } catch {
       // Local Vite development can keep the current in-memory score visible.
     } finally {
       hasLoadedSavedScoreRef.current = true;
     }
-  };
+  }, [guestName, variant]);
+
+  const submitScore = useCallback(
+    async (score = clickCountRef.current, keepalive = false) => {
+      if (!hasLoadedSavedScoreRef.current || score <= 0 || score <= lastSubmittedScoreRef.current) {
+        return;
+      }
+      if (isSubmittingScoreRef.current && !keepalive) {
+        return;
+      }
+
+      isSubmittingScoreRef.current = true;
+      try {
+        const response = await fetch("/.netlify/functions/submit-mini-game-score", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          keepalive,
+          body: JSON.stringify({
+            roomKey: variant,
+            guestName,
+            clickCount: score,
+            sessionId: getSessionId(),
+          }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as { clickCount?: number };
+          lastSubmittedScoreRef.current = Math.max(lastSubmittedScoreRef.current, data.clickCount ?? score);
+        }
+      } catch {
+        // Keep clicks playable when the database is unavailable.
+      } finally {
+        isSubmittingScoreRef.current = false;
+      }
+    },
+    [guestName, variant],
+  );
 
   useEffect(() => {
     hasLoadedSavedScoreRef.current = false;
-    void fetchLeaderboard();
-  }, [guestName, variant]);
+    lastSubmittedScoreRef.current = 0;
+    void fetchGuestScore();
+  }, [fetchGuestScore]);
 
   useEffect(() => {
-    if (!hasLoadedSavedScoreRef.current || clickCount <= 0) {
-      return;
-    }
+    const scoreTimer = window.setInterval(() => {
+      void submitScore();
+    }, SCORE_SAVE_INTERVAL_MS);
 
-    const submitTimer = window.setTimeout(() => {
-      void fetch("/.netlify/functions/submit-mini-game-score", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          roomKey: variant,
-          guestName,
-          clickCount,
-          sessionId: getSessionId(),
-        }),
-      })
-        .then(() => fetchLeaderboard())
-        .catch(() => {
-          // Keep clicks playable when the database is unavailable.
-        });
-    }, 350);
+    return () => window.clearInterval(scoreTimer);
+  }, [submitScore]);
 
-    return () => window.clearTimeout(submitTimer);
-  }, [clickCount, guestName, variant]);
+  useEffect(() => {
+    const saveBeforeLeave = () => {
+      void submitScore(clickCountRef.current, true);
+    };
+
+    window.addEventListener("pagehide", saveBeforeLeave);
+    return () => {
+      window.removeEventListener("pagehide", saveBeforeLeave);
+      void submitScore(clickCountRef.current, true);
+    };
+  }, [submitScore]);
+
+  const handleBackClick = async (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    await submitScore(clickCountRef.current);
+    window.location.assign(returnPath);
+  };
 
   const handleCharacterHit = () => {
     setClickCount((current) => current + 1);
@@ -247,7 +305,7 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
         aria-hidden="true"
       />
 
-      <a className="bot-test-back" href={returnPath} aria-label="Back to host room" title="Back to host room">
+      <a className="bot-test-back" href={returnPath} aria-label="Back to host room" title="Back to host room" onClick={handleBackClick}>
         <ArrowLeft size={20} aria-hidden="true" />
       </a>
 
@@ -285,7 +343,12 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
       />
 
       <aside className="bot-test-leaderboard" aria-label="Leaderboard">
-        <h1>Leaderboard</h1>
+        <div className="bot-test-leaderboard-title">
+          <h1>LEADERBOARD (TOP 10)</h1>
+          <button type="button" aria-label="Refresh leaderboard" title="Refresh leaderboard" onClick={() => void fetchLeaderboard()}>
+            <RefreshCw size={14} aria-hidden="true" />
+          </button>
+        </div>
         <ol>
           {displayedLeaderboardEntries.map((entry) => (
             <li key={`${entry.name}-${entry.score}`}>

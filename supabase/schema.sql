@@ -104,3 +104,41 @@ create table if not exists mini_game_scores (
 
 create index if not exists mini_game_scores_room_score_idx
 on mini_game_scores (room_key, click_count desc, updated_at asc);
+
+create or replace function upsert_mini_game_score_max(
+  p_room_key text,
+  p_guest_name text,
+  p_click_count integer,
+  p_session_id text default null
+)
+returns table (
+  room_key text,
+  guest_name text,
+  click_count integer
+)
+language sql
+as $$
+  insert into mini_game_scores (
+    room_key,
+    guest_name,
+    click_count,
+    session_id,
+    updated_at
+  )
+  values (
+    p_room_key,
+    p_guest_name,
+    greatest(0, coalesce(p_click_count, 0)),
+    p_session_id,
+    now()
+  )
+  on conflict (room_key, guest_name)
+  do update set
+    click_count = greatest(mini_game_scores.click_count, excluded.click_count),
+    session_id = coalesce(excluded.session_id, mini_game_scores.session_id),
+    updated_at = now()
+  returning
+    mini_game_scores.room_key,
+    mini_game_scores.guest_name,
+    mini_game_scores.click_count;
+$$;

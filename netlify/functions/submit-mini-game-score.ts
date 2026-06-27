@@ -7,9 +7,9 @@ type SubmitPayload = {
   sessionId?: string;
 };
 
-type ExistingScoreRow = {
+type SavedScoreRow = {
+  room_key: RoomKey;
   guest_name: string;
-  id: number;
   click_count: number;
 };
 
@@ -45,7 +45,8 @@ export const handler = async (event: { httpMethod: string; body: string | null }
 
   const roomKey = payload.roomKey;
   const guestName = payload.guestName?.trim().slice(0, 20);
-  const clickCount = Math.max(0, Math.floor(Number(payload.clickCount ?? 0)));
+  const rawClickCount = Number(payload.clickCount ?? 0);
+  const clickCount = Number.isFinite(rawClickCount) ? Math.max(0, Math.floor(rawClickCount)) : 0;
 
   if (!roomKey || !roomKeys.has(roomKey)) {
     return json(400, { error: "Valid roomKey is required" });
@@ -60,53 +61,27 @@ export const handler = async (event: { httpMethod: string; body: string | null }
     "content-type": "application/json",
   };
 
-  const existingResponse = await fetch(
-    `${supabaseUrl}/rest/v1/mini_game_scores?select=id,guest_name,click_count&room_key=eq.${roomKey}`,
-    { headers },
-  );
+  const saveResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/upsert_mini_game_score_max`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      p_room_key: roomKey,
+      p_guest_name: guestName,
+      p_click_count: clickCount,
+      p_session_id: payload.sessionId ?? null,
+    }),
+  });
 
-  if (!existingResponse.ok) {
-    return json(500, { error: "Could not fetch existing score" });
+  if (!saveResponse.ok) {
+    return json(500, { error: "Could not save score" });
   }
 
-  const existingRows = (await existingResponse.json()) as ExistingScoreRow[];
-  const existing = existingRows.find((row) => row.guest_name?.trim().toLocaleLowerCase() === guestName.toLocaleLowerCase());
-  const storedClickCount = Math.max(clickCount, existing?.click_count ?? 0);
-
-  if (existing) {
-    const updateResponse = await fetch(`${supabaseUrl}/rest/v1/mini_game_scores?id=eq.${existing.id}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({
-        click_count: storedClickCount,
-        session_id: payload.sessionId ?? null,
-        updated_at: new Date().toISOString(),
-      }),
-    });
-
-    if (!updateResponse.ok) {
-      return json(500, { error: "Could not update score" });
-    }
-  } else {
-    const insertResponse = await fetch(`${supabaseUrl}/rest/v1/mini_game_scores`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        room_key: roomKey,
-        guest_name: guestName,
-        click_count: storedClickCount,
-        session_id: payload.sessionId ?? null,
-      }),
-    });
-
-    if (!insertResponse.ok) {
-      return json(500, { error: "Could not save score" });
-    }
-  }
+  const savedRows = (await saveResponse.json()) as SavedScoreRow[];
+  const savedScore = savedRows[0];
 
   return json(200, {
-    roomKey,
-    guestName,
-    clickCount: storedClickCount,
+    roomKey: savedScore?.room_key ?? roomKey,
+    guestName: savedScore?.guest_name ?? guestName,
+    clickCount: savedScore?.click_count ?? clickCount,
   });
 };
