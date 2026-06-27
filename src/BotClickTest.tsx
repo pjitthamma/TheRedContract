@@ -1,5 +1,5 @@
 import { ArrowLeft, RefreshCw, Volume2, VolumeX } from "lucide-react";
-import { type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, type MouseEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type BotAnimationState = "start" | "end";
 
@@ -36,6 +36,7 @@ const GUEST_NAME_KEY = "red-contract-guest-name";
 const SESSION_KEY = "red-contract-session-id";
 const getPlayTokenKey = (roomKey: BotClickTestVariant) => `red-contract-play-token:${roomKey}`;
 const SCORE_SAVE_INTERVAL_MS = 15000;
+const MIN_HIT_INPUT_INTERVAL_MS = 60;
 
 const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   b: {
@@ -116,6 +117,7 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
   const clickCountRef = useRef(0);
   const lastSubmittedScoreRef = useRef(0);
   const isSubmittingScoreRef = useRef(false);
+  const lastAcceptedHitAtRef = useRef(0);
 
   useEffect(() => {
     const audio = new Audio(config.musicSrc);
@@ -278,12 +280,7 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
     window.location.assign(returnPath);
   };
 
-  const handleCharacterHit = () => {
-    if (isSessionExpired) {
-      return;
-    }
-
-    setClickCount((current) => current + 1);
+  const playHitFeedback = () => {
     setAnimationState("end");
 
     const slapAudio = slapAudioRef.current ?? new Audio("/assets/slap.mp3");
@@ -311,6 +308,35 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
       video.currentTime = 0;
       void video.play();
     }, 0);
+  };
+
+  const handleCharacterPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+
+    if (isSessionExpired) {
+      return;
+    }
+
+    if (!event.isPrimary) {
+      return;
+    }
+
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    const now = performance.now();
+    if (now - lastAcceptedHitAtRef.current < MIN_HIT_INPUT_INTERVAL_MS) {
+      return;
+    }
+    lastAcceptedHitAtRef.current = now;
+
+    setClickCount((current) => current + 1);
+    playHitFeedback();
+  };
+
+  const blockKeyboardHit = (event: KeyboardEvent<HTMLButtonElement>) => {
+    event.preventDefault();
   };
 
   const toggleMusic = () => {
@@ -429,7 +455,11 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
           type="button"
           aria-label="Hit character"
           disabled={isSessionExpired}
-          onClick={handleCharacterHit}
+          tabIndex={-1}
+          onClick={(event) => event.preventDefault()}
+          onKeyDown={blockKeyboardHit}
+          onKeyUp={blockKeyboardHit}
+          onPointerDown={handleCharacterPointerDown}
         />
       </section>
     </main>

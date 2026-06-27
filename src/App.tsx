@@ -7,7 +7,7 @@ import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitati
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.1";
+const APP_VERSION = "0.1.2";
 
 type PopupContent = {
   title: string;
