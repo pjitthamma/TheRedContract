@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 type RoomKey = "b" | "d" | "s" | "m";
 
 type ValidatePayload = {
@@ -7,12 +9,14 @@ type ValidatePayload = {
 };
 
 type InvitationResultRow = {
+  id: number;
   guest_name: string;
   invitation_code: string;
   winning_room: RoomKey;
 };
 
 const roomKeys = new Set<RoomKey>(["b", "d", "s", "m"]);
+const PLAY_SESSION_TTL_MS = 5 * 60 * 1000;
 
 const json = (statusCode: number, body: unknown) => ({
   statusCode,
@@ -62,7 +66,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   };
 
   const response = await fetch(
-    `${supabaseUrl}/rest/v1/invitation_results?select=guest_name,invitation_code,winning_room&winning_room=eq.${roomKey}`,
+    `${supabaseUrl}/rest/v1/invitation_results?select=id,guest_name,invitation_code,winning_room&winning_room=eq.${roomKey}&invitation_code=eq.${encodeURIComponent(invitationCode)}`,
     { headers },
   );
 
@@ -74,10 +78,6 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   const normalizedGuestName = guestName.toLocaleLowerCase();
   const guestRows = rows.filter((row) => row.guest_name.trim().toLocaleLowerCase() === normalizedGuestName);
 
-  if (!guestRows.length) {
-    return json(404, { error: "No guest found for this name." });
-  }
-
   const matchingRow = guestRows.find(
     (row) => row.invitation_code.trim().toLocaleLowerCase() === invitationCode.toLocaleLowerCase(),
   );
@@ -86,9 +86,31 @@ export const handler = async (event: { httpMethod: string; body: string | null }
     return json(403, { error: "Invitation code does not match this guest." });
   }
 
+  const playToken = randomBytes(32).toString("base64url");
+  const playTokenExpiresAt = new Date(Date.now() + PLAY_SESSION_TTL_MS).toISOString();
+  const sessionId = randomBytes(16).toString("base64url");
+  const updateResponse = await fetch(`${supabaseUrl}/rest/v1/invitation_results?id=eq.${matchingRow.id}`, {
+    method: "PATCH",
+    headers: {
+      ...headers,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      active_play_token: playToken,
+      active_play_session_id: sessionId,
+      active_play_expires_at: playTokenExpiresAt,
+    }),
+  });
+
+  if (!updateResponse.ok) {
+    return json(500, { error: "Could not create play session" });
+  }
+
   return json(200, {
     ok: true,
     guestName: matchingRow.guest_name,
     roomKey: matchingRow.winning_room,
+    playToken,
+    playTokenExpiresAt,
   });
 };

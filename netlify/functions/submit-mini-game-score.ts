@@ -4,6 +4,7 @@ type SubmitPayload = {
   roomKey?: RoomKey;
   guestName?: string;
   clickCount?: number;
+  playToken?: string;
   sessionId?: string;
 };
 
@@ -45,6 +46,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
 
   const roomKey = payload.roomKey;
   const guestName = payload.guestName?.trim().slice(0, 20);
+  const playToken = payload.playToken?.trim();
   const rawClickCount = Number(payload.clickCount ?? 0);
   const clickCount = Number.isFinite(rawClickCount) ? Math.max(0, Math.floor(rawClickCount)) : 0;
 
@@ -53,6 +55,9 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   }
   if (!guestName) {
     return json(400, { error: "Guest name is required" });
+  }
+  if (!playToken) {
+    return json(401, { error: "Play session is required" });
   }
 
   const headers = {
@@ -68,6 +73,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
       p_room_key: roomKey,
       p_guest_name: guestName,
       p_click_count: clickCount,
+      p_play_token: playToken,
       p_session_id: payload.sessionId ?? null,
     }),
   });
@@ -78,6 +84,9 @@ export const handler = async (event: { httpMethod: string; body: string | null }
 
   const savedRows = (await saveResponse.json()) as SavedScoreRow[];
   const savedScore = savedRows[0];
+  if (!savedScore) {
+    return json(401, { error: "Session expired. Please enter your code again." });
+  }
 
   return json(200, {
     roomKey: savedScore?.room_key ?? roomKey,

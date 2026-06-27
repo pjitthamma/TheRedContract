@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 type HostKey = "b" | "d" | "s" | "m";
 
 type SubmittedAnswer = {
@@ -32,6 +34,7 @@ type ResultRow = {
 };
 
 const hostOrder: HostKey[] = ["b", "d", "s", "m"];
+const PLAY_SESSION_TTL_MS = 5 * 60 * 1000;
 
 const json = (statusCode: number, body: unknown) => ({
   statusCode,
@@ -174,6 +177,9 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   const comparisonPercentages = peerResultsResponse.ok
     ? getComparisonPercentages(scores, ((await peerResultsResponse.json()) as ResultRow[]) ?? [])
     : { b: 100, d: 100, s: 100, m: 100 };
+  const playToken = randomBytes(32).toString("base64url");
+  const playTokenExpiresAt = new Date(Date.now() + PLAY_SESSION_TTL_MS).toISOString();
+  const playSessionId = randomBytes(16).toString("base64url");
 
   const insertResponse = await fetch(`${supabaseUrl}/rest/v1/invitation_results`, {
     method: "POST",
@@ -189,6 +195,9 @@ export const handler = async (event: { httpMethod: string; body: string | null }
       winning_room: winningRoom,
       invitation_code: invitationCode,
       session_id: payload.sessionId ?? null,
+      active_play_token: playToken,
+      active_play_session_id: playSessionId,
+      active_play_expires_at: playTokenExpiresAt,
     }),
   });
 
@@ -204,5 +213,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
     comparisonPercentages,
     winningRoom,
     invitationCode,
+    playToken,
+    playTokenExpiresAt,
   });
 };

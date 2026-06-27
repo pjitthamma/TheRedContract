@@ -79,8 +79,20 @@ create table if not exists invitation_results (
   winning_room text not null check (winning_room in ('b', 'd', 's', 'm')),
   invitation_code text not null,
   session_id text,
+  active_play_token text,
+  active_play_session_id text,
+  active_play_expires_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+alter table invitation_results
+add column if not exists active_play_token text;
+
+alter table invitation_results
+add column if not exists active_play_session_id text;
+
+alter table invitation_results
+add column if not exists active_play_expires_at timestamptz;
 
 create index if not exists invitation_results_winning_room_idx
 on invitation_results (winning_room);
@@ -109,6 +121,7 @@ create or replace function upsert_mini_game_score_max(
   p_room_key text,
   p_guest_name text,
   p_click_count integer,
+  p_play_token text,
   p_session_id text default null
 )
 returns table (
@@ -118,27 +131,46 @@ returns table (
 )
 language sql
 as $$
-  insert into mini_game_scores (
-    room_key,
-    guest_name,
-    click_count,
-    session_id,
-    updated_at
+  with valid_session as (
+    update invitation_results
+    set
+      active_play_session_id = coalesce(p_session_id, invitation_results.active_play_session_id),
+      active_play_expires_at = now() + interval '5 minutes'
+    where
+      invitation_results.winning_room = p_room_key
+      and invitation_results.guest_name = p_guest_name
+      and invitation_results.active_play_token = p_play_token
+      and invitation_results.active_play_expires_at > now()
+    returning invitation_results.guest_name
+  ),
+  saved_score as (
+    insert into mini_game_scores (
+      room_key,
+      guest_name,
+      click_count,
+      session_id,
+      updated_at
+    )
+    select
+      p_room_key,
+      p_guest_name,
+      greatest(0, coalesce(p_click_count, 0)),
+      p_session_id,
+      now()
+    from valid_session
+    on conflict (room_key, guest_name)
+    do update set
+      click_count = greatest(mini_game_scores.click_count, excluded.click_count),
+      session_id = coalesce(excluded.session_id, mini_game_scores.session_id),
+      updated_at = now()
+    returning
+      mini_game_scores.room_key,
+      mini_game_scores.guest_name,
+      mini_game_scores.click_count
   )
-  values (
-    p_room_key,
-    p_guest_name,
-    greatest(0, coalesce(p_click_count, 0)),
-    p_session_id,
-    now()
-  )
-  on conflict (room_key, guest_name)
-  do update set
-    click_count = greatest(mini_game_scores.click_count, excluded.click_count),
-    session_id = coalesce(excluded.session_id, mini_game_scores.session_id),
-    updated_at = now()
-  returning
-    mini_game_scores.room_key,
-    mini_game_scores.guest_name,
-    mini_game_scores.click_count;
+  select
+    saved_score.room_key,
+    saved_score.guest_name,
+    saved_score.click_count
+  from saved_score;
 $$;

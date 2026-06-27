@@ -34,6 +34,7 @@ type GuestScoreResponse = {
 
 const GUEST_NAME_KEY = "red-contract-guest-name";
 const SESSION_KEY = "red-contract-session-id";
+const getPlayTokenKey = (roomKey: BotClickTestVariant) => `red-contract-play-token:${roomKey}`;
 const SCORE_SAVE_INTERVAL_MS = 15000;
 
 const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
@@ -84,6 +85,7 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
 };
 
 const getStoredGuestName = () => window.localStorage.getItem(GUEST_NAME_KEY)?.trim().slice(0, 20) || "Guest";
+const getStoredPlayToken = (roomKey: BotClickTestVariant) => window.sessionStorage.getItem(getPlayTokenKey(roomKey))?.trim() ?? "";
 
 const getSessionId = () => {
   const existingSessionId = window.localStorage.getItem(SESSION_KEY);
@@ -103,6 +105,8 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [animationState, setAnimationState] = useState<BotAnimationState>("start");
   const [isMusicOn, setIsMusicOn] = useState(true);
+  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
   const endVideoRef = useRef<HTMLVideoElement | null>(null);
   const moanAudioRef = useRef<HTMLAudioElement | null>(null);
   const moanAudioSrcRef = useRef<string | null>(null);
@@ -155,11 +159,25 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
 
   const fetchGuestScore = useCallback(async () => {
     try {
+      const playToken = getStoredPlayToken(variant);
+      if (!playToken) {
+        setIsSessionExpired(true);
+        setSessionMessage("Session expired. Please enter your code again.");
+        return;
+      }
+
       const query = new URLSearchParams({
         guestName,
+        playToken,
         roomKey: variant,
       });
       const response = await fetch(`/.netlify/functions/get-mini-game-score?${query.toString()}`);
+      if (response.status === 401) {
+        window.sessionStorage.removeItem(getPlayTokenKey(variant));
+        setIsSessionExpired(true);
+        setSessionMessage("Session expired. Please enter your code again.");
+        return;
+      }
       if (!response.ok) {
         return;
       }
@@ -177,10 +195,17 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
 
   const submitScore = useCallback(
     async (score = clickCountRef.current, keepalive = false) => {
-      if (!hasLoadedSavedScoreRef.current || score <= 0 || score <= lastSubmittedScoreRef.current) {
+      if (isSessionExpired || !hasLoadedSavedScoreRef.current || score <= 0 || score <= lastSubmittedScoreRef.current) {
         return;
       }
       if (isSubmittingScoreRef.current && !keepalive) {
+        return;
+      }
+
+      const playToken = getStoredPlayToken(variant);
+      if (!playToken) {
+        setIsSessionExpired(true);
+        setSessionMessage("Session expired. Please enter your code again.");
         return;
       }
 
@@ -196,9 +221,17 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
             roomKey: variant,
             guestName,
             clickCount: score,
+            playToken,
             sessionId: getSessionId(),
           }),
         });
+
+        if (response.status === 401) {
+          window.sessionStorage.removeItem(getPlayTokenKey(variant));
+          setIsSessionExpired(true);
+          setSessionMessage("Session expired. Please enter your code again.");
+          return;
+        }
 
         if (response.ok) {
           const data = (await response.json()) as { clickCount?: number };
@@ -210,7 +243,7 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
         isSubmittingScoreRef.current = false;
       }
     },
-    [guestName, variant],
+    [guestName, isSessionExpired, variant],
   );
 
   useEffect(() => {
@@ -246,6 +279,10 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
   };
 
   const handleCharacterHit = () => {
+    if (isSessionExpired) {
+      return;
+    }
+
     setClickCount((current) => current + 1);
     setAnimationState("end");
 
@@ -319,6 +356,8 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
           <span>Hits</span>
           <strong>{clickCount}</strong>
         </div>
+
+        {sessionMessage ? <p className="bot-test-session-message">{sessionMessage}</p> : null}
       </div>
 
       <button
@@ -389,6 +428,7 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
           className={`bot-test-hitbox ${config.hitboxClassName}`}
           type="button"
           aria-label="Hit character"
+          disabled={isSessionExpired}
           onClick={handleCharacterHit}
         />
       </section>

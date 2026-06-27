@@ -7,7 +7,7 @@ import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitati
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.1.1";
 
 type PopupContent = {
   title: string;
@@ -33,6 +33,7 @@ type CodePromptState = {
 type ValidateInvitationCodeResponse = {
   error?: string;
   guestName?: string;
+  playToken?: string;
 };
 
 type LocalInvitationResult = {
@@ -143,6 +144,7 @@ const miniGameRouteByPath = {
 
 const getSceneAccessKey = (sceneId: SceneId) => `red-contract-scene-access:${sceneId}`;
 const getMiniGameAccessKey = (path: string) => `red-contract-mini-game-access:${path}`;
+const getPlayTokenKey = (roomKey: HostKey) => `red-contract-play-token:${roomKey}`;
 const hasSceneAccess = (sceneId: SceneId) => window.sessionStorage.getItem(getSceneAccessKey(sceneId)) === "true";
 const grantSceneAccess = (sceneId: SceneId) => window.sessionStorage.setItem(getSceneAccessKey(sceneId), "true");
 const hasMiniGameAccess = (path: string) => window.sessionStorage.getItem(getMiniGameAccessKey(path)) === "true";
@@ -661,9 +663,12 @@ function AppContent() {
     setIsInvitationCodeSubmitting(true);
     setInvitationCodeError(null);
 
-    const acceptInvitationCode = (verifiedGuestName: string) => {
+    const acceptInvitationCode = (verifiedGuestName: string, playToken?: string) => {
       const target = codePrompt.target;
       window.localStorage.setItem(GUEST_NAME_KEY, verifiedGuestName.slice(0, 20));
+      if (playToken) {
+        window.sessionStorage.setItem(getPlayTokenKey(codePrompt.roomKey), playToken);
+      }
       setCodePrompt(null);
       setCodeGuestNameInput("");
       setInvitationCodeInput("");
@@ -703,7 +708,7 @@ function AppContent() {
         return;
       }
 
-      acceptInvitationCode(data.guestName);
+      acceptInvitationCode(data.guestName, data.playToken);
     } catch {
       const localMatch = getLocalInvitationMatch(codePrompt.roomKey, guestName, invitationCode);
       if (localMatch) {

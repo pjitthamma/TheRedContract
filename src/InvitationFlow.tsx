@@ -40,6 +40,7 @@ type InvitationResult = {
   comparisonPercentages: HostScoreMap;
   winningRoom: HostKey;
   invitationCode: string;
+  playToken?: string;
 };
 
 type SaveFilePicker = {
@@ -71,8 +72,9 @@ const LOCAL_INVITATION_RESULTS_KEY = "red-contract-local-invitation-results";
 const rememberInvitationResult = (result: InvitationResult) => {
   try {
     const existingResults = JSON.parse(window.localStorage.getItem(LOCAL_INVITATION_RESULTS_KEY) ?? "[]") as InvitationResult[];
+    const storedResult: InvitationResult = { ...result, playToken: undefined };
     const nextResults = [
-      result,
+      storedResult,
       ...existingResults.filter(
         (item) =>
           !(
@@ -132,6 +134,7 @@ const playWelcomeSound = () => {
 };
 
 const GUEST_NAME_KEY = "red-contract-guest-name";
+const getPlayTokenKey = (roomKey: HostKey) => `red-contract-play-token:${roomKey}`;
 
 const invitationCopy = {
   en: {
@@ -461,6 +464,9 @@ function InvitationFlow({
         rememberInvitationResult(savedResult);
         setResult(savedResult);
         window.localStorage.setItem(GUEST_NAME_KEY, savedResult.guestName.trim().slice(0, 20));
+        if (savedResult.playToken) {
+          window.sessionStorage.setItem(getPlayTokenKey(savedResult.winningRoom), savedResult.playToken);
+        }
         onResultClosed(savedResult.winningRoom);
       } else if (response.status === 409) {
         setErrorMessage(formCopy.duplicateName);
