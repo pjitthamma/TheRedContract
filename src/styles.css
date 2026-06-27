@@ -30,7 +30,7 @@ button {
 .version-badge {
   position: fixed;
   top: max(0.45rem, env(safe-area-inset-top));
-  right: max(0.6rem, env(safe-area-inset-right));
+  left: max(0.6rem, env(safe-area-inset-left));
   z-index: 1000;
   padding: 0.18rem 0.42rem;
   color: rgba(255, 248, 204, 0.78);
@@ -1718,7 +1718,7 @@ button {
 
 .bot-test-back {
   position: absolute;
-  top: max(1rem, env(safe-area-inset-top));
+  top: max(2.45rem, calc(env(safe-area-inset-top) + 2rem));
   left: max(1rem, env(safe-area-inset-left));
   z-index: 2;
   display: inline-grid;

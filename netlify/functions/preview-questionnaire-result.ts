@@ -1,5 +1,3 @@
-import { randomBytes } from "node:crypto";
-
 type HostKey = "b" | "d" | "s" | "m";
 
 type SubmittedAnswer = {
@@ -7,12 +5,10 @@ type SubmittedAnswer = {
   choiceId: string;
 };
 
-type SubmitPayload = {
+type PreviewPayload = {
   guestName?: string;
   answeredDate?: string;
   answers?: SubmittedAnswer[];
-  invitationCode?: string;
-  sessionId?: string;
 };
 
 type ChoiceRow = {
@@ -29,12 +25,10 @@ type CodeRow = {
 };
 
 type ResultRow = {
-  guest_name?: string;
   scores: Partial<Record<HostKey, number>> | null;
 };
 
 const hostOrder: HostKey[] = ["b", "d", "s", "m"];
-const PLAY_SESSION_TTL_MS = 5 * 60 * 1000;
 
 const json = (statusCode: number, body: unknown) => ({
   statusCode,
@@ -82,9 +76,9 @@ export const handler = async (event: { httpMethod: string; body: string | null }
     return json(500, { error: "Supabase environment variables are missing" });
   }
 
-  let payload: SubmitPayload;
+  let payload: PreviewPayload;
   try {
-    payload = JSON.parse(event.body ?? "{}") as SubmitPayload;
+    payload = JSON.parse(event.body ?? "{}") as PreviewPayload;
   } catch {
     return json(400, { error: "Invalid JSON" });
   }
@@ -92,7 +86,6 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   const guestName = payload.guestName?.trim();
   const answeredDate = payload.answeredDate?.trim();
   const answers = payload.answers ?? [];
-  const requestedInvitationCode = payload.invitationCode?.trim();
 
   if (!guestName) {
     return json(400, { error: "Guest name is required" });
@@ -109,22 +102,6 @@ export const handler = async (event: { httpMethod: string; body: string | null }
     authorization: `Bearer ${serviceRoleKey}`,
     "content-type": "application/json",
   };
-
-  const existingGuestResponse = await fetch(`${supabaseUrl}/rest/v1/invitation_results?select=guest_name`, { headers });
-  if (!existingGuestResponse.ok) {
-    return json(500, { error: "Could not check guest name" });
-  }
-
-  const existingGuestRows = (await existingGuestResponse.json()) as ResultRow[];
-  const normalizedGuestName = guestName.toLocaleLowerCase();
-  const guestNameExists = existingGuestRows.some(
-    (row) => row.guest_name?.trim().toLocaleLowerCase() === normalizedGuestName,
-  );
-
-  if (guestNameExists) {
-    return json(409, { error: "This guest name is already registered." });
-  }
-
   const selectedChoiceIds = [...new Set(answers.map((answer) => answer.choiceId).filter(Boolean))];
   const choicesResponse = await fetch(
     `${supabaseUrl}/rest/v1/questionnaire_choices?select=id,question_id,score_b,score_d,score_s,score_m&id=in.(${selectedChoiceIds.join(",")})`,
@@ -152,58 +129,26 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   }
 
   const winningRoom = getWinner(scores);
-  const codeResponse = await fetch(
-    `${supabaseUrl}/rest/v1/invitation_codes?select=code&room_key=eq.${winningRoom}&active=eq.true&order=id.asc`,
-    { headers },
-  );
+  const [codeResponse, peerResultsResponse] = await Promise.all([
+    fetch(`${supabaseUrl}/rest/v1/invitation_codes?select=code&room_key=eq.${winningRoom}&active=eq.true&order=id.asc`, {
+      headers,
+    }),
+    fetch(`${supabaseUrl}/rest/v1/invitation_results?select=scores&winning_room=eq.${winningRoom}`, { headers }),
+  ]);
 
   if (!codeResponse.ok) {
     return json(500, { error: "Could not fetch invitation code" });
   }
 
   const codes = (await codeResponse.json()) as CodeRow[];
-  const invitationCode = requestedInvitationCode
-    ? codes.find((codeRow) => codeRow.code.toLocaleLowerCase() === requestedInvitationCode.toLocaleLowerCase())?.code
-    : codes[Math.floor(Math.random() * codes.length)]?.code;
+  const invitationCode = codes[Math.floor(Math.random() * codes.length)]?.code;
   if (!invitationCode) {
     return json(500, { error: "No invitation code is available for this room" });
   }
 
-  const peerResultsResponse = await fetch(
-    `${supabaseUrl}/rest/v1/invitation_results?select=scores&winning_room=eq.${winningRoom}`,
-    { headers },
-  );
-
   const comparisonPercentages = peerResultsResponse.ok
     ? getComparisonPercentages(scores, ((await peerResultsResponse.json()) as ResultRow[]) ?? [])
     : { b: 50, d: 50, s: 50, m: 50 };
-  const playToken = randomBytes(32).toString("base64url");
-  const playTokenExpiresAt = new Date(Date.now() + PLAY_SESSION_TTL_MS).toISOString();
-  const playSessionId = randomBytes(16).toString("base64url");
-
-  const insertResponse = await fetch(`${supabaseUrl}/rest/v1/invitation_results`, {
-    method: "POST",
-    headers: {
-      ...headers,
-      prefer: "return=representation",
-    },
-    body: JSON.stringify({
-      guest_name: guestName,
-      answered_date: answeredDate,
-      answers,
-      scores,
-      winning_room: winningRoom,
-      invitation_code: invitationCode,
-      session_id: payload.sessionId ?? null,
-      active_play_token: playToken,
-      active_play_session_id: playSessionId,
-      active_play_expires_at: playTokenExpiresAt,
-    }),
-  });
-
-  if (!insertResponse.ok) {
-    return json(500, { error: "Could not save questionnaire result" });
-  }
 
   return json(200, {
     guestName,
@@ -213,7 +158,5 @@ export const handler = async (event: { httpMethod: string; body: string | null }
     comparisonPercentages,
     winningRoom,
     invitationCode,
-    playToken,
-    playTokenExpiresAt,
   });
 };

@@ -227,7 +227,7 @@ const calculateResult = (
     answeredDate,
     answers,
     scores,
-    comparisonPercentages: { b: 100, d: 100, s: 100, m: 100 },
+    comparisonPercentages: { b: 50, d: 50, s: 50, m: 50 },
     winningRoom,
     invitationCode: codePool[Math.floor(Math.random() * codePool.length)] ?? codePool[0],
   };
@@ -426,15 +426,39 @@ function InvitationFlow({
     }));
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     if (!isQuizComplete || isSubmitting) {
       return;
     }
 
     const fallbackResult = calculateResult(questions, answersByQuestionId, guestName.trim(), answeredDate);
-    setErrorMessage(null);
-    setResult(fallbackResult);
-    setStep("result");
+    try {
+      setIsSubmitting(true);
+      setErrorMessage(null);
+      const response = await fetch("/.netlify/functions/preview-questionnaire-result", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          guestName: fallbackResult.guestName,
+          answeredDate: fallbackResult.answeredDate,
+          answers: fallbackResult.answers,
+        }),
+      });
+
+      if (response.ok) {
+        const previewResult = (await response.json()) as InvitationResult;
+        setResult(previewResult);
+      } else {
+        setResult(fallbackResult);
+      }
+    } catch {
+      setResult(fallbackResult);
+    } finally {
+      setIsSubmitting(false);
+      setStep("result");
+    }
   };
 
   const saveResultAndEnter = async () => {
