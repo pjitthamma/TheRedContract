@@ -7,6 +7,8 @@ import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitati
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
+const APP_VERSION = "0.1.0";
+
 type PopupContent = {
   title: string;
   body: string;
@@ -422,10 +424,28 @@ function App() {
   }, []);
 
   if (!loadingState.isComplete) {
-    return <InitialLoadingScreen loadedCount={loadingState.loadedCount} totalCount={loadingState.totalCount} />;
+    return (
+      <>
+        <InitialLoadingScreen loadedCount={loadingState.loadedCount} totalCount={loadingState.totalCount} />
+        <VersionBadge />
+      </>
+    );
   }
 
-  return <AppContent />;
+  return (
+    <>
+      <AppContent />
+      <VersionBadge />
+    </>
+  );
+}
+
+function VersionBadge() {
+  return (
+    <div className="version-badge" aria-label={`App version ${APP_VERSION}`}>
+      v{APP_VERSION}
+    </div>
+  );
 }
 
 type InitialLoadingScreenProps = {

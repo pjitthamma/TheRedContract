@@ -27,6 +27,26 @@ button {
   font: inherit;
 }
 
+.version-badge {
+  position: fixed;
+  top: max(0.45rem, env(safe-area-inset-top));
+  right: max(0.6rem, env(safe-area-inset-right));
+  z-index: 1000;
+  padding: 0.18rem 0.42rem;
+  color: rgba(255, 248, 204, 0.78);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  background: rgba(2, 6, 23, 0.58);
+  border: 1px solid rgba(255, 216, 117, 0.22);
+  border-radius: 999px;
+  box-shadow: 0 0.55rem 1.2rem rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .game-shell {
   min-height: 100%;
   overflow: hidden;
@@ -1534,7 +1554,7 @@ button {
 
 .bot-test-music-button {
   position: absolute;
-  top: max(1rem, env(safe-area-inset-top));
+  top: max(2.45rem, calc(env(safe-area-inset-top) + 2rem));
   right: max(1rem, env(safe-area-inset-right));
   z-index: 4;
   display: inline-grid;
