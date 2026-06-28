@@ -6,6 +6,8 @@ type BotAnimationState = "start" | "end";
 type BotClickTestVariant = "b" | "d" | "m" | "s";
 
 type BotClickTestProps = {
+  disableScorePersistence?: boolean;
+  guestNameOverride?: string;
   returnPath?: string;
   variant: BotClickTestVariant;
 };
@@ -99,9 +101,9 @@ const getSessionId = () => {
   return nextSessionId;
 };
 
-function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
+function BotClickTest({ disableScorePersistence = false, guestNameOverride, returnPath = "/", variant }: BotClickTestProps) {
   const config = botClickTestConfigs[variant];
-  const [guestName] = useState(getStoredGuestName);
+  const [guestName] = useState(() => guestNameOverride?.trim().slice(0, 20) || getStoredGuestName());
   const [clickCount, setClickCount] = useState(0);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [animationState, setAnimationState] = useState<BotAnimationState>("start");
@@ -160,6 +162,11 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
   }, [variant]);
 
   const fetchGuestScore = useCallback(async () => {
+    if (disableScorePersistence) {
+      hasLoadedSavedScoreRef.current = true;
+      return;
+    }
+
     try {
       const playToken = getStoredPlayToken(variant);
       if (!playToken) {
@@ -193,10 +200,14 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
     } finally {
       hasLoadedSavedScoreRef.current = true;
     }
-  }, [guestName, variant]);
+  }, [disableScorePersistence, guestName, variant]);
 
   const submitScore = useCallback(
     async (score = clickCountRef.current, keepalive = false) => {
+      if (disableScorePersistence) {
+        return;
+      }
+
       if (isSessionExpired || !hasLoadedSavedScoreRef.current || score <= 0 || score <= lastSubmittedScoreRef.current) {
         return;
       }
@@ -245,7 +256,7 @@ function BotClickTest({ returnPath = "/", variant }: BotClickTestProps) {
         isSubmittingScoreRef.current = false;
       }
     },
-    [guestName, isSessionExpired, variant],
+    [disableScorePersistence, guestName, isSessionExpired, variant],
   );
 
   useEffect(() => {

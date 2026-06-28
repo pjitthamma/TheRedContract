@@ -1,12 +1,13 @@
 import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import BotClickTest from "./BotClickTest";
 import InvitationFlow from "./InvitationFlow";
 import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitationData";
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.2";
+const APP_VERSION = "0.1.3";
 
 type PopupContent = {
   title: string;
@@ -139,6 +140,14 @@ const miniGameRouteByPath = {
   "/s-mini-game": { variant: "s", roomPath: "/S-room" },
   "/m-mini-game": { variant: "m", roomPath: "/M-room" },
 } satisfies Record<string, { variant: "b" | "d" | "m" | "s"; roomPath: string }>;
+
+const ADMIN_MINI_GAME_NAME = "EXCOSIA-admin";
+const adminMiniGameCodeByRoom = {
+  b: "B-TRC-A9C4-RM6K",
+  d: "D-TRC-N2VL-9YQA",
+  m: "M-TRC-Q6M4-LV7N",
+  s: "S-TRC-X3F8-PV6K",
+} satisfies Record<HostKey, string>;
 
 const getSceneAccessKey = (sceneId: SceneId) => `red-contract-scene-access:${sceneId}`;
 const getPlayTokenKey = (roomKey: HostKey) => `red-contract-play-token:${roomKey}`;
@@ -468,6 +477,10 @@ function InitialLoadingScreen({ loadedCount, totalCount }: InitialLoadingScreenP
 }
 
 function AppContent() {
+  if (window.location.pathname === "/mini-game") {
+    return <AdminMiniGameAccess />;
+  }
+
   const miniGameRoute = miniGameRouteByPath[window.location.pathname as keyof typeof miniGameRouteByPath];
   if (miniGameRoute) {
     return <DirectAccessRedirect />;
@@ -1681,6 +1694,96 @@ function AppContent() {
           onTooYoung={returnOutsideFromInvitation}
         />
       ) : null}
+    </main>
+  );
+}
+
+function AdminMiniGameAccess() {
+  const [guestNameInput, setGuestNameInput] = useState("");
+  const [codeInput, setCodeInput] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeVariant, setActiveVariant] = useState<HostKey | null>(null);
+
+  const submitAdminAccess = () => {
+    const normalizedGuestName = guestNameInput.trim().toLocaleLowerCase();
+    const normalizedCode = codeInput.trim().toLocaleUpperCase();
+
+    if (normalizedGuestName !== ADMIN_MINI_GAME_NAME.toLocaleLowerCase()) {
+      setErrorMessage("Invalid admin account.");
+      return;
+    }
+
+    const matchedRoom = (Object.entries(adminMiniGameCodeByRoom) as Array<[HostKey, string]>).find(
+      ([, code]) => code.toLocaleUpperCase() === normalizedCode,
+    )?.[0];
+
+    if (!matchedRoom) {
+      setErrorMessage("Invalid admin code.");
+      return;
+    }
+
+    setActiveVariant(matchedRoom);
+  };
+
+  if (activeVariant) {
+    return (
+      <BotClickTest
+        disableScorePersistence
+        guestNameOverride={ADMIN_MINI_GAME_NAME}
+        returnPath="/"
+        variant={activeVariant}
+      />
+    );
+  }
+
+  return (
+    <main className="initial-loading-shell">
+      <div
+        className="dialog-backdrop"
+        role="presentation"
+      >
+        <dialog className="dialog-card code-dialog-card" aria-labelledby="admin-mini-game-title" open>
+          <form
+            className="code-dialog-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitAdminAccess();
+            }}
+          >
+            <h1 id="admin-mini-game-title">Mini Game Admin</h1>
+            <p>Enter the admin account and room code.</p>
+            <label>
+              <span>Admin Account</span>
+              <input
+                className="code-dialog-name-input"
+                value={guestNameInput}
+                onChange={(event) => {
+                  setGuestNameInput(event.target.value);
+                  setErrorMessage(null);
+                }}
+                autoFocus
+                placeholder={ADMIN_MINI_GAME_NAME}
+              />
+            </label>
+            <label>
+              <span>Invitation Code</span>
+              <input
+                className="code-dialog-code-input"
+                value={codeInput}
+                onChange={(event) => {
+                  setCodeInput(event.target.value);
+                  setErrorMessage(null);
+                }}
+                placeholder="B/D/S/M-TRC-XXXX-XXXX"
+              />
+            </label>
+            {errorMessage ? <p className="code-dialog-error">{errorMessage}</p> : null}
+            <button type="submit" disabled={!guestNameInput.trim() || !codeInput.trim()}>
+              Enter
+            </button>
+          </form>
+        </dialog>
+      </div>
     </main>
   );
 }
