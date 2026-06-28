@@ -70,7 +70,7 @@ const assetNames = [
   "door-open.mp3",
   "door.png",
   "en.png",
-  "event.png",
+  "event_end.png",
   "flip.mp3",
   "green.png",
   "icon.png",

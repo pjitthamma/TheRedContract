@@ -1,7 +1,6 @@
 import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import BotClickTest from "./BotClickTest";
 import InvitationFlow from "./InvitationFlow";
 import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitationData";
 import { preloadSiteAssets } from "./preloadAssets";
@@ -125,7 +124,6 @@ const SESSION_ID_KEY = "red-contract-session-id";
 const LANGUAGE_KEY = "red-contract-language";
 const GUEST_NAME_KEY = "red-contract-guest-name";
 const LOCAL_INVITATION_RESULTS_KEY = "red-contract-local-invitation-results";
-const MINI_GAME_RETURN_ROOM_KEY = "red-contract-mini-game-return-room";
 
 const roomSceneIdByPath: Partial<Record<string, SceneId>> = {
   "/B-room": "B-room",
@@ -143,12 +141,9 @@ const miniGameRouteByPath = {
 } satisfies Record<string, { variant: "b" | "d" | "m" | "s"; roomPath: string }>;
 
 const getSceneAccessKey = (sceneId: SceneId) => `red-contract-scene-access:${sceneId}`;
-const getMiniGameAccessKey = (path: string) => `red-contract-mini-game-access:${path}`;
 const getPlayTokenKey = (roomKey: HostKey) => `red-contract-play-token:${roomKey}`;
 const hasSceneAccess = (sceneId: SceneId) => window.sessionStorage.getItem(getSceneAccessKey(sceneId)) === "true";
 const grantSceneAccess = (sceneId: SceneId) => window.sessionStorage.setItem(getSceneAccessKey(sceneId), "true");
-const hasMiniGameAccess = (path: string) => window.sessionStorage.getItem(getMiniGameAccessKey(path)) === "true";
-const grantMiniGameAccess = (path: string) => window.sessionStorage.setItem(getMiniGameAccessKey(path), "true");
 
 const getStoredLanguage = (): Language | null => {
   const storedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
@@ -475,13 +470,7 @@ function InitialLoadingScreen({ loadedCount, totalCount }: InitialLoadingScreenP
 function AppContent() {
   const miniGameRoute = miniGameRouteByPath[window.location.pathname as keyof typeof miniGameRouteByPath];
   if (miniGameRoute) {
-    return (
-      <ProtectedMiniGame
-        path={window.location.pathname}
-        returnPath={miniGameRoute.roomPath}
-        variant={miniGameRoute.variant}
-      />
-    );
+    return <DirectAccessRedirect />;
   }
 
   const initialLanguage = getStoredLanguage();
@@ -499,7 +488,6 @@ function AppContent() {
   const [invitationCodeError, setInvitationCodeError] = useState<string | null>(null);
   const [isInvitationCodeSubmitting, setIsInvitationCodeSubmitting] = useState(false);
   const [selectedLanguage] = useState<Language>(initialLanguage ?? "en");
-  const [miniGameLoading, setMiniGameLoading] = useState(false);
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
   const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
@@ -1129,14 +1117,6 @@ function AppContent() {
       if (overlay.action.audioSrc) {
         void new Audio(overlay.action.audioSrc).play();
       }
-
-      const targetPath = overlay.action.path;
-      grantMiniGameAccess(targetPath);
-      window.sessionStorage.setItem(MINI_GAME_RETURN_ROOM_KEY, hostRoomPathBySceneId[displayedScene.id] ?? "/");
-      setMiniGameLoading(true);
-      window.setTimeout(() => {
-        window.location.href = targetPath;
-      }, 760);
       return;
     }
 
@@ -1548,15 +1528,13 @@ function AppContent() {
         <div className="image-backdrop event-backdrop" role="presentation" onClick={closeEventOverlay}>
           <img
             className="image-overlay event-overlay-image"
-            src="/assets/event.png"
+            src="/assets/event_end.png"
             alt=""
             onClick={(event) => event.stopPropagation()}
             draggable={false}
           />
         </div>
       ) : null}
-
-      {miniGameLoading ? <div className="mini-game-loading" aria-hidden="true" /> : null}
 
       {codePrompt ? (
         <div
@@ -1705,21 +1683,6 @@ function AppContent() {
       ) : null}
     </main>
   );
-}
-
-type ProtectedMiniGameProps = {
-  path: string;
-  returnPath: string;
-  variant: "b" | "d" | "m" | "s";
-};
-
-function ProtectedMiniGame({ path, returnPath, variant }: ProtectedMiniGameProps) {
-  const storedReturnPath = window.sessionStorage.getItem(MINI_GAME_RETURN_ROOM_KEY) || returnPath;
-  if (!hasMiniGameAccess(path)) {
-    return <DirectAccessRedirect />;
-  }
-
-  return <BotClickTest returnPath={storedReturnPath} variant={variant} />;
 }
 
 function DirectAccessRedirect() {

@@ -428,9 +428,8 @@ export const scenes: Record<SceneId, Scene> = {
           height: 36,
         },
         action: {
-          type: "path",
-          path: "/b-mini-game",
-          audioSrc: "/assets/bell-ring.mp3",
+          type: "audio-sequence",
+          audioSrcs: ["/assets/bell-ring.mp3", "/assets/rosen_voice.mp3"],
         },
       },
       {
@@ -582,9 +581,8 @@ export const scenes: Record<SceneId, Scene> = {
         y: 67.2,
         width: 9.2,
         action: {
-          type: "path",
-          path: "/d-mini-game",
-          audioSrc: "/assets/bell-ring.mp3",
+          type: "audio-sequence",
+          audioSrcs: ["/assets/bell-ring.mp3", "/assets/michael_sound.mp3"],
         },
       },
       {
@@ -717,9 +715,8 @@ export const scenes: Record<SceneId, Scene> = {
         y: 65.8,
         width: 8.1,
         action: {
-          type: "path",
-          path: "/s-mini-game",
-          audioSrc: "/assets/bell-ring.mp3",
+          type: "audio-sequence",
+          audioSrcs: ["/assets/bell-ring.mp3", "/assets/ryusei_sound.mp3"],
         },
       },
       {
@@ -852,9 +849,8 @@ export const scenes: Record<SceneId, Scene> = {
         y: 70.4,
         width: 8.1,
         action: {
-          type: "path",
-          path: "/m-mini-game",
-          audioSrc: "/assets/bell-ring.mp3",
+          type: "audio-sequence",
+          audioSrcs: ["/assets/bell-ring.mp3", "/assets/noel_sound.mp3"],
         },
       },
       {
