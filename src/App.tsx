@@ -7,7 +7,7 @@ import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitati
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.3";
+const APP_VERSION = "0.1.4";
 
 type PopupContent = {
   title: string;
@@ -491,7 +491,6 @@ function AppContent() {
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
-  const [eventOverlayVisible, setEventOverlayVisible] = useState(() => getInitialSceneId() === "atrium");
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
   const [invitationFlowStep, setInvitationFlowStep] = useState<InvitationFlowInitialStep | null>(null);
   const [insideDoorAccess, setInsideDoorAccess] = useState<InsideDoorAccess>(null);
@@ -621,11 +620,6 @@ function AppContent() {
     setSceneId("atrium");
     setScenePlaybackKey((current) => current + 1);
     updateScenePath("atrium");
-  };
-
-  const closeEventOverlay = () => {
-    void new Audio("/assets/flip.mp3").play();
-    setEventOverlayVisible(false);
   };
 
   const openCodePrompt = (target: SceneId) => {
@@ -1534,18 +1528,6 @@ function AppContent() {
             <h1 id="dialog-title">{popup.title}</h1>
             <p>{popup.body}</p>
           </dialog>
-        </div>
-      ) : null}
-
-      {eventOverlayVisible ? (
-        <div className="image-backdrop event-backdrop" role="presentation" onClick={closeEventOverlay}>
-          <img
-            className="image-overlay event-overlay-image"
-            src="/assets/event_end.png"
-            alt=""
-            onClick={(event) => event.stopPropagation()}
-            draggable={false}
-          />
         </div>
       ) : null}
 
