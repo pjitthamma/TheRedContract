@@ -7,7 +7,7 @@ import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitati
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.4";
+const APP_VERSION = "0.1.5";
 
 type PopupContent = {
   title: string;
@@ -216,6 +216,7 @@ const previousSceneBySceneId: Partial<Record<SceneId, SceneId>> = {
   archive: "atrium",
   lineup: "archive",
   inside: "archive",
+  "hall-of-frame": "inside",
   "B-room": "inside",
   "B-desk": "B-room",
   "B-sofa": "B-room",
@@ -1002,6 +1003,12 @@ function AppContent() {
       return;
     }
 
+    if (sceneId === "inside" && action.target === "hall-of-frame") {
+      void new Audio("/assets/whoosp.mp3").play();
+      transitionToScene("hall-of-frame");
+      return;
+    }
+
     if (sceneId === "inside" && openInsideDoor(action.target)) {
       return;
     }
@@ -1061,7 +1068,9 @@ function AppContent() {
               {counterCopy.en.posterClicked}: {getPosterClickCount(hotspot.id)}
             </span>
           ) : null}
-          {hotspot.id === "lobby-up-button" ? <ArrowUp size={24} aria-hidden="true" /> : null}
+          {hotspot.id === "lobby-up-button" || hotspot.id === "inside-hall-up-button" ? (
+            <ArrowUp size={24} aria-hidden="true" />
+          ) : null}
           {hotspot.imageSrc ? <img src={hotspot.imageSrc} alt="" aria-hidden="true" draggable={false} /> : null}
           <span>{hotspot.label}</span>
         </button>
@@ -1607,7 +1616,11 @@ function AppContent() {
       {imageOverlaySrc ? (
         <div className="image-backdrop" role="presentation" onClick={() => setImageOverlaySrc(null)}>
           <img
-            className="image-overlay"
+            className={`image-overlay${
+              imageOverlaySrc.includes("hall_d-side") || imageOverlaySrc.includes("hall_m-side")
+                ? " image-overlay-wide"
+                : ""
+            }`}
             src={imageOverlaySrc}
             alt=""
             onClick={(event) => event.stopPropagation()}
@@ -1994,7 +2007,9 @@ type SoundButtonProps = {
 };
 
 const getSceneAudioSrc = (sceneId: SceneId) =>
-  sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa"
+  sceneId === "hall-of-frame"
+    ? "/assets/hall.mp3"
+    : sceneId === "B-room" || sceneId === "B-desk" || sceneId === "B-sofa"
     ? "/assets/Rosen B.mp3"
     : sceneId === "D-room" || sceneId === "D-desk" || sceneId === "D-sofa"
       ? "/assets/Michael D.mp3"

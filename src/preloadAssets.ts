@@ -72,6 +72,13 @@ const assetNames = [
   "en.png",
   "flip.mp3",
   "green.png",
+  "hall_b-side.png",
+  "hall_d-side.png",
+  "hall_m-side.jpg",
+  "hall_s-side.jpg",
+  "hall-of-frame.mp4",
+  "hall-of-frame.png",
+  "hall.mp3",
   "icon.png",
   "inside.mp4",
   "inside.png",
@@ -190,6 +197,7 @@ const assetNames = [
   "transition11.mp4",
   "transition12.mp4",
   "Welcome.mp3",
+  "welcome-to-hall.png",
   "whoosp.mp3",
 ];
 

@@ -4,6 +4,7 @@ export type SceneId =
   | "archive"
   | "lineup"
   | "inside"
+  | "hall-of-frame"
   | "B-room"
   | "B-desk"
   | "B-sofa"
@@ -351,7 +352,29 @@ export const scenes: Record<SceneId, Scene> = {
     posterSrc: "/assets/inside.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-inside",
+    overlays: [
+      {
+        id: "welcome-to-hall",
+        label: "Welcome to hall",
+        src: "/assets/welcome-to-hall.png",
+        x: 34,
+        y: 49,
+        width: 32,
+      },
+    ],
     hotspots: [
+      {
+        id: "inside-hall-up-button",
+        label: "Go to hall of frame",
+        x: 47.6,
+        y: 38.4,
+        width: 4.8,
+        height: 8.6,
+        action: {
+          type: "scene",
+          target: "hall-of-frame",
+        },
+      },
       {
         id: "inside-door-left",
         label: "B door",
@@ -402,6 +425,68 @@ export const scenes: Record<SceneId, Scene> = {
         action: {
           type: "scene",
           target: "M-room",
+        },
+      },
+    ],
+  },
+  "hall-of-frame": {
+    id: "hall-of-frame",
+    name: "",
+    videoSrc: "/assets/hall-of-frame.mp4",
+    posterSrc: "/assets/hall-of-frame.png",
+    aspectRatio: 16 / 9,
+    fallbackClassName: "fallback-inside",
+    hotspots: [
+      {
+        id: "hall-b-frame",
+        label: "B Wing frame",
+        x: 14.2,
+        y: 26.4,
+        width: 12.6,
+        height: 31.6,
+        action: {
+          type: "image",
+          imageSrc: "/assets/hall_b-side.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+      {
+        id: "hall-d-frame",
+        label: "D Wing frame",
+        x: 30.4,
+        y: 31.4,
+        width: 19.3,
+        height: 21.8,
+        action: {
+          type: "image",
+          imageSrc: "/assets/hall_d-side.png",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+      {
+        id: "hall-s-frame",
+        label: "S Wing frame",
+        x: 52.8,
+        y: 26.4,
+        width: 12.6,
+        height: 31.6,
+        action: {
+          type: "image",
+          imageSrc: "/assets/hall_s-side.jpg",
+          audioSrc: "/assets/flip.mp3",
+        },
+      },
+      {
+        id: "hall-m-frame",
+        label: "M Wing frame",
+        x: 70.6,
+        y: 31.5,
+        width: 16.4,
+        height: 21.6,
+        action: {
+          type: "image",
+          imageSrc: "/assets/hall_m-side.jpg",
+          audioSrc: "/assets/flip.mp3",
         },
       },
     ],
