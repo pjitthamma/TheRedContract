@@ -12,7 +12,7 @@ test('all four room bells point to their own restored game routes', async () => 
     assert.deepEqual(bell.action,{type:'path',path,audioSrc:'/assets/bell-ring.mp3'});
     assert.match(bell.label,/Ring bell/);
   }
-  await access('public/assets/event_poster.jpg');
+  await access('public/assets/event_poster.webp');
   const poster=scenes.atrium.hotspots.find(h=>h.id==='atrium-poster');
   assert.deepEqual([poster.x,poster.y,poster.width,poster.height],[76.45,35.7,6.45,17]);
   for (const scene of Object.values(scenes)) {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { build } from 'esbuild';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 
 async function moduleFor(assets) {
   const bundle=await build({entryPoints:['src/preloadAssets.ts'],bundle:true,format:'esm',write:false,
@@ -57,13 +57,37 @@ test('preloader waits for every asset, shares concurrent loads and retries only 
   } finally { globalThis.fetch=originalFetch;delete globalThis.window;delete globalThis.Image; }
 });
 
+test('completed preload reuses cache and removes only obsolete media entries', async () => {
+  const originalFetch=globalThis.fetch;
+  const origin='https://example.test';
+  const current=origin+'/assets/cached.mp3?asset=current';
+  const obsolete=origin+'/assets/retired.png?asset=old';
+  const stored=new Map([[current,new Response('1234')],[obsolete,new Response('old')]]);
+  const deleted=[];
+  globalThis.window={location:{origin},caches:{open:async()=>({
+    match:async key=>stored.get(new URL(key,origin).href)?.clone(),
+    keys:async()=>[...stored.keys()].map(url=>({url})),
+    delete:async request=>{deleted.push(request.url);return stored.delete(request.url);},
+    put:async()=>{throw new Error('Cache hit should not be rewritten');},
+  })}};
+  globalThis.fetch=async()=>{throw new Error('Cached asset should not be fetched');};
+  try {
+    const api=await moduleFor([{url:'/assets/cached.mp3',bytes:4,hash:'current'}]);
+    assert.deepEqual(await api.preloadSiteAssets(()=>{}),[]);
+    assert.deepEqual(deleted,[obsolete]);
+    assert.ok(stored.has(current));
+  } finally {globalThis.fetch=originalFetch;delete globalThis.window;}
+});
+
 test('asset manifest includes active game media but excludes retired background videos and sign',async()=>{
   const bundled=await build({entryPoints:['scripts/siteAssets.ts'],bundle:true,platform:'node',format:'esm',write:false});
   const {collectSiteAssets}=await import('data:text/javascript;base64,'+Buffer.from(bundled.outputFiles[0].text).toString('base64'));
   const {assets,missing}=collectSiteAssets(process.cwd());
   assert.ok(assets.length>100);
   assert.ok(assets.some(a=>a.url==='/assets/b-bot-start.mp4'));
-  assert.ok(assets.some(a=>a.url==='/assets/event_poster.jpg'));
+  assert.ok(assets.some(a=>a.url==='/assets/event_poster.webp'));
+  assert.ok(assets.reduce((sum,a)=>sum+a.bytes,0)<100_000_000, 'active assets stay below 100 MB');
+  assert.deepEqual((await readdir('public/assets')).sort(),assets.map(a=>a.url.slice('/assets/'.length)).sort(), 'no unused files shipped in public/assets');
   assert.ok(!assets.some(a=>a.url==='/assets/landing-page.mp4'||a.url==='/assets/invitation-sign.png'));
   assert.ok(missing.every(url=>url.endsWith('.mp3')));
   const app=await readFile('src/App.tsx','utf8');

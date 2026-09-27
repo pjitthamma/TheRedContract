@@ -38,7 +38,7 @@ const MIN_HIT_INPUT_INTERVAL_MS = 60;
 
 const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
   b: {
-    backgroundSrc: "/assets/splank_b.jpg",
+    backgroundSrc: "/assets/splank_b.webp",
     hitboxClassName: "bot-test-hitbox-b",
     moanSrc: "/assets/moan_b.mp3",
     musicSrc: "/assets/Rosen B.mp3",
@@ -49,7 +49,7 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
     },
   },
   d: {
-    backgroundSrc: "/assets/splank_d.png",
+    backgroundSrc: "/assets/splank_d.webp",
     hitboxClassName: "bot-test-hitbox-d",
     moanSrc: "/assets/moan_d.mp3",
     musicSrc: "/assets/Michael D.mp3",
@@ -60,7 +60,7 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
     },
   },
   m: {
-    backgroundSrc: "/assets/splank_m.jpg",
+    backgroundSrc: "/assets/splank_m.webp",
     hitboxClassName: "bot-test-hitbox-m",
     moanSrc: "/assets/moan_m.mp3",
     musicSrc: "/assets/Noel M.mp3",
@@ -71,7 +71,7 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
     },
   },
   s: {
-    backgroundSrc: "/assets/splank_s.jpg",
+    backgroundSrc: "/assets/splank_s.webp",
     hitboxClassName: "bot-test-hitbox-s",
     moanSrc: "/assets/moan_s.mp3",
     musicSrc: "/assets/Ryusei S.mp3",

@@ -28,5 +28,5 @@ test('landing retains original full-screen 16:9 scene geometry and still-image r
   assert.ok(css.includes('width: max(100vw, calc(100vh * var(--scene-aspect-ratio)));'));
   assert.ok(css.includes('height: max(100vh, calc(100vw / var(--scene-aspect-ratio)));'));
   const scenes=await readFile('src/scenes.ts','utf8');
-  assert.match(scenes,/atrium: \{[^}]*posterSrc: "\/assets\/outside.png",[^}]*aspectRatio: 16 \/ 9,/);
+  assert.match(scenes,/atrium: \{[^}]*posterSrc: "\/assets\/outside.webp",[^}]*aspectRatio: 16 \/ 9,/);
 });

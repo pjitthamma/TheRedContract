@@ -422,7 +422,7 @@ function InitialLoadingScreen({ loadedCount, totalCount, loadedBytes = 0, totalB
   return (
     <main className="initial-loading-shell" aria-live="polite">
       <div className="initial-loading-panel">
-        <img src="/assets/icon.png" alt="" aria-hidden="true" draggable={false} />
+        <img src="/assets/icon.webp" alt="" aria-hidden="true" draggable={false} />
         <span>The Red Contract</span>
         <div className="initial-loading-bar" aria-hidden="true">
           <div style={{ width: `${progress}%` }} />
@@ -1809,7 +1809,7 @@ function LanguageButton({ selectedLanguage }: LanguageButtonProps) {
       onClick={switchLanguage}
     >
       <img
-        src={assetUrl(selectedLanguage === "en" ? "/assets/en.png" : "/assets/th.png")}
+        src={assetUrl(selectedLanguage === "en" ? "/assets/en.webp" : "/assets/th.webp")}
         alt=""
         aria-hidden="true"
         draggable={false}

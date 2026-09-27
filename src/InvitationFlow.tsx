@@ -617,7 +617,7 @@ function InvitationFlow({
           >
             <div className="contract-document">
               <img
-                src={assetUrl(language === "th" ? "/assets/contract_form_th.png" : "/assets/contract_form_en.png")}
+                src={assetUrl(language === "th" ? "/assets/contract_form_th.webp" : "/assets/contract_form_en.webp")}
                 alt={hudCopy.contractAlt}
                 draggable={false}
               />

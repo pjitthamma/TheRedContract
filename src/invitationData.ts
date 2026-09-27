@@ -40,10 +40,10 @@ export const hostRoomByKey: Record<HostKey, string> = {
 };
 
 export const hostResultImageByKey: Record<HostKey, string> = {
-  b: "/assets/b-result.png",
-  d: "/assets/d-result.png",
-  s: "/assets/s-result.png",
-  m: "/assets/m-result.png",
+  b: "/assets/b-result.webp",
+  d: "/assets/d-result.webp",
+  s: "/assets/s-result.webp",
+  m: "/assets/m-result.webp",
 };
 
 export const fallbackQuestionnaire: QuestionnaireQuestion[] = [

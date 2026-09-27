@@ -9,6 +9,7 @@ export default defineConfig({
     load(id) {
       if (id !== "\0virtual:site-assets") return;
       const manifest = collectSiteAssets(process.cwd());
+      for (const asset of manifest.assets) this.addWatchFile(process.cwd() + "/public" + asset.url);
       if (manifest.missing.length) this.warn("Existing optional sounds not supplied: " + manifest.missing.join(", "));
       return "export default " + JSON.stringify(manifest);
     },

@@ -26,7 +26,7 @@ export function EventPoster({ onDismiss }: { onDismiss: () => void }) {
         aria-label="Close event poster / ปิดโปสเตอร์" onClick={onDismiss}>
         <X size={22} aria-hidden="true" />
       </button>
-      <img src={assetUrl("/assets/event_poster.jpg")} alt="The Red Contract — Host Spanking Campaign, 27 June, members only"
+      <img src={assetUrl("/assets/event_poster.webp")} alt="The Red Contract — Host Spanking Campaign, 27 June, members only"
         width={1055} height={1491} fetchPriority="high" onError={onDismiss} />
     </dialog>
   );

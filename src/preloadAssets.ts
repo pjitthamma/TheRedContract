@@ -78,6 +78,16 @@ export async function preloadSiteAssets(onProgress: (progress: LoadingProgress) 
           catch { failures.push(asset.url); progressByUrl.delete(asset.url); report(); }
         }
       }));
+      // Retire only obsolete entries in this app's media cache, after a complete load.
+      if (!failures.length && cache?.keys) {
+        try {
+          const current = new Set(manifest.assets.map(asset =>
+            new URL(asset.url + "?asset=" + asset.hash, window.location.origin).href));
+          for (const request of await cache.keys()) {
+            if (!current.has(request.url)) await cache.delete(request);
+          }
+        } catch { /* Cache cleanup must never prevent entry. */ }
+      }
       return failures;
     })().finally(() => { pending = undefined; });
   }
