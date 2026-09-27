@@ -13,7 +13,11 @@ test('one persistent switch mutes music, voice, current and reused effects', asy
     play() { this.paused=false; return Promise.resolve(); }
     pause() { this.paused=true; }
   };
-  const bundle=await build({entryPoints:['src/audio.ts'],bundle:true,format:'esm',write:false});
+  const bundle=await build({entryPoints:['src/audio.ts'],bundle:true,format:'esm',write:false,
+    plugins:[{name:'test-manifest',setup(build){
+      build.onResolve({filter:/^virtual:site-assets$/},()=>({path:'manifest',namespace:'test'}));
+      build.onLoad({filter:/.*/,namespace:'test'},()=>({contents:'export default {assets:[],missing:[]}'}));
+    }}]});
   const {createAudio,setSoundEnabled,isSoundEnabled,playSound,releaseAudio} =
     await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
   assert.equal(isSoundEnabled(),false);

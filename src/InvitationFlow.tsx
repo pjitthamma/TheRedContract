@@ -1,3 +1,4 @@
+import { assetUrl } from "./preloadAssets";
 import { Download, X } from "lucide-react";
 import { apiFetch } from "./api";
 import { playSound } from "./audio";
@@ -616,7 +617,7 @@ function InvitationFlow({
           >
             <div className="contract-document">
               <img
-                src={language === "th" ? "/assets/contract_form_th.png" : "/assets/contract_form_en.png"}
+                src={assetUrl(language === "th" ? "/assets/contract_form_th.png" : "/assets/contract_form_en.png")}
                 alt={hudCopy.contractAlt}
                 draggable={false}
               />
@@ -678,7 +679,7 @@ function InvitationFlow({
         {step === "result" && result ? (
           <div className="invitation-result-shell">
             <div className="invitation-result-card" ref={resultCardRef}>
-              <img className="invitation-result-image" src={hostResultImageByKey[result.winningRoom]} alt="" />
+              <img className="invitation-result-image" src={assetUrl(hostResultImageByKey[result.winningRoom])} alt="" />
               <div className="invitation-result-content">
                 <div className="invitation-result-heading">
                   <p>Wing</p>

@@ -1,3 +1,4 @@
+import { assetUrl, isMissingAsset } from "./preloadAssets";
 import { useSyncExternalStore } from "react";
 
 const SOUND_KEY = "red-contract-sound-enabled";
@@ -29,7 +30,7 @@ export const useSoundEnabled = () => useSyncExternalStore(subscribe, isSoundEnab
 
 // Every music, voice and effect uses the same mute switch, including detached Audio objects.
 export function createAudio(src: string) {
-  const audio = new Audio(src);
+  const audio = new Audio(assetUrl(src));
   audio.muted = !soundEnabled;
   for (const ref of audioInstances) if (!ref.deref()) audioInstances.delete(ref);
   audioInstances.add(new WeakRef(audio));
@@ -43,7 +44,7 @@ export function releaseAudio(audio: HTMLAudioElement) {
 
 // Missing optional effects and autoplay restrictions must not break navigation.
 export function playSound(src: string) {
-  if (!soundEnabled || unavailableSounds.has(src)) return;
+  if (!soundEnabled || unavailableSounds.has(src) || isMissingAsset(src)) return;
   const audio = createAudio(src);
   audio.addEventListener("error", () => unavailableSounds.add(src), { once: true });
   void audio.play().catch(() => {

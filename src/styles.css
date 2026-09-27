@@ -338,24 +338,6 @@ button {
     drop-shadow(0 1rem 1.35rem rgba(0, 0, 0, 0.62));
 }
 
-.invitation-sign-overlay {
-  position: absolute;
-  left: 34.35%;
-  top: 58.4%;
-  z-index: 2;
-  width: 30.45%;
-  height: auto;
-  pointer-events: none;
-  opacity: 0.94;
-  mix-blend-mode: normal;
-  filter:
-    drop-shadow(0 0.75rem 1.1rem rgba(0, 0, 0, 0.72))
-    drop-shadow(0 0.28rem 0.42rem rgba(0, 0, 0, 0.55))
-    drop-shadow(0 0.08rem 0.18rem rgba(255, 222, 143, 0.22))
-    saturate(0.9)
-    contrast(0.96);
-}
-
 .hotspot {
   position: absolute;
   display: grid;
@@ -1487,7 +1469,7 @@ button {
   overflow: hidden;
   color: #f8fafc;
   background: #050305;
-  cursor: url("/assets/palm.png") 24 24, pointer;
+  cursor: var(--game-cursor, pointer);
   animation: bot-test-room-reveal 420ms ease 120ms both;
 }
 
@@ -1531,7 +1513,7 @@ button {
 .bot-test-hitbox {
   position: absolute;
   padding: 0;
-  cursor: url("/assets/palm.png") 24 24, pointer;
+  cursor: var(--game-cursor, pointer);
   background: transparent;
   border: 0;
   border-radius: 8px;
@@ -1649,7 +1631,7 @@ button {
   height: 2.75rem;
   padding: 0;
   color: #f8fafc;
-  cursor: url("/assets/palm.png") 24 24, pointer;
+  cursor: var(--game-cursor, pointer);
   background: rgba(2, 6, 23, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
@@ -1819,7 +1801,7 @@ button {
   height: 2.75rem;
   color: #f8fafc;
   text-decoration: none;
-  cursor: url("/assets/palm.png") 24 24, pointer;
+  cursor: var(--game-cursor, pointer);
   background: rgba(2, 6, 23, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;

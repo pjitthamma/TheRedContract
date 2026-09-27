@@ -1,16 +1,17 @@
 import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { apiFetch } from "./api";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { apiFetch, preloadPublicData } from "./api";
 import { createAudio, releaseAudio, playSound, isSoundEnabled, setSoundEnabled, useSoundEnabled } from "./audio";
 import { EventPoster } from "./EventPoster";
+import BotClickTest from "./BotClickTest";
+import InvitationFlow from "./InvitationFlow";
 import { type HostKey, hostRoomByKey } from "./invitationData";
-import { preloadSiteAssets } from "./preloadAssets";
+import { assetUrl, preloadSiteAssets, type LoadingProgress } from "./preloadAssets";
+import { navigateTo, usePathname } from "./navigation";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.8";
-const BotClickTest = lazy(() => import("./BotClickTest"));
-const InvitationFlow = lazy(() => import("./InvitationFlow"));
+const APP_VERSION = "1.0.0";
 
 type PopupContent = {
   title: string;
@@ -26,7 +27,7 @@ type TransitionPhase = "idle" | "playing" | "revealing";
 
 type InvitationFlowInitialStep = "code-prompt" | "contract";
 
-type LoadingState = {
+type LoadingState = LoadingProgress & {
   isComplete: boolean;
   loadedCount: number;
   totalCount: number;
@@ -350,36 +351,39 @@ function App() {
     isComplete: false,
     loadedCount: 0,
     totalCount: 1,
+    loadedBytes: 0,
+    totalBytes: 1,
   });
+
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 2500);
-    const preloadTimer = preloadSiteAssets((loadedCount, totalCount) => {
-      if (isMounted) {
-        setLoadingState({ isComplete: false, loadedCount, totalCount });
+    setLoadError(null);
+    void Promise.all([
+      preloadSiteAssets((progress) => {
+        if (isMounted) setLoadingState({ ...progress, isComplete: false });
+      }),
+      import("html-to-image"),
+      preloadPublicData(),
+    ]).then(([failures]) => {
+      if (!isMounted) return;
+      if (failures.length) {
+        setLoadError(`โหลดไม่สำเร็จ ${failures.length} ไฟล์ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ / Some files could not be loaded.`);
+      } else {
+        setLoadingState(current => ({ ...current, isComplete: true }));
       }
-    }, scenes[getInitialSceneId()].posterSrc, controller.signal);
-
-    void preloadTimer.then(() => {
-      window.clearTimeout(timeout);
-      if (isMounted) {
-        setLoadingState((current) => ({ ...current, isComplete: true }));
-      }
+    }).catch(() => {
+      if (isMounted) setLoadError("โหลดเว็บไซต์ไม่สำเร็จ กรุณาลองใหม่ / Could not load the website.");
     });
-
-    return () => {
-      isMounted = false;
-      window.clearTimeout(timeout);
-      controller.abort();
-    };
-  }, []);
+    return () => { isMounted = false; };
+  }, [loadAttempt]);
 
   if (!loadingState.isComplete) {
     return (
       <>
-        <InitialLoadingScreen loadedCount={loadingState.loadedCount} totalCount={loadingState.totalCount} />
+        <InitialLoadingScreen {...loadingState} error={loadError} onRetry={() => setLoadAttempt(current => current + 1)} />
         <VersionBadge />
       </>
     );
@@ -406,10 +410,14 @@ function VersionBadge() {
 type InitialLoadingScreenProps = {
   loadedCount: number;
   totalCount: number;
+  loadedBytes?: number;
+  totalBytes?: number;
+  error?: string | null;
+  onRetry?: () => void;
 };
 
-function InitialLoadingScreen({ loadedCount, totalCount }: InitialLoadingScreenProps) {
-  const progress = Math.min(100, Math.round((loadedCount / Math.max(1, totalCount)) * 100));
+function InitialLoadingScreen({ loadedCount, totalCount, loadedBytes = 0, totalBytes = 0, error, onRetry }: InitialLoadingScreenProps) {
+  const progress = Math.min(99, Math.floor((totalBytes ? loadedBytes / totalBytes : loadedCount / Math.max(1, totalCount)) * 100));
 
   return (
     <main className="initial-loading-shell" aria-live="polite">
@@ -419,22 +427,30 @@ function InitialLoadingScreen({ loadedCount, totalCount }: InitialLoadingScreenP
         <div className="initial-loading-bar" aria-hidden="true">
           <div style={{ width: `${progress}%` }} />
         </div>
-        <strong>{progress}%</strong>
+        <strong>{progress}% · {loadedCount}/{totalCount} files</strong>
+        {totalBytes > 0 ? <small>{(loadedBytes / 1_000_000).toFixed(1)} / {(totalBytes / 1_000_000).toFixed(1)} MB</small> : null}
+        <small>กำลังเตรียมภาพ เสียง และมินิเกมทั้งหมด กรุณารอสักครู่</small>
+        {error ? <div role="alert"><p>{error}</p><button type="button" onClick={onRetry}>ลองใหม่ / Retry</button></div> : null}
       </div>
     </main>
   );
 }
 
 function AppContent() {
-  if (window.location.pathname === "/mini-game") {
+  const pathname = usePathname();
+  if (pathname === "/mini-game") {
     return <AdminMiniGameAccess />;
   }
 
-  const miniGameRoute = miniGameRouteByPath[window.location.pathname as keyof typeof miniGameRouteByPath];
+  const miniGameRoute = miniGameRouteByPath[pathname as keyof typeof miniGameRouteByPath];
   if (miniGameRoute) {
-    return <BotClickTest variant={miniGameRoute.variant} returnPath={miniGameRoute.roomPath} />;
+    return <BotClickTest key={miniGameRoute.variant} variant={miniGameRoute.variant} returnPath={miniGameRoute.roomPath} />;
   }
 
+  return <SceneExperience key={pathname} />;
+}
+
+function SceneExperience() {
   const initialLanguage = getStoredLanguage();
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
@@ -899,7 +915,7 @@ function AppContent() {
           {hotspot.id === "lobby-up-button" || hotspot.id === "inside-hall-up-button" ? (
             <ArrowUp size={24} aria-hidden="true" />
           ) : null}
-          {hotspot.imageSrc ? <img src={hotspot.imageSrc} alt="" aria-hidden="true" draggable={false} /> : null}
+          {hotspot.imageSrc ? <img src={assetUrl(hotspot.imageSrc)} alt="" aria-hidden="true" draggable={false} /> : null}
           <span>{hotspot.label}</span>
         </button>
       )),
@@ -961,7 +977,7 @@ function AppContent() {
       if (overlay.action.audioSrc) {
         playSound(overlay.action.audioSrc);
       }
-      window.location.assign(overlay.action.path);
+      navigateTo(overlay.action.path);
       return;
     }
 
@@ -1143,7 +1159,7 @@ function AppContent() {
           aria-label={overlay.label}
           onClick={() => handleSceneOverlay(overlay)}
         >
-          <img src={overlay.src} alt="" aria-hidden="true" draggable={false} />
+          <img src={assetUrl(overlay.src)} alt="" aria-hidden="true" draggable={false} />
         </button>
       )) ?? [],
     [displayedScene.overlays, isOverlayAudioSequencePlaying, isTransitioning, selectedLanguage],
@@ -1290,9 +1306,6 @@ function AppContent() {
         <div className="scene-coordinate-layer">
           <div className="hotspot-layer">{hotspotButtons}</div>
           <div className="scene-overlay-layer">{sceneOverlays}</div>
-          {displayedScene.id === "atrium" ? (
-            <img className="invitation-sign-overlay" src="/assets/invitation-sign.png" alt="" aria-hidden="true" />
-          ) : null}
         </div>
 
         <div className="top-bar">
@@ -1353,7 +1366,7 @@ function AppContent() {
                 ? " image-overlay-wide"
                 : ""
             }`}
-            src={imageOverlaySrc}
+            src={assetUrl(imageOverlaySrc)}
             alt=""
             onClick={(event) => event.stopPropagation()}
           />
@@ -1384,7 +1397,7 @@ function AppContent() {
           </button>
           <img
             className="image-overlay gallery-image"
-            src={galleryOverlay.imageSrcs[galleryOverlay.index]}
+            src={assetUrl(galleryOverlay.imageSrcs[galleryOverlay.index])}
             alt=""
             onClick={(event) => event.stopPropagation()}
             draggable={false}
@@ -1796,7 +1809,7 @@ function LanguageButton({ selectedLanguage }: LanguageButtonProps) {
       onClick={switchLanguage}
     >
       <img
-        src={selectedLanguage === "en" ? "/assets/en.png" : "/assets/th.png"}
+        src={assetUrl(selectedLanguage === "en" ? "/assets/en.png" : "/assets/th.png")}
         alt=""
         aria-hidden="true"
         draggable={false}
@@ -1811,7 +1824,7 @@ function StaticScene({ posterSrc, fallbackClassName }: StaticSceneProps) {
   return (
     <div className="scene-media-layer">
       <div className={`animated-fallback ${fallbackClassName}`} aria-hidden="true" />
-      {posterSrc ? <img className="scene-poster" src={posterSrc} alt="" aria-hidden="true" /> : null}
+      {posterSrc ? <img className="scene-poster" src={assetUrl(posterSrc)} alt="" aria-hidden="true" /> : null}
     </div>
   );
 }

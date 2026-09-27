@@ -136,10 +136,10 @@ export const scenes: Record<SceneId, Scene> = {
       {
         id: "atrium-poster",
         label: "Wall poster",
-        x: 75.4,
-        y: 25.8,
-        width: 10,
-        height: 25.7,
+        x: 76.45,
+        y: 35.7,
+        width: 6.45,
+        height: 17,
         action: {
           type: "image",
           imageSrc: "/assets/poster.png",

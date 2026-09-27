@@ -1,7 +1,9 @@
 import { ArrowLeft, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import { apiFetch } from "./api";
+import { assetUrl } from "./preloadAssets";
+import { navigateTo } from "./navigation";
 import { createAudio, releaseAudio, isSoundEnabled, setSoundEnabled, useSoundEnabled } from "./audio";
-import { type KeyboardEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type KeyboardEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type BotAnimationState = "start" | "end";
 
@@ -209,14 +211,14 @@ function BotClickTest({ guestNameOverride, returnPath = "/", variant }: BotClick
 
   return (
     <>
-    <main className="bot-test-shell">
+    <main className="bot-test-shell" style={{ "--game-cursor": `url("${assetUrl("/assets/palm.png")}") 24 24, pointer` } as CSSProperties}>
       <div
         className="bot-test-background"
-        style={{ backgroundImage: `url("${config.backgroundSrc}")` }}
+        style={{ backgroundImage: `url("${assetUrl(config.backgroundSrc)}")` }}
         aria-hidden="true"
       />
 
-      <a className="bot-test-back" href={returnPath} aria-label="Back to host room" title="Back to host room">
+      <a className="bot-test-back" href={returnPath} onClick={(event) => { if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) { event.preventDefault(); navigateTo(returnPath); } }} aria-label="Back to host room" title="Back to host room">
         <ArrowLeft size={20} aria-hidden="true" />
       </a>
 
@@ -245,7 +247,7 @@ function BotClickTest({ guestNameOverride, returnPath = "/", variant }: BotClick
 
       <video
         className="bot-test-side-video"
-        src={config.sideVideoSrc}
+        src={assetUrl(config.sideVideoSrc)}
         autoPlay
         muted
         loop
@@ -279,7 +281,8 @@ function BotClickTest({ guestNameOverride, returnPath = "/", variant }: BotClick
       <section className="bot-test-stage" aria-label="Character hit test">
         <video
           className="bot-test-video"
-          src={config.videoSrcByState.start}
+          src={assetUrl(config.videoSrcByState.start)}
+          poster={assetUrl(config.backgroundSrc)}
           autoPlay
           muted
           loop
@@ -290,7 +293,7 @@ function BotClickTest({ guestNameOverride, returnPath = "/", variant }: BotClick
         <video
           ref={endVideoRef}
           className={`bot-test-video bot-test-video-end${animationState === "end" ? " bot-test-video-active" : ""}`}
-          src={config.videoSrcByState.end}
+          src={assetUrl(config.videoSrcByState.end)}
           muted
           playsInline
           preload="auto"
