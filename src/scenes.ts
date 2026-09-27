@@ -116,7 +116,7 @@ export const scenes: Record<SceneId, Scene> = {
   atrium: {
     id: "atrium",
     name: "",
-    videoSrc: "/assets/landing-page.mp4",
+    videoSrc: "",
     posterSrc: "/assets/outside.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-atrium",
@@ -151,7 +151,8 @@ export const scenes: Record<SceneId, Scene> = {
   door: {
     id: "door",
     name: "",
-    videoSrc: "/assets/door_open.mp4",
+    videoSrc: "",
+    posterSrc: "/assets/door.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-door",
     hotspots: [
@@ -184,7 +185,8 @@ export const scenes: Record<SceneId, Scene> = {
   archive: {
     id: "archive",
     name: "",
-    videoSrc: "/assets/lobby-video.mp4",
+    videoSrc: "",
+    posterSrc: "/assets/lobby.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-archive",
     overlays: [
@@ -286,7 +288,7 @@ export const scenes: Record<SceneId, Scene> = {
   lineup: {
     id: "lineup",
     name: "",
-    videoSrc: "/assets/line-up.mp4",
+    videoSrc: "",
     posterSrc: "/assets/line-up-all.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-lineup",
@@ -348,7 +350,7 @@ export const scenes: Record<SceneId, Scene> = {
   inside: {
     id: "inside",
     name: "",
-    videoSrc: "/assets/inside.mp4",
+    videoSrc: "",
     posterSrc: "/assets/inside.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-inside",
@@ -432,7 +434,7 @@ export const scenes: Record<SceneId, Scene> = {
   "hall-of-frame": {
     id: "hall-of-frame",
     name: "",
-    videoSrc: "/assets/hall-of-frame.mp4",
+    videoSrc: "",
     posterSrc: "/assets/hall-of-frame.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-inside",
@@ -494,7 +496,7 @@ export const scenes: Record<SceneId, Scene> = {
   "B-room": {
     id: "B-room",
     name: "",
-    videoSrc: "/assets/b room.mp4",
+    videoSrc: "",
     posterSrc: "/assets/b_room_1.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-b-room",
@@ -583,7 +585,7 @@ export const scenes: Record<SceneId, Scene> = {
   "B-desk": {
     id: "B-desk",
     name: "",
-    videoSrc: "/assets/b room profile.mp4",
+    videoSrc: "",
     posterSrc: "/assets/b-desk.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-b-room",
@@ -606,7 +608,7 @@ export const scenes: Record<SceneId, Scene> = {
   "B-sofa": {
     id: "B-sofa",
     name: "",
-    videoSrc: "/assets/b room sofa.mp4",
+    videoSrc: "",
     posterSrc: "/assets/b-sofa.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-b-room",
@@ -641,7 +643,7 @@ export const scenes: Record<SceneId, Scene> = {
   "D-room": {
     id: "D-room",
     name: "",
-    videoSrc: "/assets/d room.mp4",
+    videoSrc: "",
     posterSrc: "/assets/d_room_1.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-d-room",
@@ -718,7 +720,7 @@ export const scenes: Record<SceneId, Scene> = {
   "D-desk": {
     id: "D-desk",
     name: "",
-    videoSrc: "/assets/d room profile.mp4",
+    videoSrc: "",
     posterSrc: "/assets/d-desk.PNG",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-d-room",
@@ -741,7 +743,7 @@ export const scenes: Record<SceneId, Scene> = {
   "D-sofa": {
     id: "D-sofa",
     name: "",
-    videoSrc: "/assets/d room sofa.mp4",
+    videoSrc: "",
     posterSrc: "/assets/d-sofa.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-d-room",
@@ -776,7 +778,7 @@ export const scenes: Record<SceneId, Scene> = {
   "S-room": {
     id: "S-room",
     name: "",
-    videoSrc: "/assets/s room.mp4",
+    videoSrc: "",
     posterSrc: "/assets/s_room_1.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-s-room",
@@ -853,7 +855,7 @@ export const scenes: Record<SceneId, Scene> = {
   "S-desk": {
     id: "S-desk",
     name: "",
-    videoSrc: "/assets/s room profile.mp4",
+    videoSrc: "",
     posterSrc: "/assets/s-desk.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-s-room",
@@ -876,7 +878,7 @@ export const scenes: Record<SceneId, Scene> = {
   "S-sofa": {
     id: "S-sofa",
     name: "",
-    videoSrc: "/assets/s room sofa.mp4",
+    videoSrc: "",
     posterSrc: "/assets/s-sofa.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-s-room",
@@ -911,7 +913,7 @@ export const scenes: Record<SceneId, Scene> = {
   "M-room": {
     id: "M-room",
     name: "",
-    videoSrc: "/assets/m room.mp4",
+    videoSrc: "",
     posterSrc: "/assets/m_room_1.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-m-room",
@@ -988,7 +990,7 @@ export const scenes: Record<SceneId, Scene> = {
   "M-desk": {
     id: "M-desk",
     name: "",
-    videoSrc: "/assets/m room profile.mp4",
+    videoSrc: "",
     posterSrc: "/assets/m-desk.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-m-room",
@@ -1011,7 +1013,7 @@ export const scenes: Record<SceneId, Scene> = {
   "M-sofa": {
     id: "M-sofa",
     name: "",
-    videoSrc: "/assets/m room sofa.mp4",
+    videoSrc: "",
     posterSrc: "/assets/m-sofa.png",
     aspectRatio: 16 / 9,
     fallbackClassName: "fallback-m-room",

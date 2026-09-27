@@ -13,4 +13,9 @@ test('all four room bells point to their own restored game routes', async () => 
     assert.match(bell.label,/Ring bell/);
   }
   await access('public/assets/event_poster.jpg');
+  for (const scene of Object.values(scenes)) {
+    assert.equal(scene.videoSrc, '');
+    assert.ok(scene.posterSrc, scene.id);
+    await access('public' + scene.posterSrc);
+  }
 });

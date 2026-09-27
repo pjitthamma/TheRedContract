@@ -656,7 +656,7 @@ button {
   overflow: hidden;
   background: #000;
   opacity: 1;
-  transition: opacity 900ms ease;
+  transition: opacity 250ms ease;
 }
 
 .transition-video {
@@ -1497,13 +1497,13 @@ button {
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  filter: blur(8px);
-  transform: scale(1.02);
+  /* Keep the original still background sharp. */
 }
 
 .bot-test-stage {
   position: absolute;
   inset: 0;
+  bottom: 6rem;
   overflow: hidden;
   touch-action: manipulation;
 }
@@ -1666,7 +1666,7 @@ button {
 .bot-test-side-video {
   position: absolute;
   right: clamp(1rem, 4vw, 4rem);
-  bottom: 0;
+  bottom: 6rem;
   z-index: 1;
   width: 16rem;
   max-height: 68vh;
@@ -1678,6 +1678,8 @@ button {
 
 .bot-test-leaderboard {
   position: absolute;
+  display: flex;
+  flex-direction: column;
   top: 5.9rem;
   left: 1.55rem;
   z-index: 3;
@@ -1695,6 +1697,7 @@ button {
 
 .bot-test-leaderboard-title {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
@@ -1744,11 +1747,15 @@ button {
 
 .bot-test-leaderboard ol {
   display: grid;
+  min-height: 0;
   gap: 0.7rem;
   margin: 0;
   padding: 0;
   max-height: calc(100% - 2rem);
   overflow-y: auto;
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   list-style: none;
   scrollbar-width: thin;
   scrollbar-color: rgba(214, 169, 74, 0.5) rgba(255, 255, 255, 0.08);
@@ -1768,9 +1775,8 @@ button {
 
 .bot-test-leaderboard span {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .bot-test-leaderboard strong {
@@ -1780,6 +1786,32 @@ button {
 
 .bot-test-leaderboard-empty {
   color: rgba(255, 248, 204, 0.62);
+}
+
+.bot-test-event-notice {
+  position: absolute;
+  z-index: 5;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.55rem 1rem max(0.55rem, env(safe-area-inset-bottom));
+  color: #fff8cc;
+  background: rgba(5, 3, 5, 0.9);
+  font-size: clamp(0.65rem, 1.05vw, 0.85rem);
+  line-height: 1.5;
+  text-align: center;
+  pointer-events: none;
+}
+
+.bot-test-event-notice span {
+  display: block;
+  color: #d5cbbc;
+  font-size: 0.9em;
+}
+
+.bot-test-leaderboard {
+  height: min(65vh, 42rem);
 }
 
 .bot-test-back {
@@ -1958,16 +1990,21 @@ button {
   }
 
   .bot-test-leaderboard {
-    top: auto;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    top: 4.25rem;
+    right: auto;
+    bottom: auto;
     left: 0.75rem;
-    width: auto;
-    height: auto;
-    max-height: 26vh;
+    width: 44vw;
+    height: 30vh;
+    max-height: 30vh;
     padding: 0.75rem;
     overflow: hidden;
   }
+
+  .bot-test-leaderboard h1 { font-size: 0.7rem; }
+  .bot-test-leaderboard li, .bot-test-leaderboard strong { font-size: 0.75rem; }
+  .bot-test-event-notice { font-size: 0.72rem; }
+  .bot-test-stage, .bot-test-side-video { bottom: 7rem; }
 
   .hotspot span {
     font-size: 0.7rem;

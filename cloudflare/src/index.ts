@@ -48,7 +48,7 @@ async function route(request: Request, db: D1Database) {
       return json({ ok: true, guestName: guest.guest_name, roomKey, playToken: session.playToken, playTokenExpiresAt: session.playTokenExpiresAt });
     }
     case "get-mini-game-leaderboard": {
-      const rows = await db.prepare("SELECT guest_name AS name,click_count AS score FROM mini_game_scores WHERE room_key=? ORDER BY click_count DESC,updated_at ASC LIMIT 10")
+      const rows = await db.prepare("SELECT guest_name AS name,click_count AS score FROM mini_game_scores WHERE room_key=? ORDER BY click_count DESC,updated_at ASC,guest_name ASC")
         .bind(room(p.roomKey)).all();
       return json({ leaderboard: rows.results }, 200, "public, max-age=15");
     }
@@ -64,33 +64,8 @@ async function route(request: Request, db: D1Database) {
       if (!score) throw new HttpError(401, "Session expired. Please enter your code again.");
       return json(score);
     }
-    case "submit-mini-game-score": {
-      const roomKey = room(p.roomKey);
-      const guestName = text(p.guestName, "guestName", 20);
-      if (!p.playToken) throw new HttpError(401, "Play session is required");
-      const token = text(p.playToken, "playToken");
-      if (typeof p.clickCount !== "number" || !Number.isSafeInteger(p.clickCount) || p.clickCount < 0 || p.clickCount > 2147483647) {
-        throw new HttpError(400, "Invalid clickCount");
-      }
-      const now = new Date().toISOString();
-      const valid = [nameKey(guestName), roomKey, token, now];
-      const where = "guest_name_key=? AND winning_room=? AND active_play_token=? AND active_play_expires_at>?";
-      // D1 batch is transactional: validation, max-score write and renewal cannot race a token rotation.
-      const [saved] = await db.batch([
-        db.prepare(`INSERT INTO mini_game_scores(room_key,guest_name,click_count,session_id,updated_at)
-          SELECT winning_room,guest_name,?,?,? FROM invitation_results WHERE ${where}
-          ON CONFLICT(room_key,guest_name) DO UPDATE SET
-            click_count=max(mini_game_scores.click_count,excluded.click_count),
-            session_id=coalesce(excluded.session_id,mini_game_scores.session_id),
-            updated_at=CASE WHEN excluded.click_count>mini_game_scores.click_count THEN excluded.updated_at ELSE mini_game_scores.updated_at END
-          RETURNING room_key AS roomKey,guest_name AS guestName,click_count AS clickCount`)
-          .bind(p.clickCount, optionalText(p.sessionId), now, ...valid),
-        db.prepare(`UPDATE invitation_results SET active_play_expires_at=?,active_play_session_id=coalesce(?,active_play_session_id) WHERE ${where}`)
-          .bind(new Date(Date.now() + 300_000).toISOString(), optionalText(p.sessionId), ...valid),
-      ]);
-      if (!saved.results.length) throw new HttpError(401, "Session expired. Please enter your code again.");
-      return json(saved.results[0]);
-    }
+    case "submit-mini-game-score":
+      return json({ error: "This event has ended. Scores are no longer accepted.", eventEnded: true }, 410);
     default: throw new HttpError(404, "Not found");
   }
 }

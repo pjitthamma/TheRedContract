@@ -1,13 +1,13 @@
 import { ArrowLeft, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import { apiFetch } from "./api";
-import { type KeyboardEvent, type MouseEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { createAudio, releaseAudio, isSoundEnabled, setSoundEnabled, useSoundEnabled } from "./audio";
+import { type KeyboardEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type BotAnimationState = "start" | "end";
 
 type BotClickTestVariant = "b" | "d" | "m" | "s";
 
 type BotClickTestProps = {
-  disableScorePersistence?: boolean;
   guestNameOverride?: string;
   returnPath?: string;
   variant: BotClickTestVariant;
@@ -31,14 +31,7 @@ type LeaderboardResponse = {
   leaderboard?: LeaderboardEntry[];
 };
 
-type GuestScoreResponse = {
-  guestScore?: number | null;
-};
-
 const GUEST_NAME_KEY = "red-contract-guest-name";
-const SESSION_KEY = "red-contract-session-id";
-const getPlayTokenKey = (roomKey: BotClickTestVariant) => `red-contract-play-token:${roomKey}`;
-const SCORE_SAVE_INTERVAL_MS = 15000;
 const MIN_HIT_INPUT_INTERVAL_MS = 60;
 
 const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
@@ -89,213 +82,75 @@ const botClickTestConfigs: Record<BotClickTestVariant, BotClickTestConfig> = {
 };
 
 const getStoredGuestName = () => window.localStorage.getItem(GUEST_NAME_KEY)?.trim().slice(0, 20) || "Guest";
-const getStoredPlayToken = (roomKey: BotClickTestVariant) => window.sessionStorage.getItem(getPlayTokenKey(roomKey))?.trim() ?? "";
-
-const getSessionId = () => {
-  const existingSessionId = window.localStorage.getItem(SESSION_KEY);
-  if (existingSessionId) {
-    return existingSessionId;
-  }
-
-  const nextSessionId = crypto.randomUUID();
-  window.localStorage.setItem(SESSION_KEY, nextSessionId);
-  return nextSessionId;
-};
-
-function BotClickTest({ disableScorePersistence = false, guestNameOverride, returnPath = "/", variant }: BotClickTestProps) {
+function BotClickTest({ guestNameOverride, returnPath = "/", variant }: BotClickTestProps) {
   const config = botClickTestConfigs[variant];
   const [guestName] = useState(() => guestNameOverride?.trim().slice(0, 20) || getStoredGuestName());
   const [clickCount, setClickCount] = useState(0);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [animationState, setAnimationState] = useState<BotAnimationState>("start");
-  const [isMusicOn, setIsMusicOn] = useState(true);
-  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
-  const [isSessionExpired, setIsSessionExpired] = useState(false);
+  const isMusicOn = useSoundEnabled();
+  const [leaderboardStatus, setLeaderboardStatus] = useState<"loading" | "ready" | "error">("loading");
   const endVideoRef = useRef<HTMLVideoElement | null>(null);
   const moanAudioRef = useRef<HTMLAudioElement | null>(null);
   const moanAudioSrcRef = useRef<string | null>(null);
   const slapAudioRef = useRef<HTMLAudioElement | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
-  const hasLoadedSavedScoreRef = useRef(false);
-  const clickCountRef = useRef(0);
-  const lastSubmittedScoreRef = useRef(0);
-  const isSubmittingScoreRef = useRef(false);
   const lastAcceptedHitAtRef = useRef(0);
 
   useEffect(() => {
-    const audio = new Audio(config.musicSrc);
+    const audio = createAudio(config.musicSrc);
     audio.loop = true;
     audio.volume = 0.72;
     musicAudioRef.current = audio;
 
     if (isMusicOn) {
-      void audio.play().catch(() => setIsMusicOn(false));
+      void audio.play().catch(() => {});
     }
 
     return () => {
-      audio.pause();
+      releaseAudio(audio);
       if (musicAudioRef.current === audio) {
         musicAudioRef.current = null;
       }
     };
   }, [config.musicSrc]);
 
-  useEffect(() => {
-    clickCountRef.current = clickCount;
-  }, [clickCount]);
-
   const fetchLeaderboard = useCallback(async () => {
+    setLeaderboardStatus("loading");
     try {
       const query = new URLSearchParams({
         roomKey: variant,
       });
       const response = await apiFetch(`get-mini-game-leaderboard?${query.toString()}`);
-      if (!response.ok) {
-        return;
-      }
+      if (!response.ok) throw new Error("Leaderboard unavailable");
 
       const data = (await response.json()) as LeaderboardResponse;
       const nextLeaderboardEntries = data.leaderboard ?? [];
       setLeaderboardEntries(nextLeaderboardEntries);
+      setLeaderboardStatus("ready");
     } catch {
-      // Local Vite development can keep the current in-memory score visible.
+      setLeaderboardStatus("error");
     }
   }, [variant]);
 
-  const fetchGuestScore = useCallback(async () => {
-    if (disableScorePersistence) {
-      hasLoadedSavedScoreRef.current = true;
-      return;
-    }
-
-    try {
-      const playToken = getStoredPlayToken(variant);
-      if (!playToken) {
-        setIsSessionExpired(true);
-        setSessionMessage("Session expired. Please enter your code again.");
-        return;
-      }
-
-      const query = new URLSearchParams({
-        guestName,
-        playToken,
-        roomKey: variant,
-      });
-      const response = await apiFetch(`get-mini-game-score?${query.toString()}`);
-      if (response.status === 401) {
-        window.sessionStorage.removeItem(getPlayTokenKey(variant));
-        setIsSessionExpired(true);
-        setSessionMessage("Session expired. Please enter your code again.");
-        return;
-      }
-      if (!response.ok) {
-        return;
-      }
-
-      const data = (await response.json()) as GuestScoreResponse;
-      const savedGuestScore = typeof data.guestScore === "number" ? data.guestScore : 0;
-      lastSubmittedScoreRef.current = savedGuestScore;
-      setClickCount((current) => Math.max(current, savedGuestScore));
-    } catch {
-      // Local Vite development can keep the current in-memory score visible.
-    } finally {
-      hasLoadedSavedScoreRef.current = true;
-    }
-  }, [disableScorePersistence, guestName, variant]);
-
-  const submitScore = useCallback(
-    async (score = clickCountRef.current, keepalive = false) => {
-      if (disableScorePersistence) {
-        return;
-      }
-
-      if (isSessionExpired || !hasLoadedSavedScoreRef.current || score <= 0 || score <= lastSubmittedScoreRef.current) {
-        return;
-      }
-      if (isSubmittingScoreRef.current && !keepalive) {
-        return;
-      }
-
-      const playToken = getStoredPlayToken(variant);
-      if (!playToken) {
-        setIsSessionExpired(true);
-        setSessionMessage("Session expired. Please enter your code again.");
-        return;
-      }
-
-      isSubmittingScoreRef.current = true;
-      try {
-        const response = await apiFetch("submit-mini-game-score", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-          },
-          keepalive,
-          body: JSON.stringify({
-            roomKey: variant,
-            guestName,
-            clickCount: score,
-            playToken,
-            sessionId: getSessionId(),
-          }),
-        });
-
-        if (response.status === 401) {
-          window.sessionStorage.removeItem(getPlayTokenKey(variant));
-          setIsSessionExpired(true);
-          setSessionMessage("Session expired. Please enter your code again.");
-          return;
-        }
-
-        if (response.ok) {
-          const data = (await response.json()) as { clickCount?: number };
-          lastSubmittedScoreRef.current = Math.max(lastSubmittedScoreRef.current, data.clickCount ?? score);
-        }
-      } catch {
-        // Keep clicks playable when the database is unavailable.
-      } finally {
-        isSubmittingScoreRef.current = false;
-      }
-    },
-    [disableScorePersistence, guestName, isSessionExpired, variant],
-  );
+  useEffect(() => { void fetchLeaderboard(); }, [fetchLeaderboard]);
 
   useEffect(() => {
-    hasLoadedSavedScoreRef.current = false;
-    lastSubmittedScoreRef.current = 0;
-    void fetchGuestScore();
-  }, [fetchGuestScore]);
+    const audio = musicAudioRef.current;
+    if (!audio) return;
+    if (isMusicOn) void audio.play().catch(() => {});
+    else audio.pause();
+  }, [isMusicOn]);
 
-  useEffect(() => {
-    const scoreTimer = window.setInterval(() => {
-      void submitScore();
-    }, SCORE_SAVE_INTERVAL_MS);
-
-    return () => window.clearInterval(scoreTimer);
-  }, [submitScore]);
-
-  useEffect(() => {
-    const saveBeforeLeave = () => {
-      void submitScore(clickCountRef.current, true);
-    };
-
-    window.addEventListener("pagehide", saveBeforeLeave);
-    return () => {
-      window.removeEventListener("pagehide", saveBeforeLeave);
-      void submitScore(clickCountRef.current, true);
-    };
-  }, [submitScore]);
-
-  const handleBackClick = async (event: MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-    await submitScore(clickCountRef.current);
-    window.location.assign(returnPath);
-  };
+  useEffect(() => () => {
+    if (slapAudioRef.current) releaseAudio(slapAudioRef.current);
+    if (moanAudioRef.current) releaseAudio(moanAudioRef.current);
+  }, []);
 
   const playHitFeedback = () => {
     setAnimationState("end");
 
-    const slapAudio = slapAudioRef.current ?? new Audio("/assets/slap.mp3");
+    const slapAudio = slapAudioRef.current ?? createAudio("/assets/slap.mp3");
     slapAudioRef.current = slapAudio;
     slapAudio.currentTime = 0;
     void slapAudio.play().catch(() => {});
@@ -304,7 +159,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
       const moanAudio =
         moanAudioRef.current && moanAudioSrcRef.current === config.moanSrc
           ? moanAudioRef.current
-          : new Audio(config.moanSrc);
+          : createAudio(config.moanSrc);
       moanAudioRef.current = moanAudio;
       moanAudioSrcRef.current = config.moanSrc;
       moanAudio.currentTime = 0;
@@ -324,10 +179,6 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
 
   const handleCharacterPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
-
-    if (isSessionExpired) {
-      return;
-    }
 
     if (!event.isPrimary) {
       return;
@@ -352,25 +203,9 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
   };
 
   const toggleMusic = () => {
-    const audio = musicAudioRef.current ?? new Audio(config.musicSrc);
-    audio.loop = true;
-    audio.volume = 0.72;
-    musicAudioRef.current = audio;
-
-    if (isMusicOn) {
-      audio.pause();
-      setIsMusicOn(false);
-      return;
-    }
-
-    void audio.play().then(() => setIsMusicOn(true)).catch(() => setIsMusicOn(false));
+    setSoundEnabled(!isSoundEnabled());
+    if (isSoundEnabled()) void musicAudioRef.current?.play().catch(() => {});
   };
-
-  const displayedLeaderboardEntries = leaderboardEntries.length
-    ? leaderboardEntries
-    : clickCount > 0
-      ? [{ name: guestName, score: clickCount }]
-      : [];
 
   return (
     <main className="bot-test-shell">
@@ -380,7 +215,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
         aria-hidden="true"
       />
 
-      <a className="bot-test-back" href={returnPath} aria-label="Back to host room" title="Back to host room" onClick={handleBackClick}>
+      <a className="bot-test-back" href={returnPath} aria-label="Back to host room" title="Back to host room">
         <ArrowLeft size={20} aria-hidden="true" />
       </a>
 
@@ -395,15 +230,13 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
           <strong>{clickCount}</strong>
         </div>
 
-        {sessionMessage ? <p className="bot-test-session-message">{sessionMessage}</p> : null}
-        {isSessionExpired ? <a href="/" className="bot-test-session-message">Re-enter invitation code / กรอกรหัสเชิญอีกครั้ง</a> : null}
       </div>
 
       <button
         className="bot-test-music-button"
         type="button"
-        aria-label={isMusicOn ? "Turn music off" : "Turn music on"}
-        title={isMusicOn ? "Turn music off" : "Turn music on"}
+        aria-label={isMusicOn ? "Turn sound off" : "Turn sound on"}
+        title={isMusicOn ? "Turn sound off" : "Turn sound on"}
         onClick={toggleMusic}
       >
         {isMusicOn ? <Volume2 size={20} aria-hidden="true" /> : <VolumeX size={20} aria-hidden="true" />}
@@ -422,21 +255,21 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
 
       <aside className="bot-test-leaderboard" aria-label="Leaderboard">
         <div className="bot-test-leaderboard-title">
-          <h1>LEADERBOARD (TOP 10)</h1>
+          <h1>FINAL LEADERBOARD</h1>
           <button type="button" aria-label="Refresh leaderboard" title="Refresh leaderboard" onClick={() => void fetchLeaderboard()}>
             <RefreshCw size={14} aria-hidden="true" />
           </button>
         </div>
         <ol>
-          {displayedLeaderboardEntries.map((entry) => (
-            <li key={`${entry.name}-${entry.score}`}>
-              <span>{entry.name}</span>
+          {leaderboardEntries.map((entry, index) => (
+            <li key={`${index}-${entry.name}`}>
+              <span title={entry.name}>{index + 1}. {entry.name}</span>
               <strong>{entry.score}</strong>
             </li>
           ))}
-          {!displayedLeaderboardEntries.length ? (
+          {!leaderboardEntries.length ? (
             <li className="bot-test-leaderboard-empty">
-              <span>No scores yet</span>
+              <span>{leaderboardStatus === "loading" ? "Loading final scores…" : leaderboardStatus === "error" ? "Could not load scores. Please retry ↻" : "No recorded scores"}</span>
             </li>
           ) : null}
         </ol>
@@ -467,7 +300,6 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
           className={`bot-test-hitbox ${config.hitboxClassName}`}
           type="button"
           aria-label="Hit character"
-          disabled={isSessionExpired}
           tabIndex={-1}
           onClick={(event) => event.preventDefault()}
           onKeyDown={blockKeyboardHit}
@@ -475,6 +307,11 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
           onPointerDown={handleCharacterPointerDown}
         />
       </section>
+      <p className="bot-test-event-notice">
+        กิจกรรมสิ้นสุดลงแล้ว การเล่นหลังจากนี้จะไม่บันทึกคะแนนหรือเปลี่ยนแปลงอันดับ
+        แต่ท่านยังสามารถร่วมสนุกกับมินิเกมตีก้นโฮสต์ได้ตามอัธยาศัย
+        <span>The event has ended. Enjoy playing for fun; new hits are not saved and will not affect the final rankings.</span>
+      </p>
     </main>
   );
 }

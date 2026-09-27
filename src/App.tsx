@@ -2,13 +2,13 @@ import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } fr
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "./api";
-import { playSound } from "./audio";
+import { createAudio, releaseAudio, playSound, isSoundEnabled, setSoundEnabled, useSoundEnabled } from "./audio";
 import { EventPoster } from "./EventPoster";
-import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitationData";
+import { type HostKey, hostRoomByKey } from "./invitationData";
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.6";
+const APP_VERSION = "0.1.7";
 const BotClickTest = lazy(() => import("./BotClickTest"));
 const InvitationFlow = lazy(() => import("./InvitationFlow"));
 
@@ -25,25 +25,6 @@ type GalleryOverlay = {
 type TransitionPhase = "idle" | "playing" | "revealing";
 
 type InvitationFlowInitialStep = "code-prompt" | "contract";
-
-type InsideDoorAccess = "code" | SceneId | null;
-
-type CodePromptState = {
-  target: SceneId;
-  roomKey: HostKey;
-};
-
-type ValidateInvitationCodeResponse = {
-  error?: string;
-  guestName?: string;
-  playToken?: string;
-};
-
-type LocalInvitationResult = {
-  guestName: string;
-  winningRoom: HostKey;
-  invitationCode: string;
-};
 
 type LoadingState = {
   isComplete: boolean;
@@ -126,8 +107,6 @@ type EventName =
 
 const SESSION_ID_KEY = "red-contract-session-id";
 const LANGUAGE_KEY = "red-contract-language";
-const GUEST_NAME_KEY = "red-contract-guest-name";
-const LOCAL_INVITATION_RESULTS_KEY = "red-contract-local-invitation-results";
 
 const roomSceneIdByPath: Partial<Record<string, SceneId>> = {
   "/B-room": "B-room",
@@ -151,11 +130,6 @@ const adminMiniGameCodeByRoom = {
   m: "M-TRC-Q6M4-LV7N",
   s: "S-TRC-X3F8-PV6K",
 } satisfies Record<HostKey, string>;
-
-const getSceneAccessKey = (sceneId: SceneId) => `red-contract-scene-access:${sceneId}`;
-const getPlayTokenKey = (roomKey: HostKey) => `red-contract-play-token:${roomKey}`;
-const hasSceneAccess = (sceneId: SceneId) => window.sessionStorage.getItem(getSceneAccessKey(sceneId)) === "true";
-const grantSceneAccess = (sceneId: SceneId) => window.sessionStorage.setItem(getSceneAccessKey(sceneId), "true");
 
 const getStoredLanguage = (): Language | null => {
   const storedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
@@ -329,46 +303,11 @@ const hostKeyByRoom: Partial<Record<SceneId, HostKey>> = {
   "M-room": "m",
 };
 
-const getLocalInvitationMatch = (roomKey: HostKey, guestName: string, invitationCode: string) => {
-  try {
-    const localResults = JSON.parse(window.localStorage.getItem(LOCAL_INVITATION_RESULTS_KEY) ?? "[]") as LocalInvitationResult[];
-    const normalizedGuestName = guestName.trim().toLocaleLowerCase();
-    const normalizedCode = invitationCode.trim().toLocaleLowerCase();
-    return localResults.find(
-      (result) =>
-        result.winningRoom === roomKey &&
-        result.guestName.trim().toLocaleLowerCase() === normalizedGuestName &&
-        result.invitationCode.trim().toLocaleLowerCase() === normalizedCode,
-    );
-  } catch {
-    return undefined;
-  }
-};
-
-const isFallbackInvitationCode = (roomKey: HostKey, invitationCode: string) =>
-  fallbackInvitationCodes[roomKey].some((code) => code.toLocaleLowerCase() === invitationCode.trim().toLocaleLowerCase());
-
-const isLocalBrowserHost = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-
 const appHudCopy = {
   en: {
-    invalidInvitationCode: "Invalid invitation code for this wing.",
-    invitationCodeNameLabel: "Guest Name",
-    invitationCodeNamePlaceholder: "Enter your guest name",
-    invitationCodeTitle: "Invitation Code",
-    invitationCodeDescription: "Enter the code for this wing.",
-    invitationCodeChecking: "Checking...",
-    enter: "Enter",
     closePopup: "Close popup",
   },
   th: {
-    invalidInvitationCode: "รหัสเชิญไม่ถูกต้องสำหรับวิงนี้",
-    invitationCodeNameLabel: "ชื่อแขก",
-    invitationCodeNamePlaceholder: "กรอกชื่อแขก",
-    invitationCodeTitle: "รหัสเชิญ",
-    invitationCodeDescription: "กรอกรหัสสำหรับวิงนี้",
-    invitationCodeChecking: "กำลังตรวจสอบ...",
-    enter: "เข้า",
     closePopup: "ปิดหน้าต่าง",
   },
 } satisfies Record<Language, Record<string, string>>;
@@ -493,29 +432,19 @@ function AppContent() {
 
   const miniGameRoute = miniGameRouteByPath[window.location.pathname as keyof typeof miniGameRouteByPath];
   if (miniGameRoute) {
-    if (!hasSceneAccess(miniGameRoute.roomPath.slice(1) as SceneId)) return <DirectAccessRedirect />;
     return <BotClickTest variant={miniGameRoute.variant} returnPath={miniGameRoute.roomPath} />;
   }
 
   const initialLanguage = getStoredLanguage();
-  const directRoomSceneId = roomSceneIdByPath[window.location.pathname];
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
   const [isEventPosterOpen, setIsEventPosterOpen] = useState(() => window.location.pathname === "/");
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
   const [invitationFlowStep, setInvitationFlowStep] = useState<InvitationFlowInitialStep | null>(null);
-  const [insideDoorAccess, setInsideDoorAccess] = useState<InsideDoorAccess>(null);
-  const [codePrompt, setCodePrompt] = useState<CodePromptState | null>(null);
-  const [codeGuestNameInput, setCodeGuestNameInput] = useState("");
-  const [invitationCodeInput, setInvitationCodeInput] = useState("");
-  const [invitationCodeError, setInvitationCodeError] = useState<string | null>(null);
-  const [isInvitationCodeSubmitting, setIsInvitationCodeSubmitting] = useState(false);
   const [selectedLanguage] = useState<Language>(initialLanguage ?? "en");
   const [transitionPhase, setTransitionPhase] = useState<TransitionPhase>("idle");
   const [transitionTargetSceneId, setTransitionTargetSceneId] = useState<SceneId>("archive");
-  const [transitionVideoSrc, setTransitionVideoSrc] = useState("/assets/transition1.mp4");
-  const [scenePlaybackKey, setScenePlaybackKey] = useState(0);
   const [isHotspotAudioPlaying, setIsHotspotAudioPlaying] = useState(false);
   const [isOverlayAudioSequencePlaying, setIsOverlayAudioSequencePlaying] = useState(false);
   const [subtitleText, setSubtitleText] = useState<string | null>(null);
@@ -591,148 +520,43 @@ function AppContent() {
 
   const canDragScene = () => window.matchMedia("(max-width: 720px)").matches;
 
-  const transitionToScene = (targetSceneId: SceneId, transitionSrc = "") => {
-    grantSceneAccess(targetSceneId);
+  const transitionToScene = (targetSceneId: SceneId) => {
     setScenePan({ x: 0, y: 0 });
     setTransitionTargetSceneId(targetSceneId);
-    setTransitionVideoSrc(transitionSrc);
     setTransitionPhase("playing");
   };
 
-  const enterInside = (access: InsideDoorAccess) => {
-    setInsideDoorAccess(access);
+  const enterInside = () => {
     playSound("/assets/whoosp.mp3");
-    transitionToScene("inside", "/assets/transition3.mp4");
+    transitionToScene("inside");
   };
 
   const enterMatchedRoom = (roomId: SceneId) => {
-    setInsideDoorAccess("code");
     playSound("/assets/door-open.mp3");
     transitionToScene(roomId);
   };
 
   const enterLobbyForNewGuest = () => {
-    setInsideDoorAccess(null);
     playSound("/assets/door-open.mp3");
-    transitionToScene("archive", "/assets/transition2.mp4");
+    transitionToScene("archive");
   };
 
   const returnOutsideFromInvitation = () => {
     setInvitationFlowStep(null);
-    setInsideDoorAccess(null);
     setTransitionPhase("idle");
     setScenePan({ x: 0, y: 0 });
     setPopup(null);
     setImageOverlaySrc(null);
     setGalleryOverlay(null);
-    setCodePrompt(null);
-    setCodeGuestNameInput("");
-    setInvitationCodeInput("");
-    setInvitationCodeError(null);
     setSceneId("atrium");
-    setScenePlaybackKey((current) => current + 1);
     updateScenePath("atrium");
   };
 
-  const openCodePrompt = (target: SceneId) => {
-    const roomKey = hostKeyByRoom[target];
-    if (!roomKey) {
-      return;
-    }
-
-    setCodePrompt({ target, roomKey });
-    setCodeGuestNameInput(window.localStorage.getItem(GUEST_NAME_KEY)?.trim().slice(0, 20) ?? "");
-    setInvitationCodeInput("");
-    setInvitationCodeError(null);
-  };
-
   const openInsideDoor = (target: SceneId) => {
-    const roomKey = hostKeyByRoom[target];
-    if (!roomKey) {
-      return false;
-    }
-
-    openCodePrompt(target);
+    if (!hostKeyByRoom[target]) return false;
+    playSound("/assets/door-open.mp3");
+    transitionToScene(target);
     return true;
-  };
-
-  const submitInvitationCode = async () => {
-    if (!codePrompt) {
-      return;
-    }
-
-    const guestName = codeGuestNameInput.trim().slice(0, 20);
-    const invitationCode = invitationCodeInput.trim();
-    if (!guestName || !invitationCode || isInvitationCodeSubmitting) {
-      return;
-    }
-
-    setIsInvitationCodeSubmitting(true);
-    setInvitationCodeError(null);
-
-    const acceptInvitationCode = (verifiedGuestName: string, playToken?: string) => {
-      const target = codePrompt.target;
-      window.localStorage.setItem(GUEST_NAME_KEY, verifiedGuestName.slice(0, 20));
-      if (playToken) {
-        window.sessionStorage.setItem(getPlayTokenKey(codePrompt.roomKey), playToken);
-      }
-      setCodePrompt(null);
-      setCodeGuestNameInput("");
-      setInvitationCodeInput("");
-      setInvitationCodeError(null);
-      playSound("/assets/door-open.mp3");
-      transitionToScene(target);
-    };
-
-    try {
-      const response = await apiFetch("validate-invitation-code", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          roomKey: codePrompt.roomKey,
-          guestName,
-          invitationCode,
-        }),
-      });
-      const data = (await response.json().catch(() => ({}))) as ValidateInvitationCodeResponse;
-
-      if (!response.ok || !data.guestName) {
-        const localMatch = getLocalInvitationMatch(codePrompt.roomKey, guestName, invitationCode);
-        if (isLocalBrowserHost() && localMatch) {
-          acceptInvitationCode(localMatch.guestName);
-          return;
-        }
-
-        if (isLocalBrowserHost() && isFallbackInvitationCode(codePrompt.roomKey, invitationCode)) {
-          acceptInvitationCode(guestName);
-          return;
-        }
-
-        setInvitationCodeError(data.error ?? hudCopy.invalidInvitationCode);
-        playSound("/assets/chain.mp3");
-        return;
-      }
-
-      acceptInvitationCode(data.guestName, data.playToken);
-    } catch {
-      const localMatch = getLocalInvitationMatch(codePrompt.roomKey, guestName, invitationCode);
-      if (isLocalBrowserHost() && localMatch) {
-        acceptInvitationCode(localMatch.guestName);
-        return;
-      }
-
-      if (isLocalBrowserHost() && isFallbackInvitationCode(codePrompt.roomKey, invitationCode)) {
-        acceptInvitationCode(guestName);
-        return;
-      }
-
-      setInvitationCodeError("Could not validate invitation code. Please try again.");
-      playSound("/assets/chain.mp3");
-    } finally {
-      setIsInvitationCodeSubmitting(false);
-    }
   };
 
   useEffect(() => {
@@ -891,11 +715,7 @@ function AppContent() {
 
   const handleHotspot = (hotspotId: string, action: HotspotAction) => {
     const wingEventName = getWingEventName(hotspotId);
-    const gatedInsideDoorTarget = sceneId === "inside" && action.type === "scene" && insideDoorAccess ? action.target : null;
-    const isDeniedInsideDoor =
-      gatedInsideDoorTarget !== null && insideDoorAccess !== "code" && gatedInsideDoorTarget !== insideDoorAccess;
-
-    if (wingEventName && !isDeniedInsideDoor) {
+    if (wingEventName) {
       void trackEvent(wingEventName);
     }
 
@@ -968,7 +788,7 @@ function AppContent() {
         void trackEvent("door_knocked");
       }
 
-      const audio = new Audio(action.src);
+      const audio = createAudio(action.src);
       setIsHotspotAudioPlaying(true);
       audio.addEventListener(
         "ended",
@@ -1002,13 +822,13 @@ function AppContent() {
 
     if (sceneId === "door" && action.target === "archive") {
       playSound("/assets/door-open.mp3");
-      transitionToScene("archive", "/assets/transition2.mp4");
+      transitionToScene("archive");
       return;
     }
 
     if (sceneId === "archive" && action.target === "inside") {
       playSound("/assets/whoosp.mp3");
-      transitionToScene("inside", "/assets/transition3.mp4");
+      transitionToScene("inside");
       return;
     }
 
@@ -1023,7 +843,6 @@ function AppContent() {
     }
 
     setSceneId(action.target);
-    grantSceneAccess(action.target);
     updateScenePath(action.target);
   };
 
@@ -1084,7 +903,7 @@ function AppContent() {
           <span>{hotspot.label}</span>
         </button>
       )),
-    [clickCounts, displayedScene.hotspots, insideDoorAccess, isHotspotAudioPlaying, isTransitioning, sceneId],
+    [clickCounts, displayedScene.hotspots, isHotspotAudioPlaying, isTransitioning, sceneId],
   );
 
   const handleSceneOverlay = (overlay: SceneOverlay) => {
@@ -1173,7 +992,7 @@ function AppContent() {
           return;
         }
 
-        const audio = new Audio(audioSrc);
+        const audio = createAudio(audioSrc);
         audio.addEventListener(
           "ended",
           () => {
@@ -1206,7 +1025,6 @@ function AppContent() {
     if (displayedScene.id === "B-room" && overlay.action.target === "B-desk") {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("B-desk");
-      setTransitionVideoSrc("/assets/transition4.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1214,7 +1032,6 @@ function AppContent() {
     if (displayedScene.id === "B-room" && overlay.action.target === "B-sofa") {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("B-sofa");
-      setTransitionVideoSrc("/assets/transition5.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1222,7 +1039,6 @@ function AppContent() {
     if (displayedScene.id === "D-room" && overlay.action.target === "D-desk") {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("D-desk");
-      setTransitionVideoSrc("/assets/transition7.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1230,7 +1046,6 @@ function AppContent() {
     if (displayedScene.id === "D-room" && overlay.action.target === "D-sofa") {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("D-sofa");
-      setTransitionVideoSrc("/assets/transition8.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1238,7 +1053,6 @@ function AppContent() {
     if (displayedScene.id === "S-room" && overlay.action.target === "S-desk") {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("S-desk");
-      setTransitionVideoSrc("/assets/transition9.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1246,7 +1060,6 @@ function AppContent() {
     if (displayedScene.id === "S-room" && overlay.action.target === "S-sofa") {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("S-sofa");
-      setTransitionVideoSrc("/assets/transition10.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1254,7 +1067,6 @@ function AppContent() {
     if (displayedScene.id === "M-room" && overlay.action.target === "M-desk") {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("M-desk");
-      setTransitionVideoSrc("/assets/transition11.mp4");
       setTransitionPhase("playing");
       return;
     }
@@ -1262,14 +1074,12 @@ function AppContent() {
     if (displayedScene.id === "M-room" && overlay.action.target === "M-sofa") {
       setScenePan({ x: 0, y: 0 });
       setTransitionTargetSceneId("M-sofa");
-      setTransitionVideoSrc("/assets/transition12.mp4");
       setTransitionPhase("playing");
       return;
     }
 
     setScenePan({ x: 0, y: 0 });
     setSceneId(overlay.action.target);
-    setScenePlaybackKey((current) => current + 1);
     updateScenePath(overlay.action.target);
   };
 
@@ -1345,7 +1155,6 @@ function AppContent() {
 
   const completeReveal = () => {
     setSceneId(transitionTargetSceneId);
-    setScenePlaybackKey((current) => current + 1);
     setTransitionPhase("idle");
     updateScenePath(transitionTargetSceneId);
   };
@@ -1416,8 +1225,6 @@ function AppContent() {
     setTransitionPhase("idle");
     setScenePan({ x: 0, y: 0 });
     setSceneId(previousSceneId);
-    grantSceneAccess(previousSceneId);
-    setScenePlaybackKey((current) => current + 1);
     setTransitionTargetSceneId("archive");
     updateScenePath(previousSceneId);
   };
@@ -1463,10 +1270,6 @@ function AppContent() {
     });
   };
 
-  if (directRoomSceneId && !hasSceneAccess(directRoomSceneId)) {
-    return <DirectAccessRedirect />;
-  }
-
   return (
     <main className="game-shell">
       {isEventPosterOpen ? <EventPoster onDismiss={() => setIsEventPosterOpen(false)} /> : null}
@@ -1483,15 +1286,7 @@ function AppContent() {
         onClick={handleSceneClick}
         aria-label={displayedScene.name || "Atrium"}
       >
-        <VideoScene
-          sceneId={displayedScene.id}
-          playbackKey={scenePlaybackKey}
-          shouldPlay={!isTransitioning}
-          src={displayedScene.videoSrc}
-          posterSrc={displayedScene.posterSrc}
-          loop={displayedScene.loop ?? true}
-          fallbackClassName={displayedScene.fallbackClassName}
-        />
+        <StaticScene posterSrc={displayedScene.posterSrc} fallbackClassName={displayedScene.fallbackClassName} />
         <div className="scene-coordinate-layer">
           <div className="hotspot-layer">{hotspotButtons}</div>
           <div className="scene-overlay-layer">{sceneOverlays}</div>
@@ -1523,9 +1318,8 @@ function AppContent() {
         {subtitleText ? <div className="scene-subtitle">{subtitleText}</div> : null}
 
         {isTransitioning ? (
-          <TransitionVideo
+          <SceneTransition
             phase={transitionPhase}
-            src={transitionVideoSrc}
             onFinish={finishTransition}
             onRevealComplete={completeReveal}
           />
@@ -1547,79 +1341,6 @@ function AppContent() {
             </button>
             <h1 id="dialog-title">{popup.title}</h1>
             <p>{popup.body}</p>
-          </dialog>
-        </div>
-      ) : null}
-
-      {codePrompt ? (
-        <div
-          className="dialog-backdrop"
-          role="presentation"
-          onClick={() => {
-            setCodePrompt(null);
-            setIsInvitationCodeSubmitting(false);
-          }}
-        >
-          <dialog
-            className="dialog-card code-dialog-card"
-            aria-labelledby="code-dialog-title"
-            open
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              className="close-button"
-              type="button"
-              aria-label={hudCopy.closePopup}
-              onClick={() => {
-                setCodePrompt(null);
-                setIsInvitationCodeSubmitting(false);
-              }}
-            >
-              <X size={18} aria-hidden="true" />
-            </button>
-            <form
-              className="code-dialog-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void submitInvitationCode();
-              }}
-            >
-              <h1 id="code-dialog-title">{hudCopy.invitationCodeTitle}</h1>
-              <p>{hudCopy.invitationCodeDescription}</p>
-              <label>
-                <span>{hudCopy.invitationCodeNameLabel}</span>
-                <input
-                  className="code-dialog-name-input"
-                  value={codeGuestNameInput}
-                  onChange={(event) => {
-                    setCodeGuestNameInput(event.target.value.slice(0, 20));
-                    setInvitationCodeError(null);
-                  }}
-                  maxLength={20}
-                  autoFocus
-                  placeholder={hudCopy.invitationCodeNamePlaceholder}
-                />
-              </label>
-              <label>
-                <span>{hudCopy.invitationCodeTitle}</span>
-                <input
-                  className="code-dialog-code-input"
-                  value={invitationCodeInput}
-                  onChange={(event) => {
-                    setInvitationCodeInput(event.target.value);
-                    setInvitationCodeError(null);
-                  }}
-                  placeholder={`${codePrompt.roomKey.toUpperCase()}-TRC-XXXX-XXXX`}
-                />
-              </label>
-              {invitationCodeError ? <p className="code-dialog-error">{invitationCodeError}</p> : null}
-              <button
-                type="submit"
-                disabled={!codeGuestNameInput.trim() || !invitationCodeInput.trim() || isInvitationCodeSubmitting}
-              >
-                {isInvitationCodeSubmitting ? hudCopy.invitationCodeChecking : hudCopy.enter}
-              </button>
-            </form>
           </dialog>
         </div>
       ) : null}
@@ -1691,7 +1412,7 @@ function AppContent() {
           onCancel={() => setInvitationFlowStep(null)}
           onExistingCode={() => {
             setInvitationFlowStep(null);
-            enterInside("code");
+            enterInside();
           }}
           onNewUserStarted={enterLobbyForNewGuest}
           onResultClosed={(winningRoom: HostKey) => {
@@ -1736,7 +1457,6 @@ function AdminMiniGameAccess() {
   if (activeVariant) {
     return (
       <BotClickTest
-        disableScorePersistence
         guestNameOverride={ADMIN_MINI_GAME_NAME}
         returnPath="/"
         variant={activeVariant}
@@ -1791,21 +1511,6 @@ function AdminMiniGameAccess() {
             </button>
           </form>
         </dialog>
-      </div>
-    </main>
-  );
-}
-
-function DirectAccessRedirect() {
-  useEffect(() => {
-    window.location.replace("/");
-  }, []);
-
-  return (
-    <main className="initial-loading-shell" aria-live="polite">
-      <div className="initial-loading-panel">
-        <span>The Red Contract</span>
-        <strong>Returning to entrance...</strong>
       </div>
     </main>
   );
@@ -1954,65 +1659,19 @@ function ClickCounter({ sceneId, counts }: ClickCounterProps) {
   );
 }
 
-type TransitionVideoProps = {
+type SceneTransitionProps = {
   phase: TransitionPhase;
-  src: string;
   onFinish: () => void;
   onRevealComplete: () => void;
 };
 
-function TransitionVideo({ phase, src, onFinish, onRevealComplete }: TransitionVideoProps) {
-  const [videoFailed, setVideoFailed] = useState(false);
-
+function SceneTransition({ phase, onFinish, onRevealComplete }: SceneTransitionProps) {
   useEffect(() => {
-    if (src || phase !== "playing") {
-      return;
-    }
+    const timer = window.setTimeout(phase === "playing" ? onFinish : onRevealComplete, 250);
+    return () => window.clearTimeout(timer);
+  }, [phase, onFinish, onRevealComplete]);
 
-    const blackScreenTimer = window.setTimeout(onFinish, 650);
-    return () => window.clearTimeout(blackScreenTimer);
-  }, [onFinish, phase, src]);
-
-  useEffect(() => {
-    if (!videoFailed) {
-      return;
-    }
-
-    const fallbackTimer = window.setTimeout(onFinish, 450);
-    return () => window.clearTimeout(fallbackTimer);
-  }, [onFinish, videoFailed]);
-
-  useEffect(() => {
-    if (phase !== "revealing") {
-      return;
-    }
-
-    const revealTimer = window.setTimeout(onRevealComplete, 900);
-    return () => window.clearTimeout(revealTimer);
-  }, [onRevealComplete, phase]);
-
-  return (
-    <div
-      className={`transition-overlay${phase === "revealing" ? " transition-overlay-revealing" : ""}${
-        videoFailed ? " transition-overlay-fallback" : ""
-      }`}
-      aria-hidden="true"
-    >
-      {src && !videoFailed ? (
-        <video
-          key={src}
-          className="transition-video"
-          src={src}
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
-          onEnded={onFinish}
-          onError={() => setVideoFailed(true)}
-        />
-      ) : null}
-    </div>
-  );
+  return <div className={`transition-overlay${phase === "revealing" ? " transition-overlay-revealing" : ""}`} aria-hidden="true" />;
 }
 
 type SoundButtonProps = {
@@ -2033,7 +1692,7 @@ const getSceneAudioSrc = (sceneId: SceneId) =>
           : "/assets/sound.mp3";
 
 function SoundButton({ audioSrc }: SoundButtonProps) {
-  const [isSoundOn, setIsSoundOn] = useState(true);
+  const isSoundOn = useSoundEnabled();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioSrcRef = useRef<string | null>(null);
   const isSoundOnRef = useRef(isSoundOn);
@@ -2050,7 +1709,7 @@ function SoundButton({ audioSrc }: SoundButtonProps) {
 
     audioRef.current?.pause();
 
-    const audio = new Audio(audioSrc);
+    const audio = createAudio(audioSrc);
     audio.loop = true;
     audio.volume = isDuckedRef.current ? backgroundMusicDuckedVolume : backgroundMusicFullVolume;
     audioRef.current = audio;
@@ -2059,12 +1718,12 @@ function SoundButton({ audioSrc }: SoundButtonProps) {
     if (isSoundOnRef.current) {
       void audio.play().catch(() => {
         // Browsers can block unmuted autoplay until the first user gesture.
-        setIsSoundOn(false);
+        // Autoplay may wait for a user gesture; keep the global sound preference.
       });
     }
 
     return () => {
-      audio.pause();
+      releaseAudio(audio);
       if (audioRef.current === audio) {
         audioRef.current = null;
         audioSrcRef.current = null;
@@ -2090,20 +1749,16 @@ function SoundButton({ audioSrc }: SoundButtonProps) {
     return () => window.removeEventListener(backgroundMusicDuckEvent, handleMusicDuck);
   }, []);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isSoundOn) void audio.play().catch(() => {});
+    else audio.pause();
+  }, [isSoundOn]);
+
   const toggleSound = () => {
-    const audio = audioRef.current ?? new Audio(audioSrc);
-    audio.loop = true;
-    audio.volume = isDuckedRef.current ? backgroundMusicDuckedVolume : backgroundMusicFullVolume;
-    audioRef.current = audio;
-    audioSrcRef.current = audioSrc;
-
-    if (isSoundOn) {
-      audio.pause();
-      setIsSoundOn(false);
-      return;
-    }
-
-    void audio.play().then(() => setIsSoundOn(true)).catch(() => setIsSoundOn(false));
+    setSoundEnabled(!isSoundEnabled());
+    if (isSoundEnabled()) void audioRef.current?.play().catch(() => {});
   };
 
   return (
@@ -2150,44 +1805,13 @@ function LanguageButton({ selectedLanguage }: LanguageButtonProps) {
   );
 }
 
-type VideoSceneProps = {
-  sceneId: SceneId;
-  playbackKey: number;
-  shouldPlay: boolean;
-  src: string;
-  posterSrc?: string;
-  loop: boolean;
-  fallbackClassName: string;
-};
+type StaticSceneProps = { posterSrc?: string; fallbackClassName: string };
 
-function VideoScene({ sceneId, playbackKey, shouldPlay, src, posterSrc, loop, fallbackClassName }: VideoSceneProps) {
-  const [videoFailed, setVideoFailed] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
-
-  useEffect(() => {
-    setVideoFailed(false);
-    setVideoReady(false);
-  }, [sceneId, src]);
-
+function StaticScene({ posterSrc, fallbackClassName }: StaticSceneProps) {
   return (
     <div className="scene-media-layer">
       <div className={`animated-fallback ${fallbackClassName}`} aria-hidden="true" />
       {posterSrc ? <img className="scene-poster" src={posterSrc} alt="" aria-hidden="true" /> : null}
-      {src && !videoFailed ? (
-        <video
-          key={`${sceneId}-${playbackKey}`}
-          className={`scene-video${videoReady ? " scene-video-ready" : ""}`}
-          src={src}
-          autoPlay={shouldPlay}
-          muted
-          loop={loop}
-          playsInline
-          poster={posterSrc}
-          preload="auto"
-          onCanPlay={() => setVideoReady(true)}
-          onError={() => setVideoFailed(true)}
-        />
-      ) : null}
     </div>
   );
 }

@@ -72,22 +72,27 @@ test('concurrent duplicate registration creates exactly one guest', async () => 
   })));
   assert.deepEqual(responses.map(r=>r.status).sort(), [200,409]);
 });
-test('atomic scores never decrease; tokens rotate and expired sessions cannot write', async () => {
-  const query = new URLSearchParams({ roomKey:saved.winningRoom, guestName:saved.guestName, playToken:saved.playToken });
-  assert.equal((await call(`get-mini-game-score?${query}`)).guestScore, 0);
-  const p = {roomKey:saved.winningRoom, guestName:saved.guestName, playToken:saved.playToken};
-  await Promise.all([100,20,80].map(clickCount => call('submit-mini-game-score',{...p,clickCount})));
-  assert.equal((await call(`get-mini-game-score?${query}`)).guestScore,100);
-  assert.equal((await call(`get-mini-game-leaderboard?roomKey=${saved.winningRoom}`)).leaderboard[0].score,100);
-  await call('validate-invitation-code', {...p,invitationCode:'wrong'},403);
-  const rotated=await call('validate-invitation-code',{...p,guestName:saved.guestName.toUpperCase(),invitationCode:saved.invitationCode.toLowerCase()});
-  assert.notEqual(rotated.playToken,p.playToken);
-  await call('submit-mini-game-score',{...p,clickCount:999},401);
-  await call('submit-mini-game-score',{...p,playToken:rotated.playToken,clickCount:110});
-  await db.prepare("UPDATE invitation_results SET active_play_expires_at='2000-01-01T00:00:00.000Z' WHERE guest_name=?").bind(saved.guestName).run();
-  await call('submit-mini-game-score',{...p,playToken:rotated.playToken,clickCount:999},401);
-  assert.equal(await db.prepare('SELECT click_count FROM mini_game_scores WHERE guest_name=?').bind(saved.guestName).first('click_count'),110);
+test('event closure blocks every score submission and preserves final scores in all rooms', async () => {
+  for (const roomKey of ['b','d','s','m']) {
+    for (let i=0; i<13; i++) {
+      await db.prepare('INSERT INTO mini_game_scores(room_key,guest_name,click_count) VALUES(?,?,?)')
+        .bind(roomKey, `Final-${i}`, i*10).run();
+    }
+    const before = await db.prepare('SELECT * FROM mini_game_scores WHERE room_key=? ORDER BY id').bind(roomKey).all();
+    for (const playToken of [saved.playToken, 'expired', undefined]) {
+      await call('submit-mini-game-score', {roomKey,guestName:'Final-0',clickCount:99999,playToken},410);
+    }
+    const after = await db.prepare('SELECT * FROM mini_game_scores WHERE room_key=? ORDER BY id').bind(roomKey).all();
+    assert.deepEqual(after.results,before.results);
+    const {leaderboard} = await call(`get-mini-game-leaderboard?roomKey=${roomKey}`);
+    assert.equal(leaderboard.length,13);
+    assert.deepEqual(leaderboard.map(entry=>entry.score),Array.from({length:13},(_,i)=>(12-i)*10));
+  }
+  await call('validate-invitation-code', {roomKey:saved.winningRoom,guestName:saved.guestName,invitationCode:'wrong'},403);
+  const login=await call('validate-invitation-code',{roomKey:saved.winningRoom,guestName:saved.guestName,invitationCode:saved.invitationCode});
+  assert.equal(login.guestName,saved.guestName);
 });
+
 test('legacy duplicate names survive and login updates exactly one matching invitation', async () => {
   await db.prepare(`INSERT INTO invitation_results (guest_name,guest_name_key,answered_date,answers,scores,winning_room,invitation_code)
     VALUES ('Legacy','legacy','2026-09-27','[]','{}','b','old-code'),('LEGACY','legacy','2026-09-27','[]','{}','b','old-code')`).run();

@@ -1,4 +1,4 @@
-// Warm only the initial scene's poster. Videos stream when their scene mounts.
+// Warm only the initial scene's still image.
 export async function preloadSiteAssets(
   onProgress: (loaded: number, total: number) => void,
   posterSrc: string | undefined,
