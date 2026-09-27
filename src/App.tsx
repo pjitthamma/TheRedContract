@@ -3,11 +3,12 @@ import type { CSSProperties, MouseEvent, PointerEvent } from "react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "./api";
 import { playSound } from "./audio";
+import { EventPoster } from "./EventPoster";
 import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitationData";
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.5";
+const APP_VERSION = "0.1.6";
 const BotClickTest = lazy(() => import("./BotClickTest"));
 const InvitationFlow = lazy(() => import("./InvitationFlow"));
 
@@ -492,13 +493,15 @@ function AppContent() {
 
   const miniGameRoute = miniGameRouteByPath[window.location.pathname as keyof typeof miniGameRouteByPath];
   if (miniGameRoute) {
-    return <DirectAccessRedirect />;
+    if (!hasSceneAccess(miniGameRoute.roomPath.slice(1) as SceneId)) return <DirectAccessRedirect />;
+    return <BotClickTest variant={miniGameRoute.variant} returnPath={miniGameRoute.roomPath} />;
   }
 
   const initialLanguage = getStoredLanguage();
   const directRoomSceneId = roomSceneIdByPath[window.location.pathname];
   const [sceneId, setSceneId] = useState<SceneId>(getInitialSceneId);
   const [popup, setPopup] = useState<PopupContent | null>(null);
+  const [isEventPosterOpen, setIsEventPosterOpen] = useState(() => window.location.pathname === "/");
   const [imageOverlaySrc, setImageOverlaySrc] = useState<string | null>(null);
   const [galleryOverlay, setGalleryOverlay] = useState<GalleryOverlay | null>(null);
   const [invitationFlowStep, setInvitationFlowStep] = useState<InvitationFlowInitialStep | null>(null);
@@ -861,6 +864,7 @@ function AppContent() {
 
     try {
       await apiFetch("track-event", {
+        keepalive: true,
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -1138,6 +1142,7 @@ function AppContent() {
       if (overlay.action.audioSrc) {
         playSound(overlay.action.audioSrc);
       }
+      window.location.assign(overlay.action.path);
       return;
     }
 
@@ -1464,6 +1469,7 @@ function AppContent() {
 
   return (
     <main className="game-shell">
+      {isEventPosterOpen ? <EventPoster onDismiss={() => setIsEventPosterOpen(false)} /> : null}
       <section
         className={`scene-stage${isTransitioning ? " scene-stage-transitioning" : ""}${
           isDraggingScene ? " scene-stage-dragging" : ""

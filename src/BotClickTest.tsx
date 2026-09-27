@@ -396,6 +396,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
         </div>
 
         {sessionMessage ? <p className="bot-test-session-message">{sessionMessage}</p> : null}
+        {isSessionExpired ? <a href="/" className="bot-test-session-message">Re-enter invitation code / กรอกรหัสเชิญอีกครั้ง</a> : null}
       </div>
 
       <button

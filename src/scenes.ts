@@ -501,7 +501,7 @@ export const scenes: Record<SceneId, Scene> = {
     overlays: [
       {
         id: "b-item-1",
-        label: "B item 1",
+        label: "Ring bell — BlueRose mini game",
         src: "/assets/b_item_1.png",
         x: 53.6,
         y: 66.4,
@@ -513,8 +513,9 @@ export const scenes: Record<SceneId, Scene> = {
           height: 36,
         },
         action: {
-          type: "audio-sequence",
-          audioSrcs: ["/assets/bell-ring.mp3", "/assets/rosen_voice.mp3"],
+          type: "path",
+          path: "/b-mini-game",
+          audioSrc: "/assets/bell-ring.mp3",
         },
       },
       {
@@ -660,14 +661,15 @@ export const scenes: Record<SceneId, Scene> = {
       },
       {
         id: "d-item-2",
-        label: "D item 2",
+        label: "Ring bell — Decree mini game",
         src: "/assets/d_item_2.png",
         x: 52.1,
         y: 67.2,
         width: 9.2,
         action: {
-          type: "audio-sequence",
-          audioSrcs: ["/assets/bell-ring.mp3", "/assets/michael_sound.mp3"],
+          type: "path",
+          path: "/d-mini-game",
+          audioSrc: "/assets/bell-ring.mp3",
         },
       },
       {
@@ -794,14 +796,15 @@ export const scenes: Record<SceneId, Scene> = {
       },
       {
         id: "s-item-2",
-        label: "S item 2",
+        label: "Ring bell — Stray mini game",
         src: "/assets/s_item_2.png",
         x: 39.5,
         y: 65.8,
         width: 8.1,
         action: {
-          type: "audio-sequence",
-          audioSrcs: ["/assets/bell-ring.mp3", "/assets/ryusei_sound.mp3"],
+          type: "path",
+          path: "/s-mini-game",
+          audioSrc: "/assets/bell-ring.mp3",
         },
       },
       {
@@ -928,14 +931,15 @@ export const scenes: Record<SceneId, Scene> = {
       },
       {
         id: "m-item-2",
-        label: "M item 2",
+        label: "Ring bell — Meteor mini game",
         src: "/assets/m_item_2.png",
         x: 33.8,
         y: 70.4,
         width: 8.1,
         action: {
-          type: "audio-sequence",
-          audioSrcs: ["/assets/bell-ring.mp3", "/assets/noel_sound.mp3"],
+          type: "path",
+          path: "/m-mini-game",
+          audioSrc: "/assets/bell-ring.mp3",
         },
       },
       {

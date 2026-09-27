@@ -27,6 +27,55 @@ button {
   font: inherit;
 }
 
+.event-poster-modal {
+  padding: 0;
+  border: 1px solid rgba(224, 174, 86, 0.6);
+  border-radius: 8px;
+  background: #130b08;
+  color: #fff;
+  max-width: 92vw;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow: visible;
+  box-shadow: 0 24px 80px #000;
+}
+
+.event-poster-modal::backdrop {
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+.event-poster-modal img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 92vw;
+  max-height: 90vh;
+  max-height: 90dvh;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.event-poster-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #c8a467;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  cursor: pointer;
+}
+
+.event-poster-close:focus-visible {
+  outline: 3px solid #ffe4a4;
+  outline-offset: 3px;
+}
+
 .version-badge {
   position: fixed;
   top: max(0.45rem, env(safe-area-inset-top));
