@@ -3,6 +3,9 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[build.environment]
+  VITE_API_BASE_URL = "https://the-red-contract-api.patboke-jit.workers.dev/api"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

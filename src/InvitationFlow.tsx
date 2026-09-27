@@ -1,6 +1,7 @@
 import { Download, X } from "lucide-react";
-import { toBlob } from "html-to-image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { apiFetch } from "./api";
+import { playSound } from "./audio";
+import { useMemo, useRef, useState } from "react";
 import {
   type HostKey,
   type HostScoreMap,
@@ -126,11 +127,11 @@ const getBangkokDate = () => {
 };
 
 const playPenSound = () => {
-  void new Audio("/assets/pen.mp3").play();
+  playSound("/assets/pen.mp3");
 };
 
 const playWelcomeSound = () => {
-  void new Audio("/assets/Welcome.mp3").play();
+  playSound("/assets/Welcome.mp3");
 };
 
 const GUEST_NAME_KEY = "red-contract-guest-name";
@@ -341,26 +342,6 @@ function InvitationFlow({
   );
   const isQuizComplete = answeredCount === questions.length;
 
-  useEffect(() => {
-    if (step !== "quiz") {
-      return;
-    }
-
-    void fetch("/.netlify/functions/get-questionnaire")
-      .then(async (response) => {
-        if (!response.ok) {
-          return;
-        }
-        const data = (await response.json()) as { questions?: QuestionnaireQuestion[] };
-        if (data.questions?.length) {
-          setQuestions(shuffleQuestions(data.questions));
-        }
-      })
-      .catch(() => {
-        // Local Vite development can use the generated workbook fallback.
-      });
-  }, [step]);
-
   const startNewUserFlow = () => {
     onNewUserStarted();
     setStep("contract");
@@ -377,13 +358,13 @@ function InvitationFlow({
     setErrorMessage(null);
 
     try {
-      const response = await fetch("/.netlify/functions/check-guest-name", {
+      const [response, questionnaireResponse] = await Promise.all([apiFetch("check-guest-name", {
         method: "POST",
         headers: {
           "content-type": "application/json",
         },
         body: JSON.stringify({ guestName: normalizedGuestName }),
-      });
+      }), apiFetch("get-questionnaire")]);
 
       if (response.status === 409) {
         setErrorMessage(formCopy.duplicateName);
@@ -395,8 +376,11 @@ function InvitationFlow({
         return;
       }
 
+      if (!questionnaireResponse.ok) throw new Error("Questionnaire unavailable");
+      const data = (await questionnaireResponse.json()) as { questions?: QuestionnaireQuestion[] };
+      if (!data.questions?.length) throw new Error("Questionnaire is empty");
       setAnswersByQuestionId({});
-      setQuestions(shuffleQuestions(fallbackQuestionnaire));
+      setQuestions(shuffleQuestions(data.questions));
       setStep("quiz");
     } catch {
       setErrorMessage("Could not check this guest name. Please try again.");
@@ -435,7 +419,7 @@ function InvitationFlow({
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
-      const response = await fetch("/.netlify/functions/preview-questionnaire-result", {
+      const response = await apiFetch("preview-questionnaire-result", {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -450,14 +434,14 @@ function InvitationFlow({
       if (response.ok) {
         const previewResult = (await response.json()) as InvitationResult;
         setResult(previewResult);
+        setStep("result");
       } else {
-        setResult(fallbackResult);
+        setErrorMessage("Could not calculate your result. Please try again.");
       }
     } catch {
-      setResult(fallbackResult);
+      setErrorMessage("Could not calculate your result. Please try again.");
     } finally {
       setIsSubmitting(false);
-      setStep("result");
     }
   };
 
@@ -469,7 +453,7 @@ function InvitationFlow({
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
-      const response = await fetch("/.netlify/functions/submit-questionnaire-result", {
+      const response = await apiFetch("submit-questionnaire-result", {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -523,6 +507,7 @@ function InvitationFlow({
 
     try {
       const fileName = `red-contract-${result?.invitationCode ?? "result"}.png`;
+      const { toBlob } = await import("html-to-image");
       const blob = await toBlob(resultCardRef.current, { cacheBust: true, pixelRatio: 2 });
       if (!blob) {
         return;
@@ -567,7 +552,7 @@ function InvitationFlow({
   };
 
   const closeExitMessage = () => {
-    void new Audio("/assets/door-open.mp3").play();
+    playSound("/assets/door-open.mp3");
     onTooYoung();
   };
 
@@ -660,6 +645,7 @@ function InvitationFlow({
 
         {step === "quiz" && activeQuestion ? (
           <div className="questionnaire-panel">
+            {errorMessage ? <p className="invitation-error" role="alert">{errorMessage}</p> : null}
             <div className="questionnaire-progress">
               {formCopy.question} {activeQuestionIndex + 1} / {questions.length}
             </div>

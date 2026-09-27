@@ -1,13 +1,15 @@
 import { ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import BotClickTest from "./BotClickTest";
-import InvitationFlow from "./InvitationFlow";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { apiFetch } from "./api";
+import { playSound } from "./audio";
 import { type HostKey, fallbackInvitationCodes, hostRoomByKey } from "./invitationData";
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
 const APP_VERSION = "0.1.5";
+const BotClickTest = lazy(() => import("./BotClickTest"));
+const InvitationFlow = lazy(() => import("./InvitationFlow"));
 
 type PopupContent = {
   title: string;
@@ -412,14 +414,16 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
-    const minimumLoadingTimer = new Promise((resolve) => window.setTimeout(resolve, 900));
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 2500);
     const preloadTimer = preloadSiteAssets((loadedCount, totalCount) => {
       if (isMounted) {
         setLoadingState({ isComplete: false, loadedCount, totalCount });
       }
-    });
+    }, scenes[getInitialSceneId()].posterSrc, controller.signal);
 
-    void Promise.all([minimumLoadingTimer, preloadTimer]).then(() => {
+    void preloadTimer.then(() => {
+      window.clearTimeout(timeout);
       if (isMounted) {
         setLoadingState((current) => ({ ...current, isComplete: true }));
       }
@@ -427,6 +431,8 @@ function App() {
 
     return () => {
       isMounted = false;
+      window.clearTimeout(timeout);
+      controller.abort();
     };
   }, []);
 
@@ -441,7 +447,9 @@ function App() {
 
   return (
     <>
-      <AppContent />
+      <Suspense fallback={<InitialLoadingScreen loadedCount={0} totalCount={1} />}>
+        <AppContent />
+      </Suspense>
       <VersionBadge />
     </>
   );
@@ -590,19 +598,19 @@ function AppContent() {
 
   const enterInside = (access: InsideDoorAccess) => {
     setInsideDoorAccess(access);
-    void new Audio("/assets/whoosp.mp3").play();
+    playSound("/assets/whoosp.mp3");
     transitionToScene("inside", "/assets/transition3.mp4");
   };
 
   const enterMatchedRoom = (roomId: SceneId) => {
     setInsideDoorAccess("code");
-    void new Audio("/assets/door-open.mp3").play();
+    playSound("/assets/door-open.mp3");
     transitionToScene(roomId);
   };
 
   const enterLobbyForNewGuest = () => {
     setInsideDoorAccess(null);
-    void new Audio("/assets/door-open.mp3").play();
+    playSound("/assets/door-open.mp3");
     transitionToScene("archive", "/assets/transition2.mp4");
   };
 
@@ -669,12 +677,12 @@ function AppContent() {
       setCodeGuestNameInput("");
       setInvitationCodeInput("");
       setInvitationCodeError(null);
-      void new Audio("/assets/door-open.mp3").play();
+      playSound("/assets/door-open.mp3");
       transitionToScene(target);
     };
 
     try {
-      const response = await fetch("/.netlify/functions/validate-invitation-code", {
+      const response = await apiFetch("validate-invitation-code", {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -689,7 +697,7 @@ function AppContent() {
 
       if (!response.ok || !data.guestName) {
         const localMatch = getLocalInvitationMatch(codePrompt.roomKey, guestName, invitationCode);
-        if (localMatch) {
+        if (isLocalBrowserHost() && localMatch) {
           acceptInvitationCode(localMatch.guestName);
           return;
         }
@@ -700,14 +708,14 @@ function AppContent() {
         }
 
         setInvitationCodeError(data.error ?? hudCopy.invalidInvitationCode);
-        void new Audio("/assets/chain.mp3").play();
+        playSound("/assets/chain.mp3");
         return;
       }
 
       acceptInvitationCode(data.guestName, data.playToken);
     } catch {
       const localMatch = getLocalInvitationMatch(codePrompt.roomKey, guestName, invitationCode);
-      if (localMatch) {
+      if (isLocalBrowserHost() && localMatch) {
         acceptInvitationCode(localMatch.guestName);
         return;
       }
@@ -718,7 +726,7 @@ function AppContent() {
       }
 
       setInvitationCodeError("Could not validate invitation code. Please try again.");
-      void new Audio("/assets/chain.mp3").play();
+      playSound("/assets/chain.mp3");
     } finally {
       setIsInvitationCodeSubmitting(false);
     }
@@ -738,7 +746,7 @@ function AppContent() {
   }, []);
 
   const fetchCounts = async () => {
-    const response = await fetch("/.netlify/functions/get-counts");
+    const response = await apiFetch("get-counts");
     if (!response.ok) {
       return;
     }
@@ -852,7 +860,7 @@ function AppContent() {
     });
 
     try {
-      const response = await fetch("/.netlify/functions/track-event", {
+      await apiFetch("track-event", {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -863,9 +871,6 @@ function AppContent() {
         }),
       });
 
-      if (response.ok) {
-        await fetchCounts();
-      }
     } catch {
       // Keep optimistic local counts if tracking is unavailable.
     }
@@ -877,7 +882,7 @@ function AppContent() {
     }
 
     visitTrackedRef.current = true;
-    void fetchCounts().then(() => trackEvent("club_visited"));
+    void fetchCounts().catch(() => {}).then(() => trackEvent("club_visited"));
   }, []);
 
   const handleHotspot = (hotspotId: string, action: HotspotAction) => {
@@ -927,7 +932,7 @@ function AppContent() {
         void trackEvent("m_picture_clicked");
       }
       if (action.audioSrc) {
-        void new Audio(action.audioSrc).play();
+        playSound(action.audioSrc);
       }
       setImageOverlaySrc(action.localizedImageSrcs?.[selectedLanguage] ?? action.imageSrc);
       return;
@@ -941,7 +946,7 @@ function AppContent() {
         void trackEvent("club_rules_clicked");
       }
       if (action.audioSrc) {
-        void new Audio(action.audioSrc).play();
+        playSound(action.audioSrc);
       }
       setGalleryOverlay({ imageSrcs: action.localizedImageSrcs?.[selectedLanguage] ?? action.imageSrcs, index: 0 });
       return;
@@ -992,19 +997,19 @@ function AppContent() {
     }
 
     if (sceneId === "door" && action.target === "archive") {
-      void new Audio("/assets/door-open.mp3").play();
+      playSound("/assets/door-open.mp3");
       transitionToScene("archive", "/assets/transition2.mp4");
       return;
     }
 
     if (sceneId === "archive" && action.target === "inside") {
-      void new Audio("/assets/whoosp.mp3").play();
+      playSound("/assets/whoosp.mp3");
       transitionToScene("inside", "/assets/transition3.mp4");
       return;
     }
 
     if (sceneId === "inside" && action.target === "hall-of-frame") {
-      void new Audio("/assets/whoosp.mp3").play();
+      playSound("/assets/whoosp.mp3");
       transitionToScene("hall-of-frame");
       return;
     }
@@ -1131,13 +1136,13 @@ function AppContent() {
 
     if (overlay.action.type === "path") {
       if (overlay.action.audioSrc) {
-        void new Audio(overlay.action.audioSrc).play();
+        playSound(overlay.action.audioSrc);
       }
       return;
     }
 
     if ("audioSrc" in overlay.action && overlay.action.audioSrc) {
-      void new Audio(overlay.action.audioSrc).play();
+      playSound(overlay.action.audioSrc);
     }
 
     if (overlay.action.type === "audio-sequence") {
@@ -1264,7 +1269,7 @@ function AppContent() {
   };
 
   const moveGallery = (direction: -1 | 1) => {
-    void new Audio("/assets/flip.mp3").play();
+    playSound("/assets/flip.mp3");
     setGalleryOverlay((current) => {
       if (!current) {
         return current;
@@ -1425,7 +1430,7 @@ function AppContent() {
     }
 
     void trackEvent("breached_attempt_clicked");
-    void new Audio("/assets/chain.mp3").play();
+    playSound("/assets/chain.mp3");
 
     setBreachedAttempts((current) => {
       const next = current + 1;
@@ -1446,7 +1451,7 @@ function AppContent() {
       }
 
       if (audioSrc) {
-        void new Audio(audioSrc).play();
+        playSound(audioSrc);
       }
 
       return next;
@@ -1672,6 +1677,7 @@ function AppContent() {
       ) : null}
 
       {invitationFlowStep ? (
+        <Suspense fallback={<div className="invitation-backdrop" role="status"><div className="invitation-panel">Loading…</div></div>}>
         <InvitationFlow
           initialStep={invitationFlowStep}
           language={selectedLanguage}
@@ -1688,6 +1694,7 @@ function AppContent() {
           }}
           onTooYoung={returnOutsideFromInvitation}
         />
+        </Suspense>
       ) : null}
     </main>
   );
@@ -2090,7 +2097,7 @@ function SoundButton({ audioSrc }: SoundButtonProps) {
       return;
     }
 
-    void audio.play().then(() => setIsSoundOn(true));
+    void audio.play().then(() => setIsSoundOn(true)).catch(() => setIsSoundOn(false));
   };
 
   return (

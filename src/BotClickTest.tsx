@@ -1,4 +1,5 @@
 import { ArrowLeft, RefreshCw, Volume2, VolumeX } from "lucide-react";
+import { apiFetch } from "./api";
 import { type KeyboardEvent, type MouseEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type BotAnimationState = "start" | "end";
@@ -148,7 +149,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
       const query = new URLSearchParams({
         roomKey: variant,
       });
-      const response = await fetch(`/.netlify/functions/get-mini-game-leaderboard?${query.toString()}`);
+      const response = await apiFetch(`get-mini-game-leaderboard?${query.toString()}`);
       if (!response.ok) {
         return;
       }
@@ -180,7 +181,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
         playToken,
         roomKey: variant,
       });
-      const response = await fetch(`/.netlify/functions/get-mini-game-score?${query.toString()}`);
+      const response = await apiFetch(`get-mini-game-score?${query.toString()}`);
       if (response.status === 401) {
         window.sessionStorage.removeItem(getPlayTokenKey(variant));
         setIsSessionExpired(true);
@@ -224,7 +225,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
 
       isSubmittingScoreRef.current = true;
       try {
-        const response = await fetch("/.netlify/functions/submit-mini-game-score", {
+        const response = await apiFetch("submit-mini-game-score", {
           method: "POST",
           headers: {
             "content-type": "application/json",
@@ -297,7 +298,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
     const slapAudio = slapAudioRef.current ?? new Audio("/assets/slap.mp3");
     slapAudioRef.current = slapAudio;
     slapAudio.currentTime = 0;
-    void slapAudio.play();
+    void slapAudio.play().catch(() => {});
 
     if (config.moanSrc) {
       const moanAudio =
@@ -307,7 +308,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
       moanAudioRef.current = moanAudio;
       moanAudioSrcRef.current = config.moanSrc;
       moanAudio.currentTime = 0;
-      void moanAudio.play();
+      void moanAudio.play().catch(() => {});
     }
 
     window.setTimeout(() => {
@@ -317,7 +318,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
       }
 
       video.currentTime = 0;
-      void video.play();
+      void video.play().catch(() => setAnimationState("start"));
     }, 0);
   };
 
@@ -362,7 +363,7 @@ function BotClickTest({ disableScorePersistence = false, guestNameOverride, retu
       return;
     }
 
-    void audio.play().then(() => setIsMusicOn(true));
+    void audio.play().then(() => setIsMusicOn(true)).catch(() => setIsMusicOn(false));
   };
 
   const displayedLeaderboardEntries = leaderboardEntries.length

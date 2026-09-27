@@ -1,0 +1,15 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "the-red-contract-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true, "head_sampling_rate": 0.1, "redact_query_string": true },
+  "vars": { "ALLOWED_ORIGINS": "https://the-red-contract.netlify.app", "READ_ONLY": "false" },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "the-red-contract",
+    "database_id": "dde559d5-2cc2-4fd5-a012-ee4f9ba9c93b",
+    "migrations_dir": "migrations"
+  }]
+}
