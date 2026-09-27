@@ -8,7 +8,7 @@ import { type HostKey, hostRoomByKey } from "./invitationData";
 import { preloadSiteAssets } from "./preloadAssets";
 import { type HotspotAction, type Language, type SceneId, type SceneOverlay, scenes } from "./scenes";
 
-const APP_VERSION = "0.1.7";
+const APP_VERSION = "0.1.8";
 const BotClickTest = lazy(() => import("./BotClickTest"));
 const InvitationFlow = lazy(() => import("./InvitationFlow"));
 

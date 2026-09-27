@@ -1498,12 +1498,12 @@ button {
   background-size: cover;
   background-repeat: no-repeat;
   /* Keep the original still background sharp. */
+  transform: scale(1.02);
 }
 
 .bot-test-stage {
   position: absolute;
   inset: 0;
-  bottom: 6rem;
   overflow: hidden;
   touch-action: manipulation;
 }
@@ -1666,7 +1666,7 @@ button {
 .bot-test-side-video {
   position: absolute;
   right: clamp(1rem, 4vw, 4rem);
-  bottom: 6rem;
+  bottom: 0;
   z-index: 1;
   width: 16rem;
   max-height: 68vh;
@@ -1775,8 +1775,9 @@ button {
 
 .bot-test-leaderboard span {
   min-width: 0;
-  overflow-wrap: anywhere;
-  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bot-test-leaderboard strong {
@@ -1789,11 +1790,8 @@ button {
 }
 
 .bot-test-event-notice {
-  position: absolute;
-  z-index: 5;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  /* Keep the original full-height game canvas; place the notice below it. */
+  position: relative;
   margin: 0;
   padding: 0.55rem 1rem max(0.55rem, env(safe-area-inset-bottom));
   color: #fff8cc;
@@ -1808,10 +1806,6 @@ button {
   display: block;
   color: #d5cbbc;
   font-size: 0.9em;
-}
-
-.bot-test-leaderboard {
-  height: min(65vh, 42rem);
 }
 
 .bot-test-back {
@@ -1990,21 +1984,22 @@ button {
   }
 
   .bot-test-leaderboard {
-    top: 4.25rem;
-    right: auto;
-    bottom: auto;
+    top: auto;
+    right: 0.75rem;
+    bottom: 0.75rem;
     left: 0.75rem;
-    width: 44vw;
-    height: 30vh;
-    max-height: 30vh;
+    width: auto;
+    height: auto;
+    max-height: 26vh;
     padding: 0.75rem;
     overflow: hidden;
   }
 
-  .bot-test-leaderboard h1 { font-size: 0.7rem; }
-  .bot-test-leaderboard li, .bot-test-leaderboard strong { font-size: 0.75rem; }
   .bot-test-event-notice { font-size: 0.72rem; }
-  .bot-test-stage, .bot-test-side-video { bottom: 7rem; }
+
+  .bot-test-leaderboard ol {
+    max-height: calc(26vh - 4rem);
+  }
 
   .hotspot span {
     font-size: 0.7rem;

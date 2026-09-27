@@ -208,6 +208,7 @@ function BotClickTest({ guestNameOverride, returnPath = "/", variant }: BotClick
   };
 
   return (
+    <>
     <main className="bot-test-shell">
       <div
         className="bot-test-background"
@@ -307,12 +308,13 @@ function BotClickTest({ guestNameOverride, returnPath = "/", variant }: BotClick
           onPointerDown={handleCharacterPointerDown}
         />
       </section>
+    </main>
       <p className="bot-test-event-notice">
         กิจกรรมสิ้นสุดลงแล้ว การเล่นหลังจากนี้จะไม่บันทึกคะแนนหรือเปลี่ยนแปลงอันดับ
         แต่ท่านยังสามารถร่วมสนุกกับมินิเกมตีก้นโฮสต์ได้ตามอัธยาศัย
         <span>The event has ended. Enjoy playing for fun; new hits are not saved and will not affect the final rankings.</span>
       </p>
-    </main>
+    </>
   );
 }
 
